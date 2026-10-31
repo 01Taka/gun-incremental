@@ -51,12 +51,12 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
     // Reactの再レンダリングや二重実行を防ぐガード
     if (game.current) return;
 
-    // Phaserゲームの基本設定（高解像度 1600x900 / 16:9 比率でRetina・スマホ全画面にクッキリ描画）
+    // Phaserゲームの基本設定（高解像度 縦画面 900x1600 / 9:16 比率でRetina・スマホ全画面にクッキリ描画）
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       parent: containerRef.current,
-      width: 1600,
-      height: 900,
+      width: 900,
+      height: 1600,
       backgroundColor: "#0f172a", // Tailwind slate-900
       scale: {
         mode: Phaser.Scale.FIT,

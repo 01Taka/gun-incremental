@@ -25,14 +25,11 @@ export class PermanentUpgradeScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
 
-    // 背景
     this.createBackground(width, height);
-
-    // ヘッダー
     this.createHeader(width);
 
     // 永続強化カード一覧
-    this.cardsContainer = this.add.container(0, 150);
+    this.cardsContainer = this.add.container(0, 130);
     this.renderUpgradeCards();
 
     // 下部アクションボタン
@@ -41,15 +38,15 @@ export class PermanentUpgradeScene extends Phaser.Scene {
 
   private createBackground(width: number, height: number): void {
     const bg = this.add.graphics();
-    bg.fillGradientStyle(0x090d16, 0x090d16, 0x0f172a, 0x0f172a, 1);
+    bg.fillGradientStyle(0x070b14, 0x070b14, 0x0f172a, 0x0f172a, 1);
     bg.fillRect(0, 0, width, height);
 
-    bg.lineStyle(1, 0x1e293b, 0.4);
-    for (let x = 0; x < width; x += 100) {
+    bg.lineStyle(1, 0x1e293b, 0.35);
+    for (let x = 0; x < width; x += 60) {
       bg.moveTo(x, 0);
       bg.lineTo(x, height);
     }
-    for (let y = 0; y < height; y += 100) {
+    for (let y = 0; y < height; y += 60) {
       bg.moveTo(0, y);
       bg.lineTo(width, y);
     }
@@ -58,21 +55,21 @@ export class PermanentUpgradeScene extends Phaser.Scene {
 
   private createHeader(width: number): void {
     const headerBg = this.add.graphics();
-    headerBg.fillStyle(0x0f172a, 0.95);
-    headerBg.fillRect(0, 0, width, 85);
+    headerBg.fillStyle(0x0f172a, 0.96);
+    headerBg.fillRect(0, 0, width, 95);
     headerBg.lineStyle(2, 0x1e293b, 1);
-    headerBg.moveTo(0, 85);
-    headerBg.lineTo(width, 85);
+    headerBg.moveTo(0, 95);
+    headerBg.lineTo(width, 95);
     headerBg.strokePath();
 
-    addCrispText(this, 50, 26, "⭐ 永続強化 (METAGAME)", {
-      fontSize: "30px",
+    addCrispText(this, 40, 30, "⭐ 永続強化 (METAGAME)", {
+      fontSize: "28px",
       fontStyle: "bold",
       color: "#c084fc",
     });
 
     const points = this.gameState.persistentData.permanentPoints;
-    this.pointsText = addCrispText(this, width - 50, 26, `所持永続ポイント: ${points} pt`, {
+    this.pointsText = addCrispText(this, width - 40, 30, `所持: ${points} pt`, {
       fontSize: "26px",
       fontStyle: "bold",
       color: "#facc15",
@@ -91,10 +88,10 @@ export class PermanentUpgradeScene extends Phaser.Scene {
       "invoice_reduction",
     ];
 
-    const cardW = 280;
-    const cardH = 380;
-    const spacing = 300;
-    const startX = width / 2 - (upgrades.length * spacing) / 2 + cardW / 2 + 10;
+    const cardW = 800;
+    const cardH = 175;
+    const spacing = 195;
+    const startY = 30;
 
     upgrades.forEach((id, index) => {
       const def = PERMANENT_UPGRADES[id];
@@ -103,73 +100,76 @@ export class PermanentUpgradeScene extends Phaser.Scene {
       const cost = this.gameState.getPermanentUpgradeCost(id);
       const canAfford = cost !== null && this.gameState.persistentData.permanentPoints >= cost;
 
-      const x = startX + index * spacing;
-      const y = 30;
+      const y = startY + index * spacing;
 
-      const card = this.add.container(x, y);
+      const card = this.add.container(width / 2, y + cardH / 2);
       const bg = this.add.graphics();
 
       const bgColor = isMax ? 0x1e293b : canAfford ? 0x1e293b : 0x0f172a;
       const borderColor = isMax ? 0xfacc15 : canAfford ? 0xa855f7 : 0x334155;
 
-      bg.fillStyle(bgColor, 0.95);
-      bg.fillRoundedRect(-cardW / 2, 0, cardW, cardH, 16);
+      bg.fillStyle(bgColor, 0.96);
+      bg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
       bg.lineStyle(2, borderColor, 1);
-      bg.strokeRoundedRect(-cardW / 2, 0, cardW, cardH, 16);
+      bg.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
 
-      // 名称
-      addCrispText(this, 0, 25, def.name, {
-        fontSize: "22px",
+      // 名称 & 段階
+      addCrispText(this, -cardW / 2 + 25, -55, def.name, {
+        fontSize: "24px",
         fontStyle: "bold",
         color: "#f8fafc",
-      }).setOrigin(0.5);
+      });
 
-      // レベル表示
-      addCrispText(this, 0, 65, isMax ? "★ MAX LEVEL" : `段階: ${curLevel} / ${def.maxLevel}`, {
-        fontSize: "18px",
-        fontStyle: "bold",
-        color: isMax ? "#facc15" : "#c084fc",
-      }).setOrigin(0.5);
+      addCrispText(
+        this,
+        -cardW / 2 + 180,
+        -53,
+        isMax ? "★ MAX" : `Lv.${curLevel} / ${def.maxLevel}`,
+        {
+          fontSize: "19px",
+          fontStyle: "bold",
+          color: isMax ? "#facc15" : "#c084fc",
+        },
+      );
 
       // 説明
-      addCrispText(this, 0, 115, def.description, {
-        fontSize: "15px",
+      addCrispText(this, -cardW / 2 + 25, -15, def.description, {
+        fontSize: "17px",
         color: "#94a3b8",
-        align: "center",
-        wordWrap: { width: cardW - 30 },
-      }).setOrigin(0.5);
+        wordWrap: { width: cardW - 250 },
+      });
 
-      // 各段階の効果一覧
-      let effectsY = 175;
+      // 段階ごとの効果一覧 (横並び)
+      let effX = -cardW / 2 + 25;
       def.effects.forEach((eff, i) => {
         const lvl = i + 1;
         const isCurrent = curLevel === lvl;
         const isPast = curLevel > lvl;
         const color = isCurrent ? "#38bdf8" : isPast ? "#94a3b8" : "#475569";
-        const prefix = isCurrent ? "▶ " : isPast ? "✔ " : "　";
+        const prefix = isCurrent ? "▶ " : isPast ? "✔ " : "";
 
-        addCrispText(this, 0, effectsY, `${prefix}Lv.${lvl}: +${eff} ${def.effectUnit}`, {
+        addCrispText(this, effX, 35, `${prefix}Lv.${lvl}: +${eff}${def.effectUnit}`, {
           fontSize: "16px",
           fontStyle: isCurrent ? "bold" : "normal",
           color,
-        }).setOrigin(0.5);
-        effectsY += 34;
+        });
+        effX += 165;
       });
 
-      // 強化ボタン
+      // 強化ボタン (カード右側)
       if (isMax) {
-        addCrispText(this, 0, cardH - 45, "取得完了", {
-          fontSize: "18px",
+        addCrispText(this, cardW / 2 - 100, 0, "★ 取得完了", {
+          fontSize: "20px",
           fontStyle: "bold",
           color: "#facc15",
         }).setOrigin(0.5);
       } else {
         const btn = this.add.graphics();
         btn.fillStyle(canAfford ? 0x7c3aed : 0x334155, 1);
-        btn.fillRoundedRect(-100, cardH - 65, 200, 46, 8);
+        btn.fillRoundedRect(cardW / 2 - 190, -30, 165, 60, 10);
 
-        const btnLabel = addCrispText(this, 0, cardH - 42, `強化 (${cost} pt)`, {
-          fontSize: "17px",
+        const btnLabel = addCrispText(this, cardW / 2 - 107, 0, `強化 (${cost} pt)`, {
+          fontSize: "19px",
           fontStyle: "bold",
           color: canAfford ? "#ffffff" : "#94a3b8",
         }).setOrigin(0.5);
@@ -196,33 +196,17 @@ export class PermanentUpgradeScene extends Phaser.Scene {
 
   private refreshScene(): void {
     const points = this.gameState.persistentData.permanentPoints;
-    this.pointsText.setText(`所持永続ポイント: ${points} pt`);
+    this.pointsText.setText(`所持: ${points} pt`);
     this.renderUpgradeCards();
   }
 
   private createBottomButtons(width: number, height: number): void {
-    const btnY = height - 90;
-    const spacing = 380;
+    const btnY = height - 120;
+    const spacing = 110;
 
-    // タイトルへ戻る
     this.createButton(
-      width / 2 - spacing / 2,
-      btnY,
-      "🏠 タイトルへ戻る",
-      0x334155,
-      0x475569,
-      () => {
-        this.audio.playSynthSE("click");
-        this.scene.start("TitleScene");
-      },
-      320,
-      58,
-    );
-
-    // 新しいランを開始
-    this.createButton(
-      width / 2 + spacing / 2,
-      btnY,
+      width / 2,
+      btnY - spacing,
       "▶ 新しいランを開始",
       0x0284c7,
       0x0ea5e9,
@@ -231,8 +215,22 @@ export class PermanentUpgradeScene extends Phaser.Scene {
         this.gameState.startNewRun();
         this.scene.start("RoundScene");
       },
-      320,
-      58,
+      520,
+      72,
+    );
+
+    this.createButton(
+      width / 2,
+      btnY,
+      "🏠 タイトルへ戻る",
+      0x334155,
+      0x475569,
+      () => {
+        this.audio.playSynthSE("click");
+        this.scene.start("TitleScene");
+      },
+      520,
+      72,
     );
   }
 
@@ -243,19 +241,19 @@ export class PermanentUpgradeScene extends Phaser.Scene {
     color: number,
     hoverColor: number,
     onClick: () => void,
-    width = 320,
-    height = 58,
+    width = 480,
+    height = 72,
   ): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
 
     const bg = this.add.graphics();
     bg.fillStyle(color, 1);
-    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
+    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
     bg.lineStyle(2, 0xffffff, 0.4);
-    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
 
     const label = addCrispText(this, 0, 0, text, {
-      fontSize: "22px",
+      fontSize: "24px",
       fontStyle: "bold",
       color: "#ffffff",
     }).setOrigin(0.5);
@@ -267,18 +265,18 @@ export class PermanentUpgradeScene extends Phaser.Scene {
     container.on("pointerover", () => {
       bg.clear();
       bg.fillStyle(hoverColor, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
+      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
       bg.lineStyle(3, 0xffffff, 0.9);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
       container.setScale(1.03);
     });
 
     container.on("pointerout", () => {
       bg.clear();
       bg.fillStyle(color, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
+      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
       bg.lineStyle(2, 0xffffff, 0.4);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
       container.setScale(1.0);
     });
 

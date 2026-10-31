@@ -64,7 +64,6 @@ export class UpgradeScene extends Phaser.Scene {
     bg.fillGradientStyle(0x070b14, 0x070b14, 0x0f172a, 0x0f172a, 1);
     bg.fillRect(0, 0, width, height);
 
-    // 薄い方眼グリッド
     bg.lineStyle(1, 0x1e293b, 0.35);
     for (let x = 0; x < width; x += 60) {
       bg.moveTo(x, 0);
@@ -79,14 +78,14 @@ export class UpgradeScene extends Phaser.Scene {
 
   private createHeader(width: number): void {
     const headerBg = this.add.graphics();
-    headerBg.fillStyle(0x0f172a, 0.95);
-    headerBg.fillRect(0, 0, width, 75);
+    headerBg.fillStyle(0x0f172a, 0.96);
+    headerBg.fillRect(0, 0, width, 85);
     headerBg.lineStyle(2, 0x1e293b, 1);
-    headerBg.moveTo(0, 75);
-    headerBg.lineTo(width, 75);
+    headerBg.moveTo(0, 85);
+    headerBg.lineTo(width, 85);
     headerBg.strokePath();
 
-    addCrispText(this, 50, 22, "UPGRADE SYSTEM", {
+    addCrispText(this, 40, 26, "UPGRADES", {
       fontSize: "28px",
       fontStyle: "bold",
       color: "#38bdf8",
@@ -94,11 +93,11 @@ export class UpgradeScene extends Phaser.Scene {
 
     this.spDisplay = addCrispText(
       this,
-      width / 2,
-      22,
-      `所持SP: ${formatNumber(this.gameState.sp)} SP`,
+      width / 2 + 30,
+      26,
+      `所持: ${formatNumber(this.gameState.sp)} SP`,
       {
-        fontSize: "26px",
+        fontSize: "24px",
         fontStyle: "bold",
         color: "#facc15",
       },
@@ -108,11 +107,11 @@ export class UpgradeScene extends Phaser.Scene {
     const canAfford = this.gameState.sp >= nextInvoice;
     this.invoiceDisplay = addCrispText(
       this,
-      width - 50,
-      24,
-      `次回請求: ${formatNumber(nextInvoice)} SP (${canAfford ? "支払可能" : "SP不足"})`,
+      width - 40,
+      28,
+      `次回請求: ${formatNumber(nextInvoice)} SP`,
       {
-        fontSize: "19px",
+        fontSize: "17px",
         fontStyle: "bold",
         color: canAfford ? "#4ade80" : "#f87171",
       },
@@ -120,12 +119,12 @@ export class UpgradeScene extends Phaser.Scene {
   }
 
   private createTabs(width: number): void {
-    const tabY = 115;
-    const tabWidth = 240;
-    const tabHeight = 42;
+    const tabY = 120;
+    const tabWidth = 360;
+    const tabHeight = 44;
 
     this.skillTabButton = this.createTabButton(
-      width / 2 - 140,
+      width / 2 - 190,
       tabY,
       "⚡ スキルツリー",
       this.currentTab === "skills",
@@ -142,10 +141,10 @@ export class UpgradeScene extends Phaser.Scene {
     );
 
     const isShopUnlocked = this.gameState.isShopAvailable();
-    const shopLabel = isShopUnlocked ? "🔫 武器ショップ" : "🔒 武器ショップ (Round 3〜)";
+    const shopLabel = isShopUnlocked ? "🔫 武器ショップ" : "🔒 ショップ (Round 3〜)";
 
     this.weaponTabButton = this.createTabButton(
-      width / 2 + 140,
+      width / 2 + 190,
       tabY,
       shopLabel,
       this.currentTab === "weapons",
@@ -170,8 +169,8 @@ export class UpgradeScene extends Phaser.Scene {
     text: string,
     isActive: boolean,
     onClick: () => void,
-    w = 220,
-    h = 42,
+    w = 340,
+    h = 44,
     isDisabled = false,
   ): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
@@ -180,7 +179,7 @@ export class UpgradeScene extends Phaser.Scene {
     this.drawTabBg(bg, isActive, isDisabled, w, h);
 
     const label = addCrispText(this, 0, 0, text, {
-      fontSize: "17px",
+      fontSize: "18px",
       fontStyle: isActive ? "bold" : "normal",
       color: isDisabled ? "#64748b" : isActive ? "#ffffff" : "#94a3b8",
     }).setOrigin(0.5);
@@ -208,9 +207,9 @@ export class UpgradeScene extends Phaser.Scene {
     const borderColor = isDisabled ? 0x334155 : isActive ? 0x38bdf8 : 0x475569;
 
     bg.fillStyle(color, 1);
-    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
     bg.lineStyle(2, borderColor, 1);
-    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
   }
 
   private updateTabStyles(): void {
@@ -219,15 +218,15 @@ export class UpgradeScene extends Phaser.Scene {
       this.skillTabButton.getAt(0) as Phaser.GameObjects.Graphics,
       this.currentTab === "skills",
       false,
-      240,
-      42,
+      360,
+      44,
     );
     this.drawTabBg(
       this.weaponTabButton.getAt(0) as Phaser.GameObjects.Graphics,
       this.currentTab === "weapons",
       !isShopUnlocked,
-      240,
-      42,
+      360,
+      44,
     );
   }
 
@@ -242,31 +241,28 @@ export class UpgradeScene extends Phaser.Scene {
   }
 
   private refreshHeader(): void {
-    this.spDisplay.setText(`所持SP: ${formatNumber(this.gameState.sp)} SP`);
+    this.spDisplay.setText(`所持: ${formatNumber(this.gameState.sp)} SP`);
     const nextInvoice = this.gameState.getInvoiceAmount();
     const canAfford = this.gameState.sp >= nextInvoice;
-    this.invoiceDisplay.setText(
-      `次回請求: ${formatNumber(nextInvoice)} SP (${canAfford ? "支払可能" : "SP不足"})`,
-    );
+    this.invoiceDisplay.setText(`次回請求: ${formatNumber(nextInvoice)} SP`);
     this.invoiceDisplay.setColor(canAfford ? "#4ade80" : "#f87171");
   }
 
   // ==========================================
-  // 本格的スキルツリー構造の描画 (インクリメンタルDAGツリー)
+  // 縦型スキルツリー構造の描画 (上から下へ展開)
   // ==========================================
   private renderSkillTree(): void {
-    const { width } = this.scale;
+    const treeW = 820;
+    const treeH = 680;
+    const treeX = 40;
+    const treeY = 10;
 
-    // 左〜中央: ツリービューポート (幅 1080px, 高さ 640px)
-    const treeViewportWidth = 1100;
-    const treeViewportHeight = 640;
-
-    // ツリー枠線の装飾
+    // ツリー枠背景
     const treeBg = this.add.graphics();
-    treeBg.fillStyle(0x0b1120, 0.6);
-    treeBg.fillRoundedRect(40, 10, treeViewportWidth, treeViewportHeight, 16);
+    treeBg.fillStyle(0x0b1120, 0.7);
+    treeBg.fillRoundedRect(treeX, treeY, treeW, treeH, 16);
     treeBg.lineStyle(1.5, 0x1e293b, 0.8);
-    treeBg.strokeRoundedRect(40, 10, treeViewportWidth, treeViewportHeight, 16);
+    treeBg.strokeRoundedRect(treeX, treeY, treeW, treeH, 16);
     this.contentContainer.add(treeBg);
 
     // 接続線レイヤー
@@ -277,23 +273,16 @@ export class UpgradeScene extends Phaser.Scene {
     this.nodesContainer = this.add.container(0, 0);
     this.contentContainer.add(this.nodesContainer);
 
-    // 右側: 詳細インスペクターパネル (幅 400px, x=1160)
-    this.detailPanelContainer = this.add.container(width - 430, 10);
+    // 下部: 詳細インスペクターパネル (y = 705)
+    this.detailPanelContainer = this.add.container(treeX, treeY + treeH + 15);
     this.contentContainer.add(this.detailPanelContainer);
 
-    // ツリー接続線の描画
+    // 線とノードとパネルを描画
     this.drawTreeConnectionLines();
-
-    // 各ノードの描画
     this.drawTreeNodes();
-
-    // 右側詳細パネルの描画
     this.renderDetailPanel();
   }
 
-  /**
-   * 親子ノード間の有向接続線（コネクタ）を描画
-   */
   private drawTreeConnectionLines(): void {
     this.treeLinesGraphics.clear();
 
@@ -312,55 +301,51 @@ export class UpgradeScene extends Phaser.Scene {
       const childLevel = this.gameState.skillLevels[skillId] || 0;
       const isChildMax = childLevel >= def.maxLevel;
 
-      // 線色の決定
       let lineColor = 0x1e293b;
       let lineAlpha = 0.5;
       let lineWidth = 2;
 
       if (isChildMax) {
-        lineColor = 0xfacc15; // ゴールド (MAX)
-        lineAlpha = 0.9;
-        lineWidth = 4;
-      } else if (childLevel > 0) {
-        lineColor = 0x38bdf8; // 明るいシアン (習得中)
+        lineColor = 0xfacc15;
         lineAlpha = 0.9;
         lineWidth = 3.5;
+      } else if (childLevel > 0) {
+        lineColor = 0x38bdf8;
+        lineAlpha = 0.9;
+        lineWidth = 3;
       } else if (isConditionMet) {
-        lineColor = 0x0284c7; // シアン (解放可能)
+        lineColor = 0x0284c7;
         lineAlpha = 0.75;
         lineWidth = 2.5;
       }
 
       this.treeLinesGraphics.lineStyle(lineWidth, lineColor, lineAlpha);
 
-      // カクカクした回路風の折れ線コネクタ:
-      // (parentX, parentY) -> (midX, parentY) -> (midX, childY) -> (childX, childY)
-      const midX = (parentPos.x + childPos.x) / 2;
+      // 上から下への回路配線コネクタ:
+      // (parentX, parentY) -> (parentX, midY) -> (childX, midY) -> (childX, childY)
+      const midY = (parentPos.y + childPos.y) / 2;
 
       this.treeLinesGraphics.beginPath();
-      this.treeLinesGraphics.moveTo(parentPos.x, parentPos.y);
-      this.treeLinesGraphics.lineTo(midX, parentPos.y);
-      this.treeLinesGraphics.lineTo(midX, childPos.y);
-      this.treeLinesGraphics.lineTo(childPos.x, childPos.y);
+      this.treeLinesGraphics.moveTo(parentPos.x, parentPos.y + 10);
+      this.treeLinesGraphics.lineTo(parentPos.x, midY);
+      this.treeLinesGraphics.lineTo(childPos.x, midY);
+      this.treeLinesGraphics.lineTo(childPos.x, childPos.y + 10);
       this.treeLinesGraphics.strokePath();
 
-      // 親から子への方向を示す小さな矢印/ドットマーカー
+      // 下向き矢印マーカー
       const arrowSize = 5;
       this.treeLinesGraphics.fillStyle(lineColor, lineAlpha);
       this.treeLinesGraphics.fillTriangle(
-        childPos.x - 42,
-        childPos.y,
-        childPos.x - 42 - arrowSize * 2,
-        childPos.y - arrowSize,
-        childPos.x - 42 - arrowSize * 2,
-        childPos.y + arrowSize,
+        childPos.x,
+        childPos.y + 10 - 36,
+        childPos.x - arrowSize,
+        childPos.y + 10 - 36 - arrowSize * 2,
+        childPos.x + arrowSize,
+        childPos.y + 10 - 36 - arrowSize * 2,
       );
     }
   }
 
-  /**
-   * ツリーの各ノードを描画
-   */
   private drawTreeNodes(): void {
     this.nodesContainer.removeAll(true);
 
@@ -374,7 +359,6 @@ export class UpgradeScene extends Phaser.Scene {
       const isSelected = this.selectedSkillId === skillId;
       const cost = this.gameState.getSkillCost(skillId);
 
-      // 前提条件のチェック
       let isRequirementMet = true;
       if (def.requirement) {
         const reqLvl = this.gameState.skillLevels[def.requirement.nodeId] || 0;
@@ -384,24 +368,24 @@ export class UpgradeScene extends Phaser.Scene {
       }
 
       const nodeX = def.treePos.x;
-      const nodeY = def.treePos.y;
-      const radius = 38;
+      const nodeY = def.treePos.y + 10;
+      const radius = 34;
 
       const nodeContainer = this.add.container(nodeX, nodeY);
 
-      // 外周グロー / 選択ハイライト
+      // 選択グロー
       const glowGraphics = this.add.graphics();
       if (isSelected) {
         glowGraphics.lineStyle(3, 0xffffff, 0.9);
-        glowGraphics.strokeCircle(0, 0, radius + 7);
+        glowGraphics.strokeCircle(0, 0, radius + 6);
       }
       if (canUnlock && !isMax) {
         glowGraphics.lineStyle(2, 0x38bdf8, 0.6);
-        glowGraphics.strokeCircle(0, 0, radius + 4);
+        glowGraphics.strokeCircle(0, 0, radius + 3);
       }
       nodeContainer.add(glowGraphics);
 
-      // ノード本体の円グラフィックス
+      // ノード円グラフィック
       const nodeBg = this.add.graphics();
 
       let fillColor = 0x0f172a;
@@ -434,16 +418,16 @@ export class UpgradeScene extends Phaser.Scene {
 
       // アイコン
       const iconText = !isRequirementMet ? "🔒" : def.icon;
-      const icon = addCrispText(this, 0, -6, iconText, {
-        fontSize: "26px",
+      const icon = addCrispText(this, 0, -5, iconText, {
+        fontSize: "24px",
       }).setOrigin(0.5);
       nodeContainer.add(icon);
 
-      // レベルバッジ (ノード内下部)
+      // レベルバッジ
       const levelLabel = isMax ? "MAX" : `${curLevel}/${def.maxLevel}`;
       const badgeColor = isMax ? "#facc15" : curLevel > 0 ? "#38bdf8" : "#94a3b8";
-      const lvlText = addCrispText(this, 0, 20, levelLabel, {
-        fontSize: "13px",
+      const lvlText = addCrispText(this, 0, 18, levelLabel, {
+        fontSize: "12px",
         fontStyle: "bold",
         color: badgeColor,
       }).setOrigin(0.5);
@@ -451,55 +435,45 @@ export class UpgradeScene extends Phaser.Scene {
 
       // ノード上部: スキル名
       const titleColor = !isRequirementMet ? "#475569" : isMax ? "#fef08a" : "#f8fafc";
-      const nameText = addCrispText(this, 0, -radius - 12, def.name, {
-        fontSize: "14px",
+      const nameText = addCrispText(this, 0, -radius - 10, def.name, {
+        fontSize: "13px",
         fontStyle: "bold",
         color: titleColor,
       }).setOrigin(0.5);
       nodeContainer.add(nameText);
 
-      // ノード下部: コスト / ステータス
+      // ノード下部: コスト
       if (!isMax && cost !== null) {
         const costColor = canUnlock ? "#38bdf8" : "#64748b";
-        const costText = addCrispText(this, 0, radius + 12, `${formatNumber(cost)} SP`, {
-          fontSize: "13px",
+        const costText = addCrispText(this, 0, radius + 10, `${formatNumber(cost)} SP`, {
+          fontSize: "12px",
           fontStyle: "bold",
           color: costColor,
         }).setOrigin(0.5);
         nodeContainer.add(costText);
       } else if (isMax) {
-        const completeText = addCrispText(this, 0, radius + 12, "★ 習得完了", {
-          fontSize: "12px",
+        const completeText = addCrispText(this, 0, radius + 10, "★ MAX", {
+          fontSize: "11px",
           fontStyle: "bold",
           color: "#facc15",
         }).setOrigin(0.5);
         nodeContainer.add(completeText);
       }
 
-      // インタラクション
       nodeContainer.setSize(radius * 2, radius * 2);
       nodeContainer.setInteractive({ useHandCursor: true });
 
-      nodeContainer.on("pointerover", () => {
-        nodeContainer.setScale(1.08);
-      });
-
-      nodeContainer.on("pointerout", () => {
-        nodeContainer.setScale(1.0);
-      });
-
+      nodeContainer.on("pointerover", () => nodeContainer.setScale(1.08));
+      nodeContainer.on("pointerout", () => nodeContainer.setScale(1.0));
       nodeContainer.on("pointerdown", () => {
         this.selectedSkillId = skillId;
         this.audio.playSynthSE("click");
 
-        // クリックで直接購入可能なら購入
         if (this.gameState.canUnlockSkill(skillId)) {
           if (this.gameState.buySkill(skillId)) {
             this.audio.playSynthSE("laser", 0.7);
           }
         }
-
-        // ツリーと詳細パネルの再描画
         this.refreshTreeViews();
       });
 
@@ -508,13 +482,13 @@ export class UpgradeScene extends Phaser.Scene {
   }
 
   /**
-   * 右側詳細インスペクターパネルの描画
+   * 縦画面用詳細インスペクターパネル (幅 820, 高さ 580)
    */
   private renderDetailPanel(): void {
     this.detailPanelContainer.removeAll(true);
 
-    const panelW = 410;
-    const panelH = 640;
+    const panelW = 820;
+    const panelH = 580;
 
     const def: SkillDefinition = SKILLS[this.selectedSkillId];
     const curLevel = this.gameState.skillLevels[this.selectedSkillId];
@@ -522,7 +496,6 @@ export class UpgradeScene extends Phaser.Scene {
     const cost = this.gameState.getSkillCost(this.selectedSkillId);
     const canUnlock = this.gameState.canUnlockSkill(this.selectedSkillId);
 
-    // 前提条件
     let isRequirementMet = true;
     let reqText = "なし (初期解放)";
     if (def.requirement) {
@@ -532,7 +505,6 @@ export class UpgradeScene extends Phaser.Scene {
       reqText = `${parentDef.name} Lv.${def.requirement.level} 以上 (現在: Lv.${parentCur})`;
     }
 
-    // パネル枠
     const bg = this.add.graphics();
     bg.fillStyle(0x0f172a, 0.98);
     bg.fillRoundedRect(0, 0, panelW, panelH, 16);
@@ -540,67 +512,67 @@ export class UpgradeScene extends Phaser.Scene {
     bg.strokeRoundedRect(0, 0, panelW, panelH, 16);
     this.detailPanelContainer.add(bg);
 
-    // ヘッダー部
+    // カテゴリバッジ
     const categoryBadge = def.category === "combat" ? "⚔️ 戦闘強化" : "📊 経済強化";
     const categoryColor = def.category === "combat" ? 0xef4444 : 0x10b981;
 
     const catBg = this.add.graphics();
     catBg.fillStyle(categoryColor, 0.2);
     catBg.lineStyle(1, categoryColor, 0.8);
-    catBg.fillRoundedRect(24, 20, 110, 26, 6);
-    catBg.strokeRoundedRect(24, 20, 110, 26, 6);
+    catBg.fillRoundedRect(30, 25, 120, 30, 6);
+    catBg.strokeRoundedRect(30, 25, 120, 30, 6);
     this.detailPanelContainer.add(catBg);
 
-    addCrispText(this, 79, 33, categoryBadge, {
-      fontSize: "12px",
+    addCrispText(this, 90, 40, categoryBadge, {
+      fontSize: "14px",
       fontStyle: "bold",
       color: "#ffffff",
     }).setOrigin(0.5);
 
     // スキル名とアイコン
-    addCrispText(this, 24, 60, `${def.icon} ${def.name}`, {
-      fontSize: "26px",
+    addCrispText(this, 170, 26, `${def.icon} ${def.name}`, {
+      fontSize: "28px",
       fontStyle: "bold",
       color: "#f8fafc",
     });
 
     // レベル表示
-    addCrispText(this, panelW - 24, 64, isMax ? "★ MAX" : `Lv.${curLevel} / ${def.maxLevel}`, {
-      fontSize: "18px",
+    addCrispText(this, panelW - 30, 30, isMax ? "★ MAX" : `Lv.${curLevel} / ${def.maxLevel}`, {
+      fontSize: "22px",
       fontStyle: "bold",
       color: isMax ? "#facc15" : "#38bdf8",
     }).setOrigin(1, 0);
 
     // レベルバー
-    const barW = panelW - 48;
-    const barH = 10;
-    const barY = 105;
+    const barW = panelW - 60;
+    const barH = 12;
+    const barY = 75;
 
     const barBg = this.add.graphics();
     barBg.fillStyle(0x1e293b, 1);
-    barBg.fillRoundedRect(24, barY, barW, barH, 5);
+    barBg.fillRoundedRect(30, barY, barW, barH, 6);
 
     const fillW = Math.max(0, barW * (curLevel / def.maxLevel));
     barBg.fillStyle(isMax ? 0xfacc15 : 0x0284c7, 1);
-    barBg.fillRoundedRect(24, barY, fillW, barH, 5);
+    barBg.fillRoundedRect(30, barY, fillW, barH, 6);
     this.detailPanelContainer.add(barBg);
 
     // 説明文
-    addCrispText(this, 24, 130, def.description, {
-      fontSize: "15px",
+    addCrispText(this, 30, 105, def.description, {
+      fontSize: "18px",
       color: "#94a3b8",
-      wordWrap: { width: panelW - 48 },
+      wordWrap: { width: panelW - 60 },
     });
 
-    // 区切り線
+    // 区切り線1
     const divider1 = this.add.graphics();
     divider1.lineStyle(1, 0x1e293b, 1);
-    divider1.moveTo(24, 195);
-    divider1.lineTo(panelW - 24, 195);
+    divider1.moveTo(30, 170);
+    divider1.lineTo(panelW - 30, 170);
     divider1.strokePath();
     this.detailPanelContainer.add(divider1);
 
-    // 効果量の詳細比較 (インクリメンタルゲームならではのBefore / After)
+    // 効果量の詳細比較 (Before / After)
     const curVal = curLevel * def.effectPerLevel;
     const nextVal = (curLevel + 1) * def.effectPerLevel;
     const unit = def.effectUnit;
@@ -612,31 +584,29 @@ export class UpgradeScene extends Phaser.Scene {
         ? `(+${Math.round(def.effectPerLevel * 100)}%)`
         : `(+${def.effectPerLevel} ${unit})`;
 
-    addCrispText(this, 24, 215, "効果の詳細", {
-      fontSize: "17px",
+    addCrispText(this, 30, 195, "効果の詳細", {
+      fontSize: "19px",
       fontStyle: "bold",
       color: "#cbd5e1",
     });
 
-    // 現在の効果
-    addCrispText(this, 24, 250, "現在のボーナス:", {
-      fontSize: "15px",
+    addCrispText(this, 30, 240, "現在のボーナス:", {
+      fontSize: "17px",
       color: "#94a3b8",
     });
-    addCrispText(this, panelW - 24, 250, curLevel > 0 ? curDisplay : "効果なし (Lv.0)", {
-      fontSize: "16px",
+    addCrispText(this, panelW - 30, 240, curLevel > 0 ? curDisplay : "効果なし (Lv.0)", {
+      fontSize: "19px",
       fontStyle: "bold",
       color: curLevel > 0 ? "#38bdf8" : "#64748b",
     }).setOrigin(1, 0);
 
-    // 次レベルの効果
     if (!isMax) {
-      addCrispText(this, 24, 285, "次のレベル (UP):", {
-        fontSize: "15px",
+      addCrispText(this, 30, 285, "次のレベル (UP):", {
+        fontSize: "17px",
         color: "#94a3b8",
       });
-      addCrispText(this, panelW - 24, 285, `${nextDisplay}  ${diffDisplay}`, {
-        fontSize: "16px",
+      addCrispText(this, panelW - 30, 285, `${nextDisplay}  ${diffDisplay}`, {
+        fontSize: "19px",
         fontStyle: "bold",
         color: "#4ade80",
       }).setOrigin(1, 0);
@@ -645,38 +615,38 @@ export class UpgradeScene extends Phaser.Scene {
     // 区切り線2
     const divider2 = this.add.graphics();
     divider2.lineStyle(1, 0x1e293b, 1);
-    divider2.moveTo(24, 335);
-    divider2.lineTo(panelW - 24, 335);
+    divider2.moveTo(30, 345);
+    divider2.lineTo(panelW - 30, 345);
     divider2.strokePath();
     this.detailPanelContainer.add(divider2);
 
     // 前提条件
-    addCrispText(this, 24, 355, "ツリー解放条件", {
-      fontSize: "17px",
+    addCrispText(this, 30, 370, "ツリー解放条件", {
+      fontSize: "19px",
       fontStyle: "bold",
       color: "#cbd5e1",
     });
 
-    addCrispText(this, 24, 385, reqText, {
-      fontSize: "15px",
+    addCrispText(this, 30, 410, reqText, {
+      fontSize: "17px",
       fontStyle: isRequirementMet ? "normal" : "bold",
       color: isRequirementMet ? "#38bdf8" : "#ef4444",
-      wordWrap: { width: panelW - 48 },
+      wordWrap: { width: panelW - 60 },
     });
 
-    // 下部購入アクションボタン
-    const buttonY = panelH - 90;
+    // 下部購入ボタン
+    const buttonY = panelH - 95;
 
     if (isMax) {
       const maxBanner = this.add.graphics();
       maxBanner.fillStyle(0x361e05, 1);
       maxBanner.lineStyle(2, 0xfacc15, 1);
-      maxBanner.fillRoundedRect(24, buttonY, panelW - 48, 60, 10);
-      maxBanner.strokeRoundedRect(24, buttonY, panelW - 48, 60, 10);
+      maxBanner.fillRoundedRect(30, buttonY, panelW - 60, 68, 12);
+      maxBanner.strokeRoundedRect(30, buttonY, panelW - 60, 68, 12);
       this.detailPanelContainer.add(maxBanner);
 
-      addCrispText(this, panelW / 2, buttonY + 30, "★ 最大レベル習得済み", {
-        fontSize: "20px",
+      addCrispText(this, panelW / 2, buttonY + 34, "★ 最大レベル習得済み", {
+        fontSize: "22px",
         fontStyle: "bold",
         color: "#facc15",
       }).setOrigin(0.5);
@@ -684,39 +654,38 @@ export class UpgradeScene extends Phaser.Scene {
       const lockBanner = this.add.graphics();
       lockBanner.fillStyle(0x180505, 1);
       lockBanner.lineStyle(1.5, 0xef4444, 0.6);
-      lockBanner.fillRoundedRect(24, buttonY, panelW - 48, 60, 10);
-      lockBanner.strokeRoundedRect(24, buttonY, panelW - 48, 60, 10);
+      lockBanner.fillRoundedRect(30, buttonY, panelW - 60, 68, 12);
+      lockBanner.strokeRoundedRect(30, buttonY, panelW - 60, 68, 12);
       this.detailPanelContainer.add(lockBanner);
 
-      addCrispText(this, panelW / 2, buttonY + 30, "🔒 前提スキルが未達です", {
-        fontSize: "18px",
+      addCrispText(this, panelW / 2, buttonY + 34, "🔒 前提スキルが未達です", {
+        fontSize: "20px",
         fontStyle: "bold",
         color: "#ef4444",
       }).setOrigin(0.5);
     } else {
-      // レベルアップ購入ボタン
-      const btn = this.add.container(panelW / 2, buttonY + 30);
+      const btn = this.add.container(panelW / 2, buttonY + 34);
       const btnBg = this.add.graphics();
       const btnColor = canUnlock ? 0x0284c7 : 0x1e293b;
       const btnBorder = canUnlock ? 0x38bdf8 : 0x334155;
 
       btnBg.fillStyle(btnColor, 1);
-      btnBg.fillRoundedRect(-(panelW - 48) / 2, -30, panelW - 48, 60, 10);
+      btnBg.fillRoundedRect(-(panelW - 60) / 2, -34, panelW - 60, 68, 12);
       btnBg.lineStyle(2, btnBorder, 1);
-      btnBg.strokeRoundedRect(-(panelW - 48) / 2, -30, panelW - 48, 60, 10);
+      btnBg.strokeRoundedRect(-(panelW - 60) / 2, -34, panelW - 60, 68, 12);
 
-      const btnText = addCrispText(this, 0, 0, `⚡ レベルアップ (${formatNumber(cost!)} SP)`, {
-        fontSize: "20px",
+      const btnText = addCrispText(this, 0, 0, `⚡ レベルアップ購入 (${formatNumber(cost!)} SP)`, {
+        fontSize: "22px",
         fontStyle: "bold",
         color: canUnlock ? "#ffffff" : "#64748b",
       }).setOrigin(0.5);
 
       btn.add([btnBg, btnText]);
-      btn.setSize(panelW - 48, 60);
+      btn.setSize(panelW - 60, 68);
 
       if (canUnlock) {
         btn.setInteractive({ useHandCursor: true });
-        btn.on("pointerover", () => btn.setScale(1.03));
+        btn.on("pointerover", () => btn.setScale(1.02));
         btn.on("pointerout", () => btn.setScale(1.0));
         btn.on("pointerdown", () => {
           if (this.gameState.buySkill(this.selectedSkillId)) {
@@ -738,15 +707,16 @@ export class UpgradeScene extends Phaser.Scene {
   }
 
   // ==========================================
-  // 武器ショップ描画
+  // 武器ショップ描画 (縦並び3枚カード)
   // ==========================================
   private renderWeaponShop(): void {
     const { width } = this.scale;
     const weapons: WeaponId[] = ["handgun", "rifle", "sniper"];
 
-    const cardWidth = 400;
-    const cardHeight = 340;
-    const startX = width / 2 - (weapons.length * (cardWidth + 40)) / 2 + 20;
+    const cardWidth = 780;
+    const cardHeight = 360;
+    const startY = 30;
+    const gap = 40;
 
     weapons.forEach((weaponId, index) => {
       const def = WEAPONS[weaponId];
@@ -756,58 +726,52 @@ export class UpgradeScene extends Phaser.Scene {
       const canAfford = this.gameState.sp >= price;
       const isDiscounted = this.gameState.getShopDiscount() > 0 && def.price > 0;
 
-      const x = startX + index * (cardWidth + 40);
-      const y = 30;
+      const y = startY + index * (cardHeight + gap);
 
-      const card = this.add.container(x, y);
+      const card = this.add.container(width / 2, y);
       const bg = this.add.graphics();
 
       const bgColor = isEquipped ? 0x0c4a6e : isOwned ? 0x1e293b : 0x0f172a;
       const borderColor = isEquipped ? 0x38bdf8 : isOwned ? 0x22c55e : 0x475569;
 
       bg.fillStyle(bgColor, 0.95);
-      bg.fillRoundedRect(0, 0, cardWidth, cardHeight, 16);
+      bg.fillRoundedRect(-cardWidth / 2, 0, cardWidth, cardHeight, 16);
       bg.lineStyle(2, borderColor, 1);
-      bg.strokeRoundedRect(0, 0, cardWidth, cardHeight, 16);
+      bg.strokeRoundedRect(-cardWidth / 2, 0, cardWidth, cardHeight, 16);
 
       // 武器名
-      addCrispText(card.scene, cardWidth / 2, 32, def.name, {
-        fontSize: "26px",
+      addCrispText(card.scene, 0, 40, def.name, {
+        fontSize: "30px",
         fontStyle: "bold",
         color: "#ffffff",
       }).setOrigin(0.5);
 
       // スペック
-      const specs = [
-        `ダメージ: ${def.damage}`,
-        `発射間隔: ${def.fireInterval.toFixed(2)}s (${(1 / def.fireInterval).toFixed(1)}発/秒)`,
-      ];
-
-      addCrispText(card.scene, cardWidth / 2, 90, specs.join("\n"), {
-        fontSize: "18px",
+      const specs = `ダメージ: ${def.damage}   |   発射間隔: ${def.fireInterval.toFixed(2)}s (${(1 / def.fireInterval).toFixed(1)}発/秒)`;
+      addCrispText(card.scene, 0, 95, specs, {
+        fontSize: "20px",
         color: "#38bdf8",
-        align: "center",
       }).setOrigin(0.5);
 
       // 説明
-      addCrispText(card.scene, cardWidth / 2, 160, def.description, {
-        fontSize: "16px",
+      addCrispText(card.scene, 0, 160, def.description, {
+        fontSize: "18px",
         color: "#94a3b8",
         align: "center",
-        wordWrap: { width: cardWidth - 40 },
+        wordWrap: { width: cardWidth - 80 },
       }).setOrigin(0.5);
 
-      // アクション領域
+      // アクションボタン
       if (isEquipped) {
-        addCrispText(card.scene, cardWidth / 2, cardHeight - 60, "✔ 現在装備中", {
-          fontSize: "22px",
+        addCrispText(card.scene, 0, cardHeight - 65, "✔ 現在装備中", {
+          fontSize: "24px",
           fontStyle: "bold",
           color: "#38bdf8",
         }).setOrigin(0.5);
       } else if (isOwned) {
         const equipBtn = this.createCardActionButton(
-          cardWidth / 2,
-          cardHeight - 60,
+          0,
+          cardHeight - 65,
           "装備する",
           0x0284c7,
           () => {
@@ -815,8 +779,8 @@ export class UpgradeScene extends Phaser.Scene {
             this.audio.playSynthSE("click");
             this.renderCurrentTab();
           },
-          180,
-          48,
+          260,
+          56,
         );
         card.add(equipBtn);
       } else {
@@ -826,8 +790,8 @@ export class UpgradeScene extends Phaser.Scene {
         const priceLabel = `購入: ${formatNumber(price)} SP${discountText}`;
 
         const buyBtn = this.createCardActionButton(
-          cardWidth / 2,
-          cardHeight - 60,
+          0,
+          cardHeight - 65,
           priceLabel,
           canAfford ? 0x16a34a : 0x334155,
           () => {
@@ -836,8 +800,8 @@ export class UpgradeScene extends Phaser.Scene {
               this.renderCurrentTab();
             }
           },
-          260,
-          50,
+          340,
+          56,
           !canAfford,
         );
         card.add(buyBtn);
@@ -852,7 +816,7 @@ export class UpgradeScene extends Phaser.Scene {
       addCrispText(
         this,
         width / 2,
-        cardHeight + 80,
+        startY + weapons.length * (cardHeight + gap) + 20,
         "✨ 全3種の武器を入手しました！「オート射撃」が利用可能です！",
         {
           fontSize: "20px",
@@ -869,18 +833,18 @@ export class UpgradeScene extends Phaser.Scene {
     text: string,
     color: number,
     onClick: () => void,
-    w = 180,
-    h = 48,
+    w = 260,
+    h = 56,
     isDisabled = false,
   ): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
 
     const bg = this.add.graphics();
     bg.fillStyle(color, 1);
-    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
 
     const label = addCrispText(this, 0, 0, text, {
-      fontSize: "17px",
+      fontSize: "19px",
       fontStyle: "bold",
       color: isDisabled ? "#94a3b8" : "#ffffff",
     }).setOrigin(0.5);
@@ -898,7 +862,7 @@ export class UpgradeScene extends Phaser.Scene {
 
   // --- 下部アクションバー ---
   private createBottomBar(width: number, height: number): void {
-    const btnY = height - 60;
+    const btnY = height - 50;
 
     this.createBigButton(
       width / 2,
@@ -910,8 +874,8 @@ export class UpgradeScene extends Phaser.Scene {
         this.audio.playSynthSE("click");
         this.proceedToNext();
       },
-      380,
-      50,
+      520,
+      60,
     );
   }
 
@@ -931,19 +895,19 @@ export class UpgradeScene extends Phaser.Scene {
     color: number,
     hoverColor: number,
     onClick: () => void,
-    width = 380,
-    height = 50,
+    width = 520,
+    height = 60,
   ): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
 
     const bg = this.add.graphics();
     bg.fillStyle(color, 1);
-    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
+    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 14);
     bg.lineStyle(2, 0xffffff, 0.4);
-    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
 
     const label = addCrispText(this, 0, 0, text, {
-      fontSize: "21px",
+      fontSize: "23px",
       fontStyle: "bold",
       color: "#ffffff",
     }).setOrigin(0.5);
@@ -955,18 +919,18 @@ export class UpgradeScene extends Phaser.Scene {
     container.on("pointerover", () => {
       bg.clear();
       bg.fillStyle(hoverColor, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
+      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 14);
       bg.lineStyle(3, 0xffffff, 0.9);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
       container.setScale(1.02);
     });
 
     container.on("pointerout", () => {
       bg.clear();
       bg.fillStyle(color, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
+      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 14);
       bg.lineStyle(2, 0xffffff, 0.4);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
       container.setScale(1.0);
     });
 

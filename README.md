@@ -1,7 +1,7 @@
 # 銃的当てインクリメンタル (Gun Incremental) MVP 🎯
 
 短時間ラウンド制のインクリメンタル型「的当てゲーム」のMVP（最小動作プロダクト）です。  
-**Phaser 4 + TypeScript + React + Vite + Tailwind CSS** で構築されており、PC・スマホ（横画面）の双方で快適に動作します。
+**Phaser 4 + TypeScript + React + Vite + Tailwind CSS** で構築されており、**スマホ縦画面（900×1600）最適化**・PCブラウザの双方で快適に片手・ワンハンド操作できます。中央の射撃ゾーンは正方形エリア（800×800）として設計されています。
 
 ---
 

@@ -18,27 +18,27 @@ export class TitleScene extends Phaser.Scene {
 
     // 背景装飾 (グリッド線)
     const bgGraphics = this.add.graphics();
-    bgGraphics.lineStyle(1, 0x1e293b, 0.6);
-    for (let x = 0; x < width; x += 80) {
+    bgGraphics.lineStyle(1, 0x1e293b, 0.5);
+    for (let x = 0; x < width; x += 60) {
       bgGraphics.moveTo(x, 0);
       bgGraphics.lineTo(x, height);
     }
-    for (let y = 0; y < height; y += 80) {
+    for (let y = 0; y < height; y += 60) {
       bgGraphics.moveTo(0, y);
       bgGraphics.lineTo(width, y);
     }
     bgGraphics.strokePath();
 
-    // 背景にゆっくり漂う的の装飾
+    // 背景に漂う的の装飾
     for (let i = 0; i < 4; i++) {
       const targetKeys = ["target_standard", "target_hard", "target_gold", "target_electric"];
       const t = this.add.image(
-        Phaser.Math.Between(150, width - 150),
-        Phaser.Math.Between(100, height - 100),
+        Phaser.Math.Between(100, width - 100),
+        Phaser.Math.Between(150, height - 150),
         targetKeys[i],
       );
       t.setAlpha(0.18);
-      t.setScale(Phaser.Math.FloatBetween(0.8, 1.4));
+      t.setScale(Phaser.Math.FloatBetween(0.8, 1.3));
       this.tweens.add({
         targets: t,
         y: t.y + Phaser.Math.Between(-30, 30),
@@ -51,47 +51,69 @@ export class TitleScene extends Phaser.Scene {
       });
     }
 
-    // ゲームタイトル
-    addCrispText(this, width / 2, height * 0.24, "銃的当てインクリメンタル", {
+    // 設定ボタン (右上の歯車風ボタン)
+    this.createSmallButton(width - 100, 70, "⚙ 設定", () => {
+      audio.playSynthSE("click");
+      EventBus.emit("open-settings");
+    });
+
+    // ゲームタイトル (縦画面レイアウト: y = 340)
+    addCrispText(this, width / 2, 340, "銃的当て", {
       fontSize: "64px",
       fontStyle: "bold",
       color: "#38bdf8",
       stroke: "#0369a1",
+      strokeThickness: 5,
+    }).setOrigin(0.5);
+
+    addCrispText(this, width / 2, 420, "インクリメンタル", {
+      fontSize: "52px",
+      fontStyle: "bold",
+      color: "#f8fafc",
+      stroke: "#0f172a",
       strokeThickness: 4,
     }).setOrigin(0.5);
 
-    addCrispText(this, width / 2, height * 0.33, "7秒射撃 × スキル強化 × 請求の生存ゲーム", {
-      fontSize: "24px",
+    addCrispText(this, width / 2, 500, "7秒射撃 × スキルツリー × 請求の生存ゲーム", {
+      fontSize: "22px",
       color: "#94a3b8",
-      fontFamily: "sans-serif",
     }).setOrigin(0.5);
 
-    // 統計・永続情報サマリー
+    // 統計・永続情報サマリーカード
     const permPoints = gameState.persistentData.permanentPoints;
     const highestRound = gameState.persistentData.stats.highestRound;
     const totalRuns = gameState.persistentData.stats.totalRuns;
 
+    const statsW = 760;
+    const statsH = 120;
+    const statsY = 620;
+
     const statsBg = this.add.graphics();
-    statsBg.fillStyle(0x0f172a, 0.7);
-    statsBg.lineStyle(1, 0x334155, 1);
-    statsBg.fillRoundedRect(width / 2 - 280, height * 0.4, 560, 68, 12);
-    statsBg.strokeRoundedRect(width / 2 - 280, height * 0.4, 560, 68, 12);
+    statsBg.fillStyle(0x0f172a, 0.85);
+    statsBg.fillRoundedRect(width / 2 - statsW / 2, statsY, statsW, statsH, 16);
+    statsBg.lineStyle(1.5, 0x334155, 1);
+    statsBg.strokeRoundedRect(width / 2 - statsW / 2, statsY, statsW, statsH, 16);
+
+    addCrispText(this, width / 2, statsY + 36, `所持永続ポイント: ${permPoints} pt`, {
+      fontSize: "26px",
+      color: "#facc15",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
 
     addCrispText(
       this,
       width / 2,
-      height * 0.435,
-      `所持永続ポイント: ${permPoints} pt   |   最高到達: Round ${highestRound}   |   挑戦回数: ${totalRuns} 回`,
+      statsY + 80,
+      `最高到達: Round ${highestRound}   |   挑戦回数: ${totalRuns} 回`,
       {
-        fontSize: "20px",
-        color: "#facc15",
-        fontStyle: "bold",
+        fontSize: "19px",
+        color: "#94a3b8",
       },
     ).setOrigin(0.5);
 
     // ボタン配置
-    const buttonY = height * 0.6;
-    const buttonSpacing = 90;
+    const buttonY = 880;
+    const buttonSpacing = 110;
 
     // 1. ラン開始ボタン
     this.createButton(
@@ -105,8 +127,8 @@ export class TitleScene extends Phaser.Scene {
         gameState.startNewRun();
         this.scene.start("RoundScene");
       },
-      380,
-      64,
+      520,
+      76,
     );
 
     // 2. 永続強化ボタン
@@ -122,15 +144,9 @@ export class TitleScene extends Phaser.Scene {
         audio.playSynthSE("click");
         this.scene.start("PermanentUpgradeScene");
       },
-      380,
-      64,
+      520,
+      76,
     );
-
-    // 3. 設定ボタン (右上の歯車風ボタン)
-    this.createSmallButton(width - 120, 60, "⚙ 設定", () => {
-      audio.playSynthSE("click");
-      EventBus.emit("open-settings");
-    });
   }
 
   private createButton(
@@ -140,16 +156,16 @@ export class TitleScene extends Phaser.Scene {
     color: number,
     hoverColor: number,
     onClick: () => void,
-    width = 340,
-    height = 60,
+    width = 480,
+    height = 70,
   ): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
 
     const bg = this.add.graphics();
     bg.fillStyle(color, 1);
-    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 14);
+    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
     bg.lineStyle(2, 0xffffff, 0.4);
-    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
+    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
 
     const label = addCrispText(this, 0, 0, text, {
       fontSize: "26px",
@@ -164,18 +180,18 @@ export class TitleScene extends Phaser.Scene {
     container.on("pointerover", () => {
       bg.clear();
       bg.fillStyle(hoverColor, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 14);
+      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
       bg.lineStyle(3, 0xffffff, 0.9);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
+      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
       container.setScale(1.03);
     });
 
     container.on("pointerout", () => {
       bg.clear();
       bg.fillStyle(color, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 14);
+      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
       bg.lineStyle(2, 0xffffff, 0.4);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
+      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
       container.setScale(1.0);
     });
 
