@@ -4,12 +4,15 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { AudioManager } from "./audio/AudioManager";
 import { EventBus } from "./EventBus";
 import {
-  ControllerScene,
-  GameScene,
+  ClearScene,
+  GameOverScene,
+  InvoiceScene,
+  PermanentUpgradeScene,
   PreloadScene,
   ResultScene,
+  RoundScene,
   TitleScene,
-  UIScene,
+  UpgradeScene,
 } from "./scenes";
 
 export interface IRefPhaserGame {
@@ -71,7 +74,17 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
           debug: false,
         },
       },
-      scene: [PreloadScene, TitleScene, GameScene, UIScene, ControllerScene, ResultScene],
+      scene: [
+        PreloadScene,
+        TitleScene,
+        RoundScene,
+        ResultScene,
+        UpgradeScene,
+        InvoiceScene,
+        GameOverScene,
+        PermanentUpgradeScene,
+        ClearScene,
+      ],
     };
 
     game.current = new Phaser.Game(config);

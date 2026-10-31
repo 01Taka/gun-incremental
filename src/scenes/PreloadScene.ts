@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { TARGETS } from "../config/gameData";
 import { EventBus } from "../EventBus";
 import { addCrispText } from "../utils/text";
 
@@ -8,96 +9,121 @@ export class PreloadScene extends Phaser.Scene {
     super("PreloadScene");
   }
 
-  // ==========================================
-  // ゲーム特有のアセット読み込み・生成メソッド
-  // （派生ゲーム作成時はここをオーバーライドまたは編集）
-  // ==========================================
-
-  /**
-   * ゲームで使用する個別アセット（画像・音声・テクスチャ等）の読み込み・生成
-   */
-  protected loadCustomAssets() {
-    // 外部ファイル読み込み例:
-    // this.load.image("background", "assets/bg.png");
-    // this.load.audio("laser", "assets/laser.mp3");
-
-    // 動的テクスチャ生成
-    this.createDummyAssets();
-  }
-
-  /**
-   * 動的テクスチャの生成（1600x900の高解像度に合わせて2倍サイズで生成）
-   */
-  protected createDummyAssets() {
-    // プレイヤー用自機グラフィック (64x64)
-    const playerGraphics = this.make.graphics({ x: 0, y: 0 });
-    playerGraphics.fillStyle(0x38bdf8, 1);
-    playerGraphics.fillTriangle(0, 64, 32, 0, 64, 64);
-    playerGraphics.generateTexture("player", 64, 64);
-    playerGraphics.destroy();
-
-    // 弾グラフィック (16x16)
-    const bulletGraphics = this.make.graphics({ x: 0, y: 0 });
-    bulletGraphics.fillStyle(0xfacc15, 1);
-    bulletGraphics.fillCircle(8, 8, 8);
-    bulletGraphics.generateTexture("bullet", 16, 16);
-    bulletGraphics.destroy();
-
-    // 敵グラフィック (56x56)
-    const enemyGraphics = this.make.graphics({ x: 0, y: 0 });
-    enemyGraphics.fillStyle(0xf43f5e, 1);
-    enemyGraphics.fillRoundedRect(0, 0, 56, 56, 12);
-    enemyGraphics.generateTexture("enemy", 56, 56);
-    enemyGraphics.destroy();
-  }
-
-  // ==========================================
-  // 共通プリロード処理（プログレスバー等）
-  // ==========================================
-
   preload() {
     const { width, height } = this.scale;
 
-    // タイトル・ローディングテキスト（高解像度テキスト）
-    const loadingText = addCrispText(this, width / 2, height / 2 - 80, "Now Loading...", {
-      fontSize: "40px",
+    const loadingText = addCrispText(this, width / 2, height / 2 - 80, "TARGET SHOOTER", {
+      fontSize: "44px",
       fontFamily: "monospace",
       color: "#ffffff",
     }).setOrigin(0.5);
 
-    const percentText = addCrispText(this, width / 2, height / 2 + 70, "0%", {
-      fontSize: "30px",
+    const percentText = addCrispText(this, width / 2, height / 2 + 70, "Loading...", {
+      fontSize: "26px",
       fontFamily: "monospace",
       color: "#94a3b8",
     }).setOrigin(0.5);
 
-    // プログレスバーの枠
     const progressBox = this.add.graphics();
-    progressBox.fillStyle(0x334155, 0.8);
-    progressBox.fillRoundedRect(width / 2 - 300, height / 2 - 20, 600, 40, 12);
+    progressBox.fillStyle(0x1e293b, 0.9);
+    progressBox.fillRoundedRect(width / 2 - 250, height / 2 - 16, 500, 32, 10);
 
-    // プログレスバー本体
     const progressBar = this.add.graphics();
+    progressBar.fillStyle(0x38bdf8, 1);
+    progressBar.fillRoundedRect(width / 2 - 246, height / 2 - 12, 492, 24, 8);
 
-    this.load.on("progress", (value: number) => {
-      percentText.setText(`${Math.floor(value * 100)}%`);
-      progressBar.clear();
-      progressBar.fillStyle(0x38bdf8, 1);
-      progressBar.fillRoundedRect(width / 2 - 294, height / 2 - 14, 588 * value, 28, 8);
-    });
+    this.createGameTextures();
 
-    this.load.on("complete", () => {
+    // わずかなディレイ後にTitleSceneへ
+    this.time.delayedCall(200, () => {
       progressBar.destroy();
       progressBox.destroy();
       loadingText.destroy();
       percentText.destroy();
-
-      // ロード完了後、TitleScene へ遷移
       this.scene.start("TitleScene");
     });
+  }
 
-    // ゲーム特有のアセット読み込みを実行
-    this.loadCustomAssets();
+  private createGameTextures(): void {
+    // 1. 各種的のベーステクスチャ (同心円のターゲット模様)
+    for (const [key, target] of Object.entries(TARGETS)) {
+      const size = target.radius * 2 + 8;
+      const g = this.make.graphics({ x: 0, y: 0 });
+
+      // 外枠の光彩
+      g.fillStyle(target.border, 0.3);
+      g.fillCircle(size / 2, size / 2, target.radius + 3);
+
+      // 外円
+      g.fillStyle(target.color, 1.0);
+      g.fillCircle(size / 2, size / 2, target.radius);
+
+      // 白帯
+      g.fillStyle(0xffffff, 0.85);
+      g.fillCircle(size / 2, size / 2, target.radius * 0.72);
+
+      // 内円
+      g.fillStyle(target.color, 1.0);
+      g.fillCircle(size / 2, size / 2, target.radius * 0.44);
+
+      // センタードット (ブルズアイ)
+      g.fillStyle(0xffffff, 1.0);
+      g.fillCircle(size / 2, size / 2, target.radius * 0.2);
+
+      // 十字線
+      g.lineStyle(2, target.border, 0.8);
+      g.beginPath();
+      g.moveTo(size / 2, 4);
+      g.lineTo(size / 2, size - 4);
+      g.moveTo(4, size / 2);
+      g.lineTo(size - 4, size / 2);
+      g.strokePath();
+
+      g.generateTexture(`target_${key}`, size, size);
+      g.destroy();
+    }
+
+    // 2. 照準 (Crosshair / Reticle)
+    const reticleSize = 64;
+    const rg = this.make.graphics({ x: 0, y: 0 });
+    rg.lineStyle(2, 0x38bdf8, 0.9);
+    rg.strokeCircle(reticleSize / 2, reticleSize / 2, 20);
+
+    // 十字
+    rg.lineStyle(2, 0x38bdf8, 1);
+    rg.beginPath();
+    rg.moveTo(reticleSize / 2, 6);
+    rg.lineTo(reticleSize / 2, 18);
+    rg.moveTo(reticleSize / 2, reticleSize - 18);
+    rg.lineTo(reticleSize / 2, reticleSize - 6);
+    rg.moveTo(6, reticleSize / 2);
+    rg.lineTo(18, reticleSize / 2);
+    rg.moveTo(reticleSize - 18, reticleSize / 2);
+    rg.lineTo(reticleSize - 6, reticleSize / 2);
+    rg.strokePath();
+
+    // センターポイント
+    rg.fillStyle(0xef4444, 0.9);
+    rg.fillCircle(reticleSize / 2, reticleSize / 2, 2.5);
+
+    rg.generateTexture("reticle", reticleSize, reticleSize);
+    rg.destroy();
+
+    // 3. パーティクル (スパーク・光の破片)
+    const pg = this.make.graphics({ x: 0, y: 0 });
+    pg.fillStyle(0xffffff, 1);
+    pg.fillCircle(8, 8, 8);
+    pg.generateTexture("spark", 16, 16);
+    pg.destroy();
+
+    // 4. 着弾痕 (Bullet Hole)
+    const hg = this.make.graphics({ x: 0, y: 0 });
+    hg.fillStyle(0x0f172a, 0.7);
+    hg.fillCircle(12, 12, 10);
+    hg.fillStyle(0x000000, 0.9);
+    hg.fillCircle(12, 12, 5);
+    hg.generateTexture("bullet_hole", 24, 24);
+    hg.destroy();
   }
 
   create() {

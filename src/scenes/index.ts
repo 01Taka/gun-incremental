@@ -1,6 +1,9 @@
-export { ControllerScene } from "./ControllerScene";
-export { GameScene } from "./GameScene";
+export { ClearScene } from "./ClearScene";
+export { GameOverScene } from "./GameOverScene";
+export { InvoiceScene } from "./InvoiceScene";
+export { PermanentUpgradeScene } from "./PermanentUpgradeScene";
 export { PreloadScene } from "./PreloadScene";
 export { ResultScene } from "./ResultScene";
+export { RoundScene } from "./RoundScene";
 export { TitleScene } from "./TitleScene";
-export { UIScene } from "./UIScene";
+export { UpgradeScene } from "./UpgradeScene";
