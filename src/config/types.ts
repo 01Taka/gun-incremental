@@ -70,7 +70,7 @@ export interface PermanentUpgradeDefinition {
   name: string;
   description: string;
   maxLevel: number;
-  costPerLevel: number; // 常に1
+  costs: number[]; // 各レベルの必要ポイント [15, 35, 75]
   effects: number[]; // レベル1, 2, 3の効果量
   effectUnit: string; // "+", "%" などの表示用
 }

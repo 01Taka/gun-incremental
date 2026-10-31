@@ -204,17 +204,23 @@ export class GameState {
     return (PERMANENT_UPGRADES.invoice_reduction.effects[level - 1] ?? 0) / 100;
   }
 
+  public getPermanentUpgradeCost(id: PermanentUpgradeId): number | null {
+    const def = PERMANENT_UPGRADES[id];
+    const curLevel = this.persistentData.permanentUpgrades[id] || 0;
+    if (curLevel >= def.maxLevel) return null;
+    return def.costs[curLevel] ?? null;
+  }
+
   /**
    * 永続強化を購入
    */
   public purchasePermanentUpgrade(id: PermanentUpgradeId): boolean {
-    const def = PERMANENT_UPGRADES[id];
-    const curLevel = this.persistentData.permanentUpgrades[id] || 0;
-    if (curLevel >= def.maxLevel) return false;
-    if (this.persistentData.permanentPoints < def.costPerLevel) return false;
+    const cost = this.getPermanentUpgradeCost(id);
+    if (cost === null || this.persistentData.permanentPoints < cost) return false;
 
-    this.persistentData.permanentPoints -= def.costPerLevel;
-    this.persistentData.permanentUpgrades[id] = curLevel + 1;
+    this.persistentData.permanentPoints -= cost;
+    this.persistentData.permanentUpgrades[id] =
+      (this.persistentData.permanentUpgrades[id] || 0) + 1;
     StorageService.save(this.persistentData);
     return true;
   }

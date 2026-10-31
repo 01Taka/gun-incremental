@@ -53,4 +53,10 @@ export default defineConfig([
       "simple-import-sort/exports": "error",
     },
   },
+  {
+    files: ["scripts/**/*.{ts,js}"],
+    rules: {
+      "no-console": "off",
+    },
+  },
 ]);

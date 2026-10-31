@@ -100,7 +100,8 @@ export class PermanentUpgradeScene extends Phaser.Scene {
       const def = PERMANENT_UPGRADES[id];
       const curLevel = this.gameState.persistentData.permanentUpgrades[id] || 0;
       const isMax = curLevel >= def.maxLevel;
-      const canAfford = this.gameState.persistentData.permanentPoints >= def.costPerLevel;
+      const cost = this.gameState.getPermanentUpgradeCost(id);
+      const canAfford = cost !== null && this.gameState.persistentData.permanentPoints >= cost;
 
       const x = startX + index * spacing;
       const y = 30;
@@ -167,7 +168,7 @@ export class PermanentUpgradeScene extends Phaser.Scene {
         btn.fillStyle(canAfford ? 0x7c3aed : 0x334155, 1);
         btn.fillRoundedRect(-100, cardH - 65, 200, 46, 8);
 
-        const btnLabel = addCrispText(this, 0, cardH - 42, `強化 (1 pt)`, {
+        const btnLabel = addCrispText(this, 0, cardH - 42, `強化 (${cost} pt)`, {
           fontSize: "17px",
           fontStyle: "bold",
           color: canAfford ? "#ffffff" : "#94a3b8",
