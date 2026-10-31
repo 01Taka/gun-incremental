@@ -43,6 +43,9 @@ export interface SkillDefinition {
   id: SkillNodeId;
   name: string;
   description: string;
+  icon: string;
+  category: "combat" | "economy";
+  treePos: { x: number; y: number };
   maxLevel: number;
   costs: number[]; // 各レベルのコスト
   requirement?: {
@@ -50,6 +53,7 @@ export interface SkillDefinition {
     level: number;
   };
   effectPerLevel: number;
+  effectUnit: string;
 }
 
 export type PassiveId =
