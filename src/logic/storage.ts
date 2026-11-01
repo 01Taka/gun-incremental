@@ -8,7 +8,6 @@ const DEFAULT_SAVE_DATA: PersistentSaveData = {
     start_sp: 0,
     base_dmg: 0,
     round_time: 0,
-    tp_gain: 0,
     invoice_reduction: 0,
   },
   settings: {
@@ -41,7 +40,6 @@ export class StorageService {
           start_sp: Number(parsed.permanentUpgrades?.start_sp) || 0,
           base_dmg: Number(parsed.permanentUpgrades?.base_dmg) || 0,
           round_time: Number(parsed.permanentUpgrades?.round_time) || 0,
-          tp_gain: Number(parsed.permanentUpgrades?.tp_gain) || 0,
           invoice_reduction: Number(parsed.permanentUpgrades?.invoice_reduction) || 0,
         },
         settings: {

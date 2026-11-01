@@ -12,13 +12,12 @@ const REQUIRED_PERMANENT_UPGRADE_IDS: readonly PermanentUpgradeId[] = [
   "start_sp",
   "base_dmg",
   "round_time",
-  "tp_gain",
   "invoice_reduction",
 ];
 
 const permanentUpgradeJsonSchema = z
   .object({
-    id: z.enum(["start_sp", "base_dmg", "round_time", "tp_gain", "invoice_reduction"]),
+    id: z.enum(["start_sp", "base_dmg", "round_time", "invoice_reduction"]),
     name: z.string().min(1, "name は必須です"),
     description: z.string(),
     maxLevel: z.number().int().min(1, "maxLevel は1以上の整数である必要があります"),

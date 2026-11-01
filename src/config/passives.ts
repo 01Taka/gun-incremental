@@ -14,12 +14,11 @@ const REQUIRED_PASSIVE_IDS: readonly PassiveId[] = [
   "time_bonus",
   "target_bonus",
   "crit_bonus",
-  "tp_bonus",
 ];
 
 const passiveJsonSchema = z
   .object({
-    id: z.enum(["sp_bonus", "dmg_bonus", "time_bonus", "target_bonus", "crit_bonus", "tp_bonus"]),
+    id: z.enum(["sp_bonus", "dmg_bonus", "time_bonus", "target_bonus", "crit_bonus"]),
     name: z.string().min(1, "name は必須です"),
     description: z.string(),
     icon: z.string().min(1, "icon は必須です"),

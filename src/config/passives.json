@@ -34,13 +34,6 @@
       "description": "会心（急所）率 +10%",
       "icon": "🎯",
       "effectPerStack": 0.1
-    },
-    {
-      "id": "tp_bonus",
-      "name": "広域指名手配",
-      "description": "手配ポイント（新標的の解放） +20%",
-      "icon": "📜",
-      "effectPerStack": 0.2
     }
   ]
 }

@@ -53,9 +53,6 @@ export function createSkillModifier(nodeId: SkillNodeId, level: number): StatMod
         case "spMultiplier":
           acc.spSkillMult += totalValue;
           break;
-        case "targetPointMultiplier":
-          acc.tpSkillMult += totalValue;
-          break;
         case "shopDiscount":
           acc.shopDiscount += totalValue;
           break;
@@ -98,9 +95,6 @@ export function createPermanentUpgradeModifier(
         case "round_time":
           acc.roundTimeFlat += rawEffect;
           break;
-        case "tp_gain":
-          acc.tpPermMult += rawEffect / 100;
-          break;
         case "invoice_reduction":
           acc.invoiceReduction += rawEffect / 100;
           break;
@@ -142,9 +136,6 @@ export function createPassiveModifier(id: PassiveId, stacks: number): StatModifi
           break;
         case "sp_bonus":
           acc.spPassiveMult += totalValue;
-          break;
-        case "tp_bonus":
-          acc.tpPassiveMult += totalValue;
           break;
       }
     },

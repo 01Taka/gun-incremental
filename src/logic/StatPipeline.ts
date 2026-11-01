@@ -60,9 +60,6 @@ export interface StatAccumulator {
   maxTargetsFlat: number; // 出現数加算 (スキル + パッシブ)
   spSkillMult: number; // SP獲得倍率のスキル枠 (1 + Σ)
   spPassiveMult: number; // SP獲得倍率のパッシブ枠 (1 + Σ)
-  tpSkillMult: number; // TP獲得倍率のスキル枠 (1 + Σ)
-  tpPassiveMult: number; // TP獲得倍率のパッシブ枠 (1 + Σ)
-  tpPermMult: number; // TP獲得倍率の永続枠 (1 + Σ)
   shopDiscount: number; // ショップ割引率 (スキル)
   timeTargetBonus: number; // 懐中時計延長加算 (スキル)
   invoiceReduction: number; // 上納金軽減率 (永続)
@@ -82,7 +79,6 @@ export interface EffectiveStats {
   roundDuration: number;
   maxTargets: number;
   spMultiplier: number;
-  targetPointMultiplier: number;
   shopDiscount: number;
   weaponPrice: number;
   timeTargetBonus: number;
@@ -121,9 +117,6 @@ export function createInitialAccumulator(): StatAccumulator {
     maxTargetsFlat: 0,
     spSkillMult: 1.0,
     spPassiveMult: 1.0,
-    tpSkillMult: 1.0,
-    tpPassiveMult: 1.0,
-    tpPermMult: 1.0,
     shopDiscount: 0,
     timeTargetBonus: 0,
     invoiceReduction: 0,
@@ -262,7 +255,6 @@ export class StatPipeline {
       ROUND_CONFIG.baseTargetCount + acc.maxTargetsFlat,
     );
     const spMultiplier = acc.spSkillMult * acc.spPassiveMult;
-    const targetPointMultiplier = acc.tpSkillMult * acc.tpPassiveMult * acc.tpPermMult;
 
     const shopDiscount = Math.min(COMBAT_CONFIG.maxShopDiscount, acc.shopDiscount);
     const weaponPrice = Math.max(0, Math.floor(weapon.price * (1 - shopDiscount)));
@@ -282,7 +274,6 @@ export class StatPipeline {
       roundDuration,
       maxTargets,
       spMultiplier,
-      targetPointMultiplier,
       shopDiscount,
       weaponPrice,
       timeTargetBonus,

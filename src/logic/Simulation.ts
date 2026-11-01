@@ -326,7 +326,6 @@ export class HeadlessSimulation {
       sp_multiplier: 1.3,
       round_time: 1.25,
       fire_rate: 1.2,
-      target_point_mult: 1.18,
       magazine_size: 1.12,
       crit_rate: 1.1,
       reload_speed: 1.08,
@@ -369,7 +368,6 @@ export class HeadlessSimulation {
       "sp_bonus",
       "dmg_bonus",
       "time_bonus",
-      "tp_bonus",
       "crit_bonus",
       "target_bonus",
     ];
@@ -403,7 +401,6 @@ export class HeadlessSimulation {
           "base_dmg",
           "invoice_reduction",
           "round_time",
-          "tp_gain",
           "start_sp",
         ];
         let bestUpgrade: keyof typeof gameState.persistentData.permanentUpgrades | null = null;

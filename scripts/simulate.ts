@@ -22,7 +22,6 @@ zeroSkillGs.persistentData.permanentUpgrades = {
   start_sp: 3,
   base_dmg: 3,
   round_time: 3,
-  tp_gain: 3,
   invoice_reduction: 3,
 };
 StorageService.save(zeroSkillGs.persistentData);

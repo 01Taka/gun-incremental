@@ -186,12 +186,6 @@ export class GameState {
     return PERMANENT_UPGRADES.round_time.effects[level - 1] ?? 0;
   }
 
-  public getPermanentTargetPointBonus(): number {
-    const level = this.persistentData.permanentUpgrades.tp_gain ?? 0;
-    if (level <= 0) return 0;
-    return (PERMANENT_UPGRADES.tp_gain.effects[level - 1] ?? 0) / 100;
-  }
-
   public getPermanentInvoiceReduction(): number {
     const level = this.persistentData.permanentUpgrades.invoice_reduction ?? 0;
     if (level <= 0) return 0;
@@ -267,10 +261,6 @@ export class GameState {
 
   public getSpMultiplier(): number {
     return this.getEffectiveStats().spMultiplier;
-  }
-
-  public getTargetPointMultiplier(): number {
-    return this.getEffectiveStats().targetPointMultiplier;
   }
 
   public getShopDiscount(): number {
@@ -403,8 +393,8 @@ export class GameState {
 
   // --- ラウンド終了処理 ---
   public endRound(): void {
-    // 的ポイント加算
-    const tpEarned = Math.round(this.lastRoundSpEarned * this.getTargetPointMultiplier());
+    // 的ポイント加算（獲得賞金SPが直接手配ポイントとして加算される）
+    const tpEarned = this.lastRoundSpEarned;
     this.targetPoints += tpEarned;
 
     // 新規解放チェック

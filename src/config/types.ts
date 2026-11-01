@@ -63,7 +63,6 @@ export type SkillStatId =
   | "roundTime"
   | "maxTargets"
   | "spMultiplier"
-  | "targetPointMultiplier"
   | "shopDiscount"
   | "timeTargetBonus"
   | "chainDamage"
@@ -90,8 +89,7 @@ export interface SkillDefinition {
   };
 }
 
-export type PassiveId =
-  "sp_bonus" | "dmg_bonus" | "time_bonus" | "target_bonus" | "crit_bonus" | "tp_bonus";
+export type PassiveId = "sp_bonus" | "dmg_bonus" | "time_bonus" | "target_bonus" | "crit_bonus";
 
 export interface PassiveDefinition {
   id: PassiveId;
@@ -101,8 +99,7 @@ export interface PassiveDefinition {
   effectPerStack: number; // 1スタックあたりの効果量 (割合は 0.1 = 10%, 実数値はそのまま)
 }
 
-export type PermanentUpgradeId =
-  "start_sp" | "base_dmg" | "round_time" | "tp_gain" | "invoice_reduction";
+export type PermanentUpgradeId = "start_sp" | "base_dmg" | "round_time" | "invoice_reduction";
 
 export interface PermanentUpgradeDefinition {
   id: PermanentUpgradeId;

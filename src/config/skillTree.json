@@ -146,20 +146,6 @@
       "effect": { "stat": "spMultiplier", "perLevel": 0.16 }
     },
     {
-      "id": "target_point_mult",
-      "size": "medium",
-      "parent": "sp_multiplier",
-      "side": "left",
-      "unlockLevel": 1,
-      "name": "手配ポイント増加",
-      "description": "新しい標的を解放する「手配ポイント」の獲得量を増やす",
-      "icon": "Award",
-      "category": "economy",
-      "maxLevel": 4,
-      "costs": [65, 220, 740, 2400],
-      "effect": { "stat": "targetPointMultiplier", "perLevel": 0.18 }
-    },
-    {
       "id": "magazine_mult",
       "size": "medium",
       "parent": "sp_multiplier",

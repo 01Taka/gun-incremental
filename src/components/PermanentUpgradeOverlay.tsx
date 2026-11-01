@@ -1,5 +1,4 @@
 import {
-  BarChart3,
   Check,
   Coins,
   Crosshair,
@@ -29,7 +28,6 @@ const UPGRADE_ICONS: Record<PermanentUpgradeId, LucideIcon> = {
   start_sp: Coins,
   base_dmg: Crosshair,
   round_time: Timer,
-  tp_gain: BarChart3,
   invoice_reduction: Percent,
 };
 

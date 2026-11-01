@@ -46,7 +46,6 @@ const SKILL_STAT_KEYS: Record<SkillStatId, true> = {
   roundTime: true,
   maxTargets: true,
   spMultiplier: true,
-  targetPointMultiplier: true,
   shopDiscount: true,
   timeTargetBonus: true,
   chainDamage: true,

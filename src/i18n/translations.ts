@@ -387,8 +387,6 @@ export const translations: Record<Locale, Translations> = {
             return `威力 +${eff}`;
           case "round_time":
             return `+${eff}秒`;
-          case "tp_gain":
-            return `+${eff}%`;
           case "invoice_reduction":
             return `-${eff}%`;
         }
@@ -404,7 +402,6 @@ export const translations: Record<Locale, Translations> = {
       roundTime: { label: "ラウンド制限時間", subLabel: "制限時間", unit: "秒" },
       maxTargets: { label: "同時出現数", subLabel: "出現数", unit: "個" },
       spMultiplier: { label: "獲得賞金ボーナス", subLabel: "獲得賞金", unit: "%" },
-      targetPointMultiplier: { label: "手配ポイントボーナス", subLabel: "手配pt", unit: "%" },
       shopDiscount: { label: "銃砲店の割引率", subLabel: "武器割引", unit: "%" },
       timeTargetBonus: { label: "懐中時計の延長時間", subLabel: "時間追加", unit: "秒" },
       chainDamage: { label: "ダイナマイト誘爆威力", subLabel: "誘爆倍率", unit: "%" },
@@ -492,10 +489,6 @@ export const translations: Record<Locale, Translations> = {
         name: "獲得賞金アップ",
         description: "標的を撃破したときに得られる賞金（$）を増やす",
       },
-      target_point_mult: {
-        name: "手配ポイント増加",
-        description: "新しい標的を解放する「手配ポイント」の獲得量を増やす",
-      },
       shop_discount: {
         name: "銃砲店の割引",
         description: "銃砲店で購入する武器の価格を割り引く",
@@ -526,10 +519,6 @@ export const translations: Record<Locale, Translations> = {
         name: "死神の眼光",
         description: `会心（急所）率 +${Math.round(PASSIVES.crit_bonus.effectPerStack * 100)}%`,
       },
-      tp_bonus: {
-        name: "広域指名手配",
-        description: `手配ポイント（新標的の解放） +${Math.round(PASSIVES.tp_bonus.effectPerStack * 100)}%`,
-      },
     },
     permanentUpgrades: {
       start_sp: {
@@ -543,10 +532,6 @@ export const translations: Record<Locale, Translations> = {
       round_time: {
         name: "死線の集中力",
         description: "ラウンドの制限時間を延長する",
-      },
-      tp_gain: {
-        name: "手配書コレクター",
-        description: "新しい標的を解放する「手配ポイント」の獲得量を増やす",
       },
       invoice_reduction: {
         name: "保安官への袖の下",
@@ -763,8 +748,6 @@ export const translations: Record<Locale, Translations> = {
             return `DMG +${eff}`;
           case "round_time":
             return `+${eff}s`;
-          case "tp_gain":
-            return `+${eff}%`;
           case "invoice_reduction":
             return `-${eff}%`;
         }
@@ -780,7 +763,6 @@ export const translations: Record<Locale, Translations> = {
       roundTime: { label: "Round Time Limit", subLabel: "Time Limit", unit: "s" },
       maxTargets: { label: "Max Targets at Once", subLabel: "Max Targets", unit: "" },
       spMultiplier: { label: "Bounty Cash Bonus", subLabel: "Cash %", unit: "%" },
-      targetPointMultiplier: { label: "Wanted Points Bonus", subLabel: "WP %", unit: "%" },
       shopDiscount: { label: "Gunsmith Discount", subLabel: "Discount", unit: "%" },
       timeTargetBonus: { label: "Pocket Watch Bonus", subLabel: "Watch +s", unit: "s" },
       chainDamage: { label: "Dynamite Blast Damage", subLabel: "Blast %", unit: "%" },
@@ -869,10 +851,6 @@ export const translations: Record<Locale, Translations> = {
         name: "Bounty Boost",
         description: "Increases cash ($) earned from destroying targets.",
       },
-      target_point_mult: {
-        name: "Wanted Points+",
-        description: "Increases Wanted Points gained to unlock new targets.",
-      },
       shop_discount: {
         name: "Gunsmith Deal",
         description: "Discounts weapon prices at the Gunsmith.",
@@ -903,10 +881,6 @@ export const translations: Record<Locale, Translations> = {
         name: "Reaper's Eye",
         description: `Critical Hit Chance +${Math.round(PASSIVES.crit_bonus.effectPerStack * 100)}%`,
       },
-      tp_bonus: {
-        name: "Wide Wanted Network",
-        description: `Wanted Points (Target Unlock) +${Math.round(PASSIVES.tp_bonus.effectPerStack * 100)}%`,
-      },
     },
     permanentUpgrades: {
       start_sp: {
@@ -920,10 +894,6 @@ export const translations: Record<Locale, Translations> = {
       round_time: {
         name: "Deadeye Focus",
         description: "Extends the round time limit.",
-      },
-      tp_gain: {
-        name: "Poster Collector",
-        description: "Increases Wanted Points gained to unlock new targets.",
       },
       invoice_reduction: {
         name: "Sheriff's Bribe",

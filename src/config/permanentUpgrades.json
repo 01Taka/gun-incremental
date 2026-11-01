@@ -28,15 +28,6 @@
       "effectUnit": "秒"
     },
     {
-      "id": "tp_gain",
-      "name": "手配書コレクター",
-      "description": "新しい標的を解放する「手配ポイント」の獲得量を増やす",
-      "maxLevel": 3,
-      "costs": [7, 28, 100],
-      "effects": [50, 120, 220],
-      "effectUnit": "%"
-    },
-    {
       "id": "invoice_reduction",
       "name": "保安官への袖の下",
       "description": "5ラウンドごとの「保安官の上納金」を軽減する",
