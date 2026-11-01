@@ -155,54 +155,42 @@ export class GunTurret {
   }
 
   /**
-   * 銃口から前方に伸びる照準レーザーサイトを描画
+   * 銃口から前方に伸びる照準レーザーサイトを高視認性で描画
+   * （エイムが合っている時の過剰なハイライト演出は廃止）
    */
-  public drawLaserSight(lockedTarget: ActiveTarget | null): void {
+  public drawLaserSight(): void {
     this.laserSight.clear();
     const muzzle = this.getMuzzlePosition();
 
-    if (lockedTarget) {
-      // ★ 的に当たっている時: 強力な赤色ロックオンビーム
-      const dist = Phaser.Math.Distance.Between(muzzle.x, muzzle.y, lockedTarget.x, lockedTarget.y);
+    const rayLength = 950;
+    const endX = muzzle.x + Math.cos(this.angle) * rayLength;
+    const endY = muzzle.y + Math.sin(this.angle) * rayLength;
 
-      // 外側の光彩
-      this.laserSight.lineStyle(6, 0xef4444, 0.4);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(
-        muzzle.x + Math.cos(this.angle) * dist,
-        muzzle.y + Math.sin(this.angle) * dist,
-      );
-      this.laserSight.strokePath();
+    // 1. 外側のネオングロー (太さ 6px, シアン)
+    this.laserSight.lineStyle(6, 0x38bdf8, 0.35);
+    this.laserSight.beginPath();
+    this.laserSight.moveTo(muzzle.x, muzzle.y);
+    this.laserSight.lineTo(endX, endY);
+    this.laserSight.strokePath();
 
-      // 内側の鋭いビーム
-      this.laserSight.lineStyle(2.5, 0xffffff, 1.0);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(
-        muzzle.x + Math.cos(this.angle) * dist,
-        muzzle.y + Math.sin(this.angle) * dist,
-      );
-      this.laserSight.strokePath();
+    // 2. メインのエネルギービーム (太さ 3px, ディープブルー)
+    this.laserSight.lineStyle(3, 0x0284c7, 0.85);
+    this.laserSight.beginPath();
+    this.laserSight.moveTo(muzzle.x, muzzle.y);
+    this.laserSight.lineTo(endX, endY);
+    this.laserSight.strokePath();
 
-      // 着弾点のクロスマーカー
-      this.laserSight.lineStyle(2, 0xef4444, 0.9);
-      this.laserSight.strokeCircle(lockedTarget.x, lockedTarget.y, lockedTarget.def.radius + 6);
-    } else {
-      // 的に当たっていない時: 細い半透明のガイドライン
-      const rayLength = 950;
-      const endX = muzzle.x + Math.cos(this.angle) * rayLength;
-      const endY = muzzle.y + Math.sin(this.angle) * rayLength;
+    // 3. 中心のシャープな高輝度コアライン (太さ 1.5px, 白)
+    this.laserSight.lineStyle(1.5, 0xffffff, 0.95);
+    this.laserSight.beginPath();
+    this.laserSight.moveTo(muzzle.x, muzzle.y);
+    this.laserSight.lineTo(endX, endY);
+    this.laserSight.strokePath();
 
-      this.laserSight.lineStyle(1.5, 0x38bdf8, 0.25);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(endX, endY);
-      this.laserSight.strokePath();
-    }
-
-    // 銃口の輝き
-    this.laserSight.fillStyle(lockedTarget ? 0xef4444 : 0x38bdf8, 0.6);
+    // 銃口のマズルグロー
+    this.laserSight.fillStyle(0x38bdf8, 0.5);
+    this.laserSight.fillCircle(muzzle.x, muzzle.y, 8);
+    this.laserSight.fillStyle(0xffffff, 0.9);
     this.laserSight.fillCircle(muzzle.x, muzzle.y, 4);
   }
 

@@ -256,8 +256,8 @@ export class RoundScene extends Phaser.Scene {
     const targets = this.targetManager.getTargets();
     const lockedTarget = this.gunTurret.checkRayIntersection(targets);
 
-    // レーザーサイトの描画（当たっている時は赤色ビーム）
-    this.gunTurret.drawLaserSight(lockedTarget);
+    // 射線（レーザーサイト）を高視認性で描画
+    this.gunTurret.drawLaserSight();
 
     // HUDのロックオンステータス表示
     if (lockedTarget) {

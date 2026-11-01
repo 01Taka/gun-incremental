@@ -122,7 +122,7 @@ export class RoundHUD {
       this.scene,
       width / 2,
       1210,
-      "🕹️ 下部タッチ＆上下ドラッグでエイム！（タップで正面へ）",
+      "🕹️ 画面のどこでもタッチ＆上下ドラッグでエイム！（タップで正面へ）",
       {
         fontSize: "20px",
         fontStyle: "bold",
@@ -153,11 +153,11 @@ export class RoundHUD {
 
   public updateLockOn(targetName: string | null): void {
     if (targetName) {
-      this.lockOnStatusText.setText(`🎯 TARGET: ${targetName}`);
+      this.lockOnStatusText.setText("SHOOTING");
       this.lockOnStatusText.setColor("#38bdf8");
     } else {
-      this.lockOnStatusText.setText("FIRING...");
-      this.lockOnStatusText.setColor("#22c55e");
+      this.lockOnStatusText.setText("AIMING");
+      this.lockOnStatusText.setColor("#64748b");
     }
   }
 

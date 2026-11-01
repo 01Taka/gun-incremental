@@ -187,28 +187,29 @@ export class VerticalSlider {
   }
 
   /**
-   * 画面下部エリアのタッチ判定
+   * 画面内の任意の位置でのタッチ判定
    */
   public handlePointerDown(pointer: Phaser.Input.Pointer): boolean {
     if (this.activePointerId !== null) return false;
 
-    // 操作領域判定（y > 1030 の下部コントロール領域全体で受け付ける）
-    if (pointer.y <= 1030) {
-      return false;
-    }
-
     this.activePointerId = pointer.id;
     this.isDragging = true;
 
-    // ★ タッチした位置をスライダーの中央（基準点）にする
+    // ★ 画面上の任意の位置でタッチしたY座標をスライダーの中央（基準点）にする
     this.startY = pointer.y;
-    this.currentCenterX = pointer.x;
-    this.currentCenterY = pointer.y;
 
-    // 画面外にはみ出さないよう微調整
-    const marginY = this.options.halfLength + 30;
-    this.currentCenterY = Phaser.Math.Clamp(this.currentCenterY, 1040 + marginY, 1600 - marginY);
-    this.currentCenterX = Phaser.Math.Clamp(this.currentCenterX, 80, 820);
+    // スライダーの表示位置:
+    // 下部操作エリア(y >= 1040)ならタッチした指の下に表示、上部なら的の視界を遮らないよう下部中央に表示
+    if (pointer.y >= 1040) {
+      this.currentCenterX = pointer.x;
+      this.currentCenterY = pointer.y;
+      const marginY = this.options.halfLength + 30;
+      this.currentCenterY = Phaser.Math.Clamp(this.currentCenterY, 1040 + marginY, 1600 - marginY);
+      this.currentCenterX = Phaser.Math.Clamp(this.currentCenterX, 80, 820);
+    } else {
+      this.currentCenterX = this.options.defaultCenterX;
+      this.currentCenterY = this.options.defaultCenterY;
+    }
 
     this.container.setPosition(this.currentCenterX, this.currentCenterY);
     this.container.setAlpha(1.0);
