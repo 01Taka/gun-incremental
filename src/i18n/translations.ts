@@ -5,6 +5,14 @@
  * ゲームルール・数値効果・文節の区切りが一読で直感的に分かる表現に統一しています。
  */
 
+import {
+  COMBAT_CONFIG,
+  INVOICE_CONFIG,
+  PASSIVES,
+  PROGRESSION_CONFIG,
+  ROUND_CONFIG,
+  TARGET_UNLOCK_SEQUENCE,
+} from "../config/gameData";
 import type {
   PassiveId,
   PermanentUpgradeId,
@@ -220,8 +228,7 @@ export const translations: Record<Locale, Translations> = {
       invoiceTitle: (count: number) => `保安官の上納金（第 ${count} 回）`,
       invoiceTerm: "保安官の上納金",
       invoiceShort: "上納金",
-      invoiceDueDesc:
-        "5ラウンドごとに徴収される縄張り代だ。\n支払えなければ町から追放（ゲームオーバー）となる。",
+      invoiceDueDesc: `${INVOICE_CONFIG.intervalRounds}ラウンドごとに徴収される縄張り代だ。\n支払えなければ町から追放（ゲームオーバー）となる。`,
       invoiceAmountLabel: "— 今回の支払額 —",
       invoiceStatusAfford: (cash: string) =>
         `現在の所持金: ${cash}\n（支払い可能 — 次のラウンドへ進める）`,
@@ -245,7 +252,7 @@ export const translations: Record<Locale, Translations> = {
       lockOnTarget: (name: string) => `🎯 狙い: ${name}`,
       critHit: "急所!",
       autoFireAim: "自動エイム",
-      autoFireUnlockedMsg: "全3種の銃を入手！「自動エイム」が利用可能になった！",
+      autoFireUnlockedMsg: `全${PROGRESSION_CONFIG.autoFireUnlockWeaponCount}種の銃を入手！「自動エイム」が利用可能になった！`,
       cylinderReloading: (pct: number) => `リロード ${pct}%`,
       cylinderReloadSub: "再装填中...",
       cylinderReserveAmmo: (extra: number) => `6発 + 予備${extra}発`,
@@ -269,7 +276,7 @@ export const translations: Record<Locale, Translations> = {
       saloonSub: "永続強化",
       passivesTitle: "ボーナス",
       passivesSub: "保安官の黙認 — ボーナス習得",
-      passivesDesc: "3つのボーナスから1つを選んで習得しよう（重複習得可）",
+      passivesDesc: `${PROGRESSION_CONFIG.passiveChoicesCount}つのボーナスから1つを選んで習得しよう（重複習得可）`,
       passiveOwnedCount: (count: number) => `現在の習得数: ×${count}`,
       passiveUnowned: "未習得",
       settings: "設定",
@@ -297,7 +304,7 @@ export const translations: Record<Locale, Translations> = {
     titleScreen: {
       mainTitleTop: "荒野の早撃ち",
       mainTitleBottom: "賞 金 稼 ぎ",
-      tagline: "7秒の早撃ち × 銃器改造 × 保安官の上納金",
+      tagline: `${ROUND_CONFIG.baseDuration}秒の早撃ち × 銃器改造 × 保安官の上納金`,
       posterQuote: "「この町は俺には狭すぎる」",
       heldBadges: (points: number) => `★ 所持名声バッジ: ${points}`,
       careerRecord: (highestRound: number, totalRuns: number) =>
@@ -310,7 +317,7 @@ export const translations: Record<Locale, Translations> = {
       unlockSectionTitle: "📜 次の標的（賞金首）解放ゲージ",
       nextTargetProgress: (name: string, pct: number) => `次の解放: 【${name}】 (${pct}%)`,
       totalWantedPoints: (cur: string, req: string) => `手配ポイント: ${cur} / ${req} pt`,
-      allTargetsUnlocked: "★ 全6種の標的をすべて解放済み！ ★",
+      allTargetsUnlocked: `★ 全${TARGET_UNLOCK_SEQUENCE.length}種の標的をすべて解放済み！ ★`,
       unlockPopupBanner: "★ NEW WANTED! ★",
       unlockPopupBody: (names: string) => `新たな標的 ${names} が出現するようになった！`,
       unlockPopupClose: "（タップして閉じる）",
@@ -318,8 +325,7 @@ export const translations: Record<Locale, Translations> = {
     records: {
       gameOverTitle: "💀 GAME OVER 💀",
       gameOverQuote: "「俺の墓標に名は要らねえ……次はもっと速く抜くだけさ」",
-      clearSubtitle:
-        "全6種の標的（WANTED）を解放し、荒野を制覇した！\n「この町は俺には狭すぎる……次の荒野へ行くか」",
+      clearSubtitle: `全${TARGET_UNLOCK_SEQUENCE.length}種の標的（WANTED）を解放し、荒野を制覇した！\n「この町は俺には狭すぎる……次の荒野へ行くか」`,
       roundReached: "到達ラウンド",
       roundCleared: "クリア到達ラウンド",
       invoicesPaidCount: "上納金の支払い回数",
@@ -331,7 +337,7 @@ export const translations: Record<Locale, Translations> = {
       targetsUnlocked: "解放した標的の種類",
       targetsUnlockedValue: (cur: number, total: number) => `${cur} / ${total} 種`,
       gunsAcquired: "入手した銃器",
-      badgeConversionNote: "★ 上納金総額の2%を「名声バッジ」として獲得！ ★",
+      badgeConversionNote: `★ 上納金総額の${Math.round(INVOICE_CONFIG.permanentPointRate * 100)}%を「名声バッジ」として獲得！ ★`,
       badgeGainedSummary: (gained: number, total: number) =>
         `★ +${gained} 獲得！ （所持合計: ${total}）`,
     },
@@ -439,7 +445,7 @@ export const translations: Record<Locale, Translations> = {
       },
       crit_rate: {
         name: "急所撃ち",
-        description: "ダメージが2倍になる会心（急所）率を上げる",
+        description: `ダメージが${COMBAT_CONFIG.critMultiplier}倍になる会心（急所）率を上げる`,
       },
       chain_damage: {
         name: "ダイナマイト誘爆",
@@ -475,12 +481,30 @@ export const translations: Record<Locale, Translations> = {
       },
     },
     passives: {
-      sp_bonus: { name: "賞金稼ぎの嗅覚", description: "獲得賞金（$） +10%" },
-      dmg_bonus: { name: "大口径鉛弾", description: "すべての銃の基礎威力 +15%" },
-      time_bonus: { name: "早撃ちの集中", description: "ラウンド制限時間 +1.0秒" },
-      target_bonus: { name: "一斉指名手配", description: "標的の同時出現数 +1" },
-      shop_discount: { name: "銃砲店の顔パス", description: "銃砲店の武器価格 -10%" },
-      tp_bonus: { name: "広域指名手配", description: "手配ポイント（新標的の解放） +10%" },
+      sp_bonus: {
+        name: "賞金稼ぎの嗅覚",
+        description: `獲得賞金（$） +${Math.round(PASSIVES.sp_bonus.effectPerStack * 100)}%`,
+      },
+      dmg_bonus: {
+        name: "大口径鉛弾",
+        description: `すべての銃の基礎威力 +${Math.round(PASSIVES.dmg_bonus.effectPerStack * 100)}%`,
+      },
+      time_bonus: {
+        name: "早撃ちの集中",
+        description: `ラウンド制限時間 +${PASSIVES.time_bonus.effectPerStack.toFixed(1)}秒`,
+      },
+      target_bonus: {
+        name: "一斉指名手配",
+        description: `標的の同時出現数 +${PASSIVES.target_bonus.effectPerStack}`,
+      },
+      shop_discount: {
+        name: "銃砲店の顔パス",
+        description: `銃砲店の武器価格 -${Math.round(PASSIVES.shop_discount.effectPerStack * 100)}%`,
+      },
+      tp_bonus: {
+        name: "広域指名手配",
+        description: `手配ポイント（新標的の解放） +${Math.round(PASSIVES.tp_bonus.effectPerStack * 100)}%`,
+      },
     },
     permanentUpgrades: {
       start_sp: {
@@ -501,7 +525,7 @@ export const translations: Record<Locale, Translations> = {
       },
       invoice_reduction: {
         name: "保安官への袖の下",
-        description: "5ラウンドごとの「保安官の上納金」を軽減する",
+        description: `${INVOICE_CONFIG.intervalRounds}ラウンドごとの「保安官の上納金」を軽減する`,
       },
     },
     quotes: [
@@ -564,8 +588,7 @@ export const translations: Record<Locale, Translations> = {
       invoiceTitle: (count: number) => `Sheriff's Tax (#${count})`,
       invoiceTerm: "Sheriff's Tax",
       invoiceShort: "Tax",
-      invoiceDueDesc:
-        "Territory tax collected every 5 rounds.\nFail to pay, and you're run out of town (Game Over).",
+      invoiceDueDesc: `Territory tax collected every ${INVOICE_CONFIG.intervalRounds} rounds.\nFail to pay, and you're run out of town (Game Over).`,
       invoiceAmountLabel: "— Amount Due —",
       invoiceStatusAfford: (cash: string) =>
         `Current Cash: ${cash}\n(Enough to pay — ready for the next round)`,
@@ -589,7 +612,7 @@ export const translations: Record<Locale, Translations> = {
       lockOnTarget: (name: string) => `🎯 LOCKED: ${name}`,
       critHit: "CRIT!",
       autoFireAim: "Auto-Aim",
-      autoFireUnlockedMsg: "All 3 guns owned! 'Auto-Aim' is now unlocked!",
+      autoFireUnlockedMsg: `All ${PROGRESSION_CONFIG.autoFireUnlockWeaponCount} guns owned! 'Auto-Aim' is now unlocked!`,
       cylinderReloading: (pct: number) => `Reload ${pct}%`,
       cylinderReloadSub: "Reloading...",
       cylinderReserveAmmo: (extra: number) => `6 + ${extra} reserve`,
@@ -613,7 +636,7 @@ export const translations: Record<Locale, Translations> = {
       saloonSub: "Perm Upgrades",
       passivesTitle: "Bonus Perk",
       passivesSub: "Sheriff's Blind Eye — Bonus Perk",
-      passivesDesc: "Choose 1 of 3 perks to keep for this run (stackable)",
+      passivesDesc: `Choose 1 of ${PROGRESSION_CONFIG.passiveChoicesCount} perks to keep for this run (stackable)`,
       passiveOwnedCount: (count: number) => `Owned: ×${count}`,
       passiveUnowned: "Not Owned",
       settings: "Settings",
@@ -641,7 +664,7 @@ export const translations: Record<Locale, Translations> = {
     titleScreen: {
       mainTitleTop: "QUICK-DRAW",
       mainTitleBottom: "BOUNTY HUNTER",
-      tagline: "7-Second Duels × Gunsmithing × Sheriff's Tax",
+      tagline: `${ROUND_CONFIG.baseDuration}-Second Duels × Gunsmithing × Sheriff's Tax`,
       posterQuote: '"This town ain\'t big enough for the both of us."',
       heldBadges: (points: number) => `★ Star Badges: ${points}`,
       careerRecord: (highestRound: number, totalRuns: number) =>
@@ -654,7 +677,7 @@ export const translations: Record<Locale, Translations> = {
       unlockSectionTitle: "📜 Next Wanted Target Unlock",
       nextTargetProgress: (name: string, pct: number) => `Next Target: [${name}] (${pct}%)`,
       totalWantedPoints: (cur: string, req: string) => `Wanted Points: ${cur} / ${req} pt`,
-      allTargetsUnlocked: "★ All 6 Wanted Targets Unlocked! ★",
+      allTargetsUnlocked: `★ All ${TARGET_UNLOCK_SEQUENCE.length} Wanted Targets Unlocked! ★`,
       unlockPopupBanner: "★ NEW WANTED TARGET! ★",
       unlockPopupBody: (names: string) => `New target ${names} now appears!`,
       unlockPopupClose: "(Tap to close)",
@@ -662,8 +685,7 @@ export const translations: Record<Locale, Translations> = {
     records: {
       gameOverTitle: "💀 GAME OVER 💀",
       gameOverQuote: '"No name needed on my headstone... Next time I\'ll draw faster."',
-      clearSubtitle:
-        'All 6 Wanted Targets unlocked — you conquered the Frontier!\n"This town ain\'t big enough for me... Onto the next horizon."',
+      clearSubtitle: `All ${TARGET_UNLOCK_SEQUENCE.length} Wanted Targets unlocked — you conquered the Frontier!\n"This town ain't big enough for me... Onto the next horizon."`,
       roundReached: "Round Reached",
       roundCleared: "Cleared at Round",
       invoicesPaidCount: "Taxes Paid",
@@ -675,7 +697,7 @@ export const translations: Record<Locale, Translations> = {
       targetsUnlocked: "Targets Unlocked",
       targetsUnlockedValue: (cur: number, total: number) => `${cur} / ${total}`,
       gunsAcquired: "Guns Acquired",
-      badgeConversionNote: "★ Earned 2% of Total Taxes Paid as Star Badges! ★",
+      badgeConversionNote: `★ Earned ${Math.round(INVOICE_CONFIG.permanentPointRate * 100)}% of Total Taxes Paid as Star Badges! ★`,
       badgeGainedSummary: (gained: number, total: number) =>
         `★ +${gained} Earned! (Total Held: ${total})`,
     },
@@ -783,7 +805,7 @@ export const translations: Record<Locale, Translations> = {
       },
       crit_rate: {
         name: "Deadeye Crit",
-        description: "Increases critical hit chance (2x damage).",
+        description: `Increases critical hit chance (${COMBAT_CONFIG.critMultiplier}x damage).`,
       },
       chain_damage: {
         name: "Dynamite Blast",
@@ -819,12 +841,30 @@ export const translations: Record<Locale, Translations> = {
       },
     },
     passives: {
-      sp_bonus: { name: "Bounty Hunter's Nose", description: "Cash ($) Earned +10%" },
-      dmg_bonus: { name: "Heavy Lead Rounds", description: "Base Gun Damage +15%" },
-      time_bonus: { name: "Quick-Draw Focus", description: "Round Time Limit +1.0s" },
-      target_bonus: { name: "Mass Wanted Posters", description: "Simultaneous Targets +1" },
-      shop_discount: { name: "Gunsmith Regular", description: "Gunsmith Weapon Prices -10%" },
-      tp_bonus: { name: "Wide Wanted Network", description: "Wanted Points (Target Unlock) +10%" },
+      sp_bonus: {
+        name: "Bounty Hunter's Nose",
+        description: `Cash ($) Earned +${Math.round(PASSIVES.sp_bonus.effectPerStack * 100)}%`,
+      },
+      dmg_bonus: {
+        name: "Heavy Lead Rounds",
+        description: `Base Gun Damage +${Math.round(PASSIVES.dmg_bonus.effectPerStack * 100)}%`,
+      },
+      time_bonus: {
+        name: "Quick-Draw Focus",
+        description: `Round Time Limit +${PASSIVES.time_bonus.effectPerStack.toFixed(1)}s`,
+      },
+      target_bonus: {
+        name: "Mass Wanted Posters",
+        description: `Simultaneous Targets +${PASSIVES.target_bonus.effectPerStack}`,
+      },
+      shop_discount: {
+        name: "Gunsmith Regular",
+        description: `Gunsmith Weapon Prices -${Math.round(PASSIVES.shop_discount.effectPerStack * 100)}%`,
+      },
+      tp_bonus: {
+        name: "Wide Wanted Network",
+        description: `Wanted Points (Target Unlock) +${Math.round(PASSIVES.tp_bonus.effectPerStack * 100)}%`,
+      },
     },
     permanentUpgrades: {
       start_sp: {
@@ -845,7 +885,7 @@ export const translations: Record<Locale, Translations> = {
       },
       invoice_reduction: {
         name: "Sheriff's Bribe",
-        description: "Reduces the Sheriff's Tax collected every 5 rounds.",
+        description: `Reduces the Sheriff's Tax collected every ${INVOICE_CONFIG.intervalRounds} rounds.`,
       },
     },
     quotes: [

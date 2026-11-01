@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
-import { TARGET_UNLOCK_SEQUENCE } from "../config/gameData";
+import { INVOICE_CONFIG, TARGET_UNLOCK_SEQUENCE } from "../config/gameData";
 import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { useI18n } from "../i18n";
@@ -269,7 +269,7 @@ export class ResultScene extends Phaser.Scene {
 
   private createInvoiceWarningCard(width: number): void {
     const nextRound = this.gameState.round + 1;
-    const isNextInvoice = nextRound % 5 === 0;
+    const isNextInvoice = nextRound % INVOICE_CONFIG.intervalRounds === 0;
 
     if (!isNextInvoice) return;
 

@@ -1,7 +1,7 @@
 import type Phaser from "phaser";
 
 import { AudioManager } from "../../audio/AudioManager";
-import { WEAPONS } from "../../config/gameData";
+import { ROUND_CONFIG, WEAPONS } from "../../config/gameData";
 import { VOCAB } from "../../config/vocab";
 import { formatMoney, formatSeconds } from "../../logic/format";
 import { GameState } from "../../logic/GameState";
@@ -254,7 +254,7 @@ export class RoundHUD {
 
   public updateTimer(timeRemaining: number): void {
     this.timerText.setText(`${formatSeconds(timeRemaining)}`);
-    if (timeRemaining <= 2.5) {
+    if (timeRemaining <= ROUND_CONFIG.lowTimeWarningThreshold) {
       this.timerText.setColor("#ef4444");
     } else {
       this.timerText.setColor("#fbbf24");

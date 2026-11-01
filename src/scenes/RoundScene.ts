@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
+import { ARENA_CONFIG, INVOICE_CONFIG, ROUND_CONFIG } from "../config/gameData";
 import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { GameState } from "../logic/GameState";
@@ -21,9 +22,6 @@ import {
 type RoundPhase = "countdown" | "playing" | "ended";
 
 export class RoundScene extends Phaser.Scene {
-  // 決闘開始前の「静寂の間」3カウント合計時間（秒）
-  private static readonly COUNTDOWN_DURATION = 1.15;
-
   private gameState!: GameState;
   private audio!: AudioManager;
 
@@ -44,9 +42,9 @@ export class RoundScene extends Phaser.Scene {
   private hud!: RoundHUD;
 
   // ラウンド進行状態
-  private timeRemaining: number = 7.0;
+  private timeRemaining: number = ROUND_CONFIG.baseDuration;
   private phase: RoundPhase = "countdown";
-  private countdownRemaining: number = RoundScene.COUNTDOWN_DURATION;
+  private countdownRemaining: number = ROUND_CONFIG.countdownDuration;
   private lastDisplayedCount: number = 0;
   private lastFireTime: number = -Infinity;
 
@@ -80,7 +78,7 @@ export class RoundScene extends Phaser.Scene {
     // ラウンド状態の初期化
     this.timeRemaining = this.gameState.getRoundDuration();
     this.phase = "countdown";
-    this.countdownRemaining = RoundScene.COUNTDOWN_DURATION;
+    this.countdownRemaining = ROUND_CONFIG.countdownDuration;
     this.lastDisplayedCount = 3;
     this.lastFireTime = -Infinity;
 
@@ -94,7 +92,7 @@ export class RoundScene extends Phaser.Scene {
     // 1. 西部劇の夕焼け荒野背景と木柵アリーナの描画
     drawWesternBackdrop(this, width, height, {
       horizonY: 540,
-      variant: this.gameState.round % 5 === 0 ? "crimson" : "sunset",
+      variant: this.gameState.round % INVOICE_CONFIG.intervalRounds === 0 ? "crimson" : "sunset",
       withBuildings: true,
       withAtmosphere: true,
     });
@@ -272,7 +270,7 @@ export class RoundScene extends Phaser.Scene {
         );
         const targetRatio = this.gunTurret.getRatioForAngle(targetAngle);
         const diff = targetRatio - this.verticalSlider.ratio;
-        const step = deltaSeconds * 1.5;
+        const step = deltaSeconds * ARENA_CONFIG.autoAimSpeed;
         if (Math.abs(diff) < step) {
           this.verticalSlider.setRatio(targetRatio);
         } else {
@@ -285,11 +283,16 @@ export class RoundScene extends Phaser.Scene {
     this.gunTurret.setAimRatio(this.verticalSlider.ratio);
     this.gunTurret.drawLaserSight(this.isReloading);
 
+    const currentBulletRadius = this.gameState.getBulletConfig().radius;
+
     // 決闘前の静寂カウントダウン中の処理
     if (this.phase === "countdown") {
       this.countdownRemaining -= deltaSeconds;
       if (this.countdownRemaining > 0) {
-        const count = Math.ceil((this.countdownRemaining / RoundScene.COUNTDOWN_DURATION) * 3);
+        const count =
+          ROUND_CONFIG.countdownDuration > 0
+            ? Math.ceil((this.countdownRemaining / ROUND_CONFIG.countdownDuration) * 3)
+            : 0;
         if (count < this.lastDisplayedCount && count >= 1) {
           this.lastDisplayedCount = count;
           this.hud.showCountdownNumber(count);
@@ -299,7 +302,10 @@ export class RoundScene extends Phaser.Scene {
       }
 
       this.startRound();
-      const initialTarget = this.gunTurret.checkRayIntersection(this.targetManager.getTargets());
+      const initialTarget = this.gunTurret.checkRayIntersection(
+        this.targetManager.getTargets(),
+        currentBulletRadius,
+      );
       this.hud.updateLockOn(initialTarget ? VOCAB.targets[initialTarget.def.id].name : null);
       if (initialTarget) {
         this.attemptAutoFire();
@@ -331,7 +337,7 @@ export class RoundScene extends Phaser.Scene {
 
     // 射線と賞金首の交差判定
     const targets = this.targetManager.getTargets();
-    const lockedTarget = this.gunTurret.checkRayIntersection(targets);
+    const lockedTarget = this.gunTurret.checkRayIntersection(targets, currentBulletRadius);
 
     if (this.isReloading) {
       this.hud.updateLockOn(null);
@@ -422,7 +428,8 @@ export class RoundScene extends Phaser.Scene {
     this.cameras.main.shake(55, 0.0024);
 
     const muzzle = this.gunTurret.getMuzzlePosition();
-    this.bulletManager.spawnBullet(muzzle.x, muzzle.y, this.gunTurret.angle);
+    const bulletConfig = this.gameState.getBulletConfig();
+    this.bulletManager.spawnBullet(muzzle.x, muzzle.y, this.gunTurret.angle, bulletConfig);
     this.gunTurret.playRecoilAnimation();
 
     if (this.currentAmmo <= 0) {

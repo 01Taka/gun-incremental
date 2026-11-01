@@ -1,3 +1,4 @@
+import { INVOICE_CONFIG, SIMULATION_CONFIG } from "../config/gameData";
 import { SKILL_IDS, SKILLS } from "../config/skillTree";
 import type { PassiveId, SkillNodeId } from "../config/types";
 import { GameState } from "./GameState";
@@ -38,8 +39,8 @@ export class HeadlessSimulation {
         }
       }
 
-      // 人間操作を模した命中率 (85%〜95%)
-      const accuracy = 0.9;
+      // 人間操作を模した命中率
+      const accuracy = SIMULATION_CONFIG.assumedAccuracy;
       const effectiveShots = Math.floor(shotsTotal * accuracy);
 
       for (let s = 0; s < effectiveShots; s++) {
@@ -85,7 +86,7 @@ export class HeadlessSimulation {
       gameState.prepareNextRound();
 
       // セーフティガード (無限ループ防止)
-      if (gameState.round > 120) {
+      if (gameState.round > SIMULATION_CONFIG.maxRoundsGuard) {
         break;
       }
     }
@@ -103,23 +104,30 @@ export class HeadlessSimulation {
   }
 
   private static simulateUpgrades(gameState: GameState): void {
-    // 次回の請求予定ラウンド (例: round 1..5 なら 5, round 6..10 なら 10)
+    // 次回の請求予定ラウンド
     const currentRound = gameState.round;
-    const nextInvoiceRound = Math.ceil(currentRound / 5) * 5;
+    const interval = INVOICE_CONFIG.intervalRounds;
+    const nextInvoiceRound = Math.ceil(currentRound / interval) * interval;
     const roundsUntilInvoice = nextInvoiceRound - currentRound; // 0なら今まさに請求の直前
     const invoiceCost = gameState.getInvoiceAmount();
 
     // 請求直前(残り0〜1ラウンド)なら請求予定額を全額温存
-    const reserveAmount = roundsUntilInvoice <= 1 ? invoiceCost : Math.floor(invoiceCost * 0.35);
+    const reserveAmount =
+      roundsUntilInvoice <= 1
+        ? invoiceCost
+        : Math.floor(invoiceCost * SIMULATION_CONFIG.invoiceReserveRatio);
 
-    // 武器ショップ購入優先判定 (Round 3以降)
+    // 武器ショップ購入優先判定
     if (gameState.isShopAvailable()) {
       if (!gameState.ownedWeapons.includes("rifle")) {
         const riflePrice = gameState.getWeaponPrice("rifle");
         if (gameState.sp - riflePrice >= reserveAmount) {
           gameState.buyWeapon("rifle");
         }
-      } else if (!gameState.ownedWeapons.includes("sniper") && gameState.round >= 10) {
+      } else if (
+        !gameState.ownedWeapons.includes("sniper") &&
+        gameState.round >= SIMULATION_CONFIG.sniperPurchaseMinRound
+      ) {
         const sniperPrice = gameState.getWeaponPrice("sniper");
         if (gameState.sp - sniperPrice >= reserveAmount) {
           gameState.buyWeapon("sniper");

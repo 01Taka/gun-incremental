@@ -1,0 +1,46 @@
+{
+  "passives": [
+    {
+      "id": "sp_bonus",
+      "name": "賞金稼ぎの嗅覚",
+      "description": "獲得賞金（$） +10%",
+      "icon": "💰",
+      "effectPerStack": 0.1
+    },
+    {
+      "id": "dmg_bonus",
+      "name": "大口径鉛弾",
+      "description": "すべての銃の基礎威力 +15%",
+      "icon": "💥",
+      "effectPerStack": 0.15
+    },
+    {
+      "id": "time_bonus",
+      "name": "早撃ちの集中",
+      "description": "ラウンド制限時間 +1.0秒",
+      "icon": "⏳",
+      "effectPerStack": 1.0
+    },
+    {
+      "id": "target_bonus",
+      "name": "一斉指名手配",
+      "description": "標的の同時出現数 +1",
+      "icon": "🎯",
+      "effectPerStack": 1
+    },
+    {
+      "id": "shop_discount",
+      "name": "銃砲店の顔パス",
+      "description": "銃砲店の武器価格 -10%",
+      "icon": "🏷️",
+      "effectPerStack": 0.1
+    },
+    {
+      "id": "tp_bonus",
+      "name": "広域指名手配",
+      "description": "手配ポイント（新標的の解放） +10%",
+      "icon": "📜",
+      "effectPerStack": 0.1
+    }
+  ]
+}

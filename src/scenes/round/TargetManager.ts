@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../../audio/AudioManager";
+import { ARENA_CONFIG } from "../../config/gameData";
 import { GameState } from "../../logic/GameState";
 import type { ActiveTarget, ArenaBounds, HitResult } from "./types";
 
@@ -183,7 +184,7 @@ export class TargetManager {
     for (const t of Array.from(this.activeTargets.values())) {
       if (typeof t.remainingLife === "number") {
         t.remainingLife -= deltaSeconds;
-        if (t.remainingLife <= 0.8) {
+        if (t.remainingLife <= ARENA_CONFIG.targetBlinkThresholdSeconds) {
           t.container.setAlpha(Math.floor(this.scene.time.now / 80) % 2 === 0 ? 0.35 : 1.0);
         }
         if (t.remainingLife <= 0) {
@@ -283,7 +284,7 @@ export class TargetManager {
       },
     });
 
-    this.scene.time.delayedCall(200, () => {
+    this.scene.time.delayedCall(ARENA_CONFIG.targetRespawnDelayMs, () => {
       if (this.isRoundActive && this.activeTargets.size < this.gameState.getMaxTargets()) {
         this.spawnOneTarget();
       }

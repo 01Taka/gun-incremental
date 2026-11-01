@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { ARENA_CONFIG } from "../../config/gameData";
 import type { ActiveTarget, ArenaBounds } from "./types";
 
 export class GunTurret {
@@ -12,9 +13,9 @@ export class GunTurret {
   // 銃の角度（ラジアン）: -PI/2 (真上) を基準
   public angle: number = -Math.PI / 2;
 
-  // 角度の可動範囲（真上を中心に左右約75度: -165度 〜 -15度）
-  public readonly minAngle: number = Phaser.Math.DegToRad(-165);
-  public readonly maxAngle: number = Phaser.Math.DegToRad(-15);
+  // 角度の可動範囲（gameRules.json で設定）
+  public readonly minAngle: number = Phaser.Math.DegToRad(ARENA_CONFIG.turretMinAngleDeg);
+  public readonly maxAngle: number = Phaser.Math.DegToRad(ARENA_CONFIG.turretMaxAngleDeg);
 
   // バレルの長さ（銃口までのオフセット）
   public readonly barrelLength: number = 52;
@@ -134,13 +135,14 @@ export class GunTurret {
   /**
    * 銃口から前方に伸びる射線と的（円）の交差判定
    */
-  public checkRayIntersection(targets: ActiveTarget[]): ActiveTarget | null {
+  public checkRayIntersection(targets: ActiveTarget[], bulletRadius: number): ActiveTarget | null {
     const muzzle = this.getMuzzlePosition();
     const dirX = Math.cos(this.angle);
     const dirY = Math.sin(this.angle);
 
     let closestTarget: ActiveTarget | null = null;
     let minT = Infinity;
+    const hitMargin = bulletRadius * ARENA_CONFIG.rayHitMarginRatio;
 
     for (const target of targets) {
       const vx = target.x - muzzle.x;
@@ -150,7 +152,7 @@ export class GunTurret {
       if (t < 0) continue;
 
       const distSq = vx * vx + vy * vy - t * t;
-      const radiusWithMargin = target.def.radius + 4;
+      const radiusWithMargin = target.def.radius + hitMargin;
 
       if (distSq <= radiusWithMargin * radiusWithMargin) {
         if (t < minT) {

@@ -1,0 +1,47 @@
+{
+  "round": {
+    "baseDuration": 7.0,
+    "baseTargetCount": 3,
+    "maxTargetCountCap": 8,
+    "timeTargetBaseExtension": 0.8,
+    "countdownDuration": 1.15,
+    "lowTimeWarningThreshold": 2.5
+  },
+  "invoice": {
+    "intervalRounds": 5,
+    "baseCost": 150,
+    "growthRate": 1.6,
+    "minCost": 10,
+    "permanentPointRate": 0.02
+  },
+  "combat": {
+    "critMultiplier": 2.0,
+    "maxFireRateReduction": 0.8,
+    "minFireInterval": 0.08,
+    "maxReloadTimeReduction": 0.8,
+    "minReloadTime": 0.2,
+    "maxShopDiscount": 0.5
+  },
+  "progression": {
+    "initialWeaponId": "handgun",
+    "shopUnlockRound": 3,
+    "autoFireUnlockWeaponCount": 3,
+    "passiveChoicesCount": 3
+  },
+  "arena": {
+    "turretMinAngleDeg": -165,
+    "turretMaxAngleDeg": -15,
+    "rayHitMarginRatio": 0.67,
+    "autoAimSpeed": 1.5,
+    "keyboardAimSpeed": 0.72,
+    "targetRespawnDelayMs": 200,
+    "targetBlinkThresholdSeconds": 0.8,
+    "bulletOutPadding": 20
+  },
+  "simulation": {
+    "assumedAccuracy": 0.9,
+    "maxRoundsGuard": 120,
+    "invoiceReserveRatio": 0.35,
+    "sniperPurchaseMinRound": 10
+  }
+}

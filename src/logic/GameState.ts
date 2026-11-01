@@ -1,6 +1,10 @@
 import {
+  COMBAT_CONFIG,
   INVOICE_CONFIG,
+  PASSIVE_IDS,
+  PASSIVES,
   PERMANENT_UPGRADES,
+  PROGRESSION_CONFIG,
   ROUND_CONFIG,
   TARGET_IDS,
   TARGET_UNLOCK_SEQUENCE,
@@ -17,6 +21,7 @@ import type {
   SkillStatId,
   TargetDefinition,
   TargetId,
+  WeaponBulletConfig,
   WeaponDefinition,
   WeaponId,
 } from "../config/types";
@@ -26,6 +31,14 @@ import { StorageService } from "./storage";
 function createInitialTargetsDestroyed(): Record<TargetId, number> {
   const result = {} as Record<TargetId, number>;
   for (const id of TARGET_IDS) {
+    result[id] = 0;
+  }
+  return result;
+}
+
+function createInitialPassives(): Record<PassiveId, number> {
+  const result = {} as Record<PassiveId, number>;
+  for (const id of PASSIVE_IDS) {
     result[id] = 0;
   }
   return result;
@@ -42,17 +55,10 @@ export class GameState {
   public round: number = 1;
   public sp: number = 0;
   public targetPoints: number = 0;
-  public equippedWeapon: WeaponId = "handgun";
-  public ownedWeapons: WeaponId[] = ["handgun"];
+  public equippedWeapon: WeaponId = PROGRESSION_CONFIG.initialWeaponId;
+  public ownedWeapons: WeaponId[] = [PROGRESSION_CONFIG.initialWeaponId];
   public skillLevels: Record<SkillNodeId, number> = createEmptySkillLevels();
-  public passives: Record<PassiveId, number> = {
-    sp_bonus: 0,
-    dmg_bonus: 0,
-    time_bonus: 0,
-    target_bonus: 0,
-    shop_discount: 0,
-    tp_bonus: 0,
-  };
+  public passives: Record<PassiveId, number> = createInitialPassives();
   public invoiceCount: number = 0; // これまでクリアした請求回数
   public unlockedTargets: TargetId[] = [
     TARGET_UNLOCK_SEQUENCE[0]?.targetId ?? ("standard" as TargetId),
@@ -71,7 +77,7 @@ export class GameState {
     invoicesPassed: 0,
     targetsDestroyedTotal: 0,
     targetsDestroyedByType: createInitialTargetsDestroyed(),
-    weaponsPurchased: ["handgun"],
+    weaponsPurchased: [PROGRESSION_CONFIG.initialWeaponId],
     cleared: false,
   };
 
@@ -105,23 +111,16 @@ export class GameState {
     this.persistentData = StorageService.load();
 
     const startSpBonus = this.getPermanentStartSp();
+    const initialWeapon = PROGRESSION_CONFIG.initialWeaponId;
     this.currentRunActive = true;
     this.round = 1;
     this.sp = startSpBonus;
     this.targetPoints = 0;
-    this.equippedWeapon = "handgun";
-    this.ownedWeapons = ["handgun"];
+    this.equippedWeapon = initialWeapon;
+    this.ownedWeapons = [initialWeapon];
 
     this.skillLevels = createEmptySkillLevels();
-
-    this.passives = {
-      sp_bonus: 0,
-      dmg_bonus: 0,
-      time_bonus: 0,
-      target_bonus: 0,
-      shop_discount: 0,
-      tp_bonus: 0,
-    };
+    this.passives = createInitialPassives();
 
     this.invoiceCount = 0;
     this.unlockedTargets = [TARGET_UNLOCK_SEQUENCE[0]?.targetId ?? ("standard" as TargetId)];
@@ -136,7 +135,7 @@ export class GameState {
       invoicesPassed: 0,
       targetsDestroyedTotal: 0,
       targetsDestroyedByType: createInitialTargetsDestroyed(),
-      weaponsPurchased: ["handgun"],
+      weaponsPurchased: [initialWeapon],
       cleared: false,
     };
 
@@ -221,6 +220,10 @@ export class GameState {
     return WEAPONS[id];
   }
 
+  public getBulletConfig(id: WeaponId = this.equippedWeapon): WeaponBulletConfig {
+    return this.getWeapon(id).bullet;
+  }
+
   /**
    * 攻撃ダメージの計算
    * 基礎: (武器威力 + スキル基礎ダメージ + 永続基礎ダメージ) * (1 + パッシブ基礎ダメージ% + 会心倍率)
@@ -229,11 +232,11 @@ export class GameState {
     const weapon = this.getWeapon();
     const skillBonus = this.getSkillStat("damage");
     const permBonus = this.getPermanentBaseDamage();
-    const passiveMult = 1 + this.passives.dmg_bonus * 0.15;
+    const passiveMult = 1 + this.passives.dmg_bonus * PASSIVES.dmg_bonus.effectPerStack;
 
     let base = (weapon.damage + skillBonus + permBonus) * passiveMult;
     if (isCrit) {
-      base *= 2;
+      base *= COMBAT_CONFIG.critMultiplier;
     }
     return Math.max(1, Math.round(base));
   }
@@ -245,8 +248,11 @@ export class GameState {
 
   public getFireInterval(id: WeaponId = this.equippedWeapon): number {
     const weapon = this.getWeapon(id);
-    const reduction = Math.min(0.8, this.getSkillStat("fireRateReduction"));
-    return Math.max(0.08, weapon.fireInterval * (1 - reduction));
+    const reduction = Math.min(
+      COMBAT_CONFIG.maxFireRateReduction,
+      this.getSkillStat("fireRateReduction"),
+    );
+    return Math.max(COMBAT_CONFIG.minFireInterval, weapon.fireInterval * (1 - reduction));
   }
 
   public getMagazineSize(id: WeaponId = this.equippedWeapon): number {
@@ -258,42 +264,45 @@ export class GameState {
 
   public getReloadTime(id: WeaponId = this.equippedWeapon): number {
     const weapon = this.getWeapon(id);
-    const reduction = Math.min(0.8, this.getSkillStat("reloadTimeReduction"));
-    return Math.max(0.2, weapon.reloadTime * (1 - reduction));
+    const reduction = Math.min(
+      COMBAT_CONFIG.maxReloadTimeReduction,
+      this.getSkillStat("reloadTimeReduction"),
+    );
+    return Math.max(COMBAT_CONFIG.minReloadTime, weapon.reloadTime * (1 - reduction));
   }
 
   public getRoundDuration(): number {
     const base = ROUND_CONFIG.baseDuration;
     const skillBonus = this.getSkillStat("roundTime");
     const permBonus = this.getPermanentRoundTime();
-    const passiveBonus = this.passives.time_bonus * 1.0;
+    const passiveBonus = this.passives.time_bonus * PASSIVES.time_bonus.effectPerStack;
     return base + skillBonus + permBonus + passiveBonus;
   }
 
   public getMaxTargets(): number {
     const base = ROUND_CONFIG.baseTargetCount;
     const skillBonus = this.getSkillStat("maxTargets");
-    const passiveBonus = this.passives.target_bonus * 1;
+    const passiveBonus = this.passives.target_bonus * PASSIVES.target_bonus.effectPerStack;
     return Math.min(ROUND_CONFIG.maxTargetCountCap, base + skillBonus + passiveBonus);
   }
 
   public getSpMultiplier(): number {
     const skillMult = 1 + this.getSkillStat("spMultiplier");
-    const passiveMult = 1 + this.passives.sp_bonus * 0.1;
+    const passiveMult = 1 + this.passives.sp_bonus * PASSIVES.sp_bonus.effectPerStack;
     return skillMult * passiveMult;
   }
 
   public getTargetPointMultiplier(): number {
     const skillMult = 1 + this.getSkillStat("targetPointMultiplier");
-    const passiveMult = 1 + this.passives.tp_bonus * 0.1;
+    const passiveMult = 1 + this.passives.tp_bonus * PASSIVES.tp_bonus.effectPerStack;
     const permMult = 1 + this.getPermanentTargetPointBonus();
     return skillMult * passiveMult * permMult;
   }
 
   public getShopDiscount(): number {
     const skillDisc = this.getSkillStat("shopDiscount");
-    const passiveDisc = this.passives.shop_discount * 0.1;
-    return Math.min(0.5, skillDisc + passiveDisc); // 最大50%引
+    const passiveDisc = this.passives.shop_discount * PASSIVES.shop_discount.effectPerStack;
+    return Math.min(COMBAT_CONFIG.maxShopDiscount, skillDisc + passiveDisc);
   }
 
   public getWeaponPrice(id: WeaponId): number {
@@ -352,7 +361,7 @@ export class GameState {
 
   // --- 武器購入 & 切り替え ---
   public isShopAvailable(): boolean {
-    return this.round >= 3;
+    return this.round >= PROGRESSION_CONFIG.shopUnlockRound;
   }
 
   public buyWeapon(id: WeaponId): boolean {
@@ -367,8 +376,8 @@ export class GameState {
       this.runStats.weaponsPurchased.push(id);
     }
 
-    // 3つ目の武器を購入したらオート射撃設定を可能にする
-    if (this.ownedWeapons.length >= 3) {
+    // 指定数の武器を購入したらオート射撃設定を可能にする
+    if (this.ownedWeapons.length >= PROGRESSION_CONFIG.autoFireUnlockWeaponCount) {
       this.persistentData.settings.autoFire = true;
       StorageService.save(this.persistentData);
     }
@@ -382,7 +391,10 @@ export class GameState {
   }
 
   public canToggleAutoFire(): boolean {
-    return this.ownedWeapons.length >= 3 || this.persistentData.stats.cleared;
+    return (
+      this.ownedWeapons.length >= PROGRESSION_CONFIG.autoFireUnlockWeaponCount ||
+      this.persistentData.stats.cleared
+    );
   }
 
   public toggleAutoFire(): void {
@@ -511,7 +523,7 @@ export class GameState {
     const n = this.invoiceCount + 1; // 1回目、2回目...
     const base = INVOICE_CONFIG.baseCost * Math.pow(INVOICE_CONFIG.growthRate, n - 1);
     const reduction = this.getPermanentInvoiceReduction();
-    return Math.max(10, Math.floor(base * (1 - reduction)));
+    return Math.max(INVOICE_CONFIG.minCost, Math.floor(base * (1 - reduction)));
   }
 
   public canPayInvoice(): boolean {
@@ -541,18 +553,10 @@ export class GameState {
   }
 
   /**
-   * 請求後のパッシブ候補を3つ抽選
+   * 請求後のパッシブ候補を抽選
    */
   public rollPassives(): PassiveId[] {
-    const allPassiveIds: PassiveId[] = [
-      "sp_bonus",
-      "dmg_bonus",
-      "time_bonus",
-      "target_bonus",
-      "shop_discount",
-      "tp_bonus",
-    ];
-    return this.rng.shuffle(allPassiveIds).slice(0, 3);
+    return this.rng.shuffle([...PASSIVE_IDS]).slice(0, PROGRESSION_CONFIG.passiveChoicesCount);
   }
 
   public choosePassive(id: PassiveId): void {
@@ -564,7 +568,7 @@ export class GameState {
     this.isGameOver = true;
     this.currentRunActive = false;
 
-    // 支払総額の2%(切り捨て)を永続ポイントとして獲得
+    // 支払総額の指定割合(切り捨て)を永続ポイントとして獲得
     const pts = Math.floor(
       this.runStats.totalInvoicesPaidAmount * INVOICE_CONFIG.permanentPointRate,
     );

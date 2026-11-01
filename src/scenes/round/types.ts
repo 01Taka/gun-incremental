@@ -40,4 +40,5 @@ export interface Bullet {
   vy: number;
   angle: number;
   speed: number;
+  radius: number;
 }

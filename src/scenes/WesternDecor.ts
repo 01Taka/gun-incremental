@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
+import { INVOICE_CONFIG } from "../config/gameData";
 import { VOCAB } from "../config/vocab";
 import { addCrispText } from "../utils/text";
 
@@ -11,7 +12,7 @@ export function getWesternQuote(indexOrSeed: number): string {
 }
 
 export function getStageSubtitle(round: number): string {
-  if (round % 5 === 0) {
+  if (round % INVOICE_CONFIG.intervalRounds === 0) {
     return VOCAB.sheriffStageSubtitle;
   }
   const subtitles = VOCAB.stageSubtitles;

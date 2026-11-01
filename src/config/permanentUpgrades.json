@@ -1,0 +1,49 @@
+{
+  "upgrades": [
+    {
+      "id": "start_sp",
+      "name": "砂金の軍資金",
+      "description": "ゲーム開始時の初期所持金（$）を増やす",
+      "maxLevel": 3,
+      "costs": [15, 35, 75],
+      "effects": [30, 80, 160],
+      "effectUnit": "$"
+    },
+    {
+      "id": "base_dmg",
+      "name": "伝説の早撃ち術",
+      "description": "ゲーム開始時からの基礎威力を増やす",
+      "maxLevel": 3,
+      "costs": [15, 35, 75],
+      "effects": [1, 2, 3],
+      "effectUnit": ""
+    },
+    {
+      "id": "round_time",
+      "name": "死線の集中力",
+      "description": "ラウンドの制限時間を延長する",
+      "maxLevel": 3,
+      "costs": [15, 35, 75],
+      "effects": [0.5, 1.0, 1.5],
+      "effectUnit": "秒"
+    },
+    {
+      "id": "tp_gain",
+      "name": "手配書コレクター",
+      "description": "新しい標的を解放する「手配ポイント」の獲得量を増やす",
+      "maxLevel": 3,
+      "costs": [15, 35, 75],
+      "effects": [15, 30, 50],
+      "effectUnit": "%"
+    },
+    {
+      "id": "invoice_reduction",
+      "name": "保安官への袖の下",
+      "description": "5ラウンドごとの「保安官の上納金」を軽減する",
+      "maxLevel": 3,
+      "costs": [15, 35, 75],
+      "effects": [5, 10, 15],
+      "effectUnit": "%"
+    }
+  ]
+}

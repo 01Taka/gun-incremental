@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { ARENA_CONFIG } from "../../config/gameData";
 import { VOCAB } from "../../config/vocab";
 import { addCrispText } from "../../utils/text";
 
@@ -246,7 +247,7 @@ export class VerticalSlider {
     }
 
     if (keyInput !== 0 && !this.isDragging) {
-      const speed = 0.72;
+      const speed = ARENA_CONFIG.keyboardAimSpeed;
       this.ratio = Phaser.Math.Clamp(this.ratio + keyInput * speed * deltaSeconds, 0, 1);
       this.updateKnobPosition();
     }

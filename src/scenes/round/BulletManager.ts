@@ -1,11 +1,16 @@
 import Phaser from "phaser";
 
+import { ARENA_CONFIG } from "../../config/gameData";
+import type { WeaponBulletConfig } from "../../config/types";
 import type { TargetManager } from "./TargetManager";
-import type { ArenaBounds, Bullet, HitResult } from "./types";
+import type { ActiveTarget, ArenaBounds, Bullet, HitResult } from "./types";
 
 export interface BulletCallbacks {
   onHitTarget: (hitResult: HitResult, hitX: number, hitY: number) => void;
 }
+
+/** 弾テクスチャ生成時の基準当たり判定半径 (px) */
+const BASE_VISUAL_BULLET_RADIUS = 6;
 
 export class BulletManager {
   private scene: Phaser.Scene;
@@ -15,10 +20,6 @@ export class BulletManager {
 
   private bullets: Map<string, Bullet> = new Map();
   private nextBulletId: number = 1;
-
-  // 弾速 (px/s)
-  public readonly bulletSpeed: number = 1850;
-  public readonly bulletRadius: number = 6;
 
   constructor(
     scene: Phaser.Scene,
@@ -33,16 +34,23 @@ export class BulletManager {
   }
 
   /**
-   * 指定位置から指定角度へ鉛弾を発射
+   * 指定位置から指定角度へ、銃固有の弾パラメータで鉛弾を発射
    */
-  public spawnBullet(startX: number, startY: number, angle: number): Bullet {
+  public spawnBullet(
+    startX: number,
+    startY: number,
+    angle: number,
+    bulletConfig: WeaponBulletConfig,
+  ): Bullet {
     const id = `bullet_${this.nextBulletId++}`;
+    const { speed, radius } = bulletConfig;
 
-    const vx = Math.cos(angle) * this.bulletSpeed;
-    const vy = Math.sin(angle) * this.bulletSpeed;
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
 
     const sprite = this.scene.add.image(startX, startY, "bullet").setDepth(60);
     sprite.setRotation(angle);
+    sprite.setScale(radius / BASE_VISUAL_BULLET_RADIUS);
 
     const bullet: Bullet = {
       id,
@@ -52,7 +60,8 @@ export class BulletManager {
       vx,
       vy,
       angle,
-      speed: this.bulletSpeed,
+      speed,
+      radius,
     };
 
     this.bullets.set(id, bullet);
@@ -61,32 +70,39 @@ export class BulletManager {
 
   public update(deltaSeconds: number): void {
     const bulletsToRemove: string[] = [];
+    const padding = ARENA_CONFIG.bulletOutPadding;
 
     for (const bullet of this.bullets.values()) {
+      const prevX = bullet.x;
+      const prevY = bullet.y;
+
       bullet.x += bullet.vx * deltaSeconds;
       bullet.y += bullet.vy * deltaSeconds;
       bullet.sprite.setPosition(bullet.x, bullet.y);
 
+      // 的との衝突判定（高速弾でもすり抜けない線分判定＋弾ごとの半径を使用）
+      const collision = this.checkTargetCollision(prevX, prevY, bullet.x, bullet.y, bullet.radius);
+      if (collision) {
+        const hitResult = this.targetManager.hitTarget(
+          collision.target,
+          collision.hitX,
+          collision.hitY,
+        );
+        this.callbacks.onHitTarget(hitResult, collision.hitX, collision.hitY);
+
+        // 着弾エフェクト（火花＋砂煙）
+        this.createHitSparks(collision.hitX, collision.hitY);
+        bulletsToRemove.push(bullet.id);
+        continue;
+      }
+
       // アリーナ境界外判定
-      const padding = 20;
       if (
         bullet.x < this.bounds.left - padding ||
         bullet.x > this.bounds.right + padding ||
         bullet.y < this.bounds.top - padding ||
         bullet.y > this.bounds.bottom + padding
       ) {
-        bulletsToRemove.push(bullet.id);
-        continue;
-      }
-
-      // 的との衝突判定
-      const hitTarget = this.checkTargetCollision(bullet.x, bullet.y);
-      if (hitTarget) {
-        const hitResult = this.targetManager.hitTarget(hitTarget, bullet.x, bullet.y);
-        this.callbacks.onHitTarget(hitResult, bullet.x, bullet.y);
-
-        // 着弾エフェクト（火花＋砂煙＋弾痕）
-        this.createHitSparks(bullet.x, bullet.y);
         bulletsToRemove.push(bullet.id);
       }
     }
@@ -100,15 +116,42 @@ export class BulletManager {
     }
   }
 
-  private checkTargetCollision(x: number, y: number) {
+  private checkTargetCollision(
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    bulletRadius: number,
+  ): { target: ActiveTarget; hitX: number; hitY: number } | null {
     const targets = this.targetManager.getTargets();
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const lenSq = dx * dx + dy * dy;
+
+    let earliestU = Infinity;
+    let hitTarget: ActiveTarget | null = null;
+    let hitX = x1;
+    let hitY = y1;
+
     for (const t of targets) {
-      const dist = Phaser.Math.Distance.Between(x, y, t.x, t.y);
-      if (dist <= t.def.radius + this.bulletRadius) {
-        return t;
+      const u =
+        lenSq > 0 ? Phaser.Math.Clamp(((t.x - x0) * dx + (t.y - y0) * dy) / lenSq, 0, 1) : 0;
+      const closestX = x0 + u * dx;
+      const closestY = y0 + u * dy;
+      const distX = t.x - closestX;
+      const distY = t.y - closestY;
+      const combinedRadius = t.def.radius + bulletRadius;
+
+      if (distX * distX + distY * distY <= combinedRadius * combinedRadius && u < earliestU) {
+        earliestU = u;
+        hitTarget = t;
+        hitX = closestX;
+        hitY = closestY;
       }
     }
-    return null;
+
+    if (!hitTarget) return null;
+    return { target: hitTarget, hitX, hitY };
   }
 
   private createHitSparks(x: number, y: number): void {

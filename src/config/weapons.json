@@ -1,0 +1,49 @@
+{
+  "weapons": [
+    {
+      "id": "handgun",
+      "name": "ピースメイカー",
+      "description": "連射とリロードが速い、扱いやすい6連発リボルバー。",
+      "fireInterval": 1.0,
+      "damage": 1,
+      "magazineSize": 6,
+      "reloadTime": 1.5,
+      "price": 0,
+      "unlockRound": 1,
+      "bullet": {
+        "speed": 1850,
+        "radius": 6
+      }
+    },
+    {
+      "id": "rifle",
+      "name": "ウィンチェスター銃",
+      "description": "中威力で装弾数が多いレバーアクション連発銃。",
+      "fireInterval": 0.6,
+      "damage": 3,
+      "magazineSize": 10,
+      "reloadTime": 1.3,
+      "price": 120,
+      "unlockRound": 3,
+      "bullet": {
+        "speed": 1850,
+        "radius": 6
+      }
+    },
+    {
+      "id": "sniper",
+      "name": "シャープス大口径銃",
+      "description": "装弾数は少なくリロードも重いが、硬い標的も一撃で砕く高威力ライフル。",
+      "fireInterval": 1.15,
+      "damage": 8,
+      "magazineSize": 5,
+      "reloadTime": 1.7,
+      "price": 450,
+      "unlockRound": 6,
+      "bullet": {
+        "speed": 1850,
+        "radius": 6
+      }
+    }
+  ]
+}

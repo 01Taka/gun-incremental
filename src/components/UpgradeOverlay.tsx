@@ -12,7 +12,7 @@ import {
 import { useCallback, useState } from "react";
 
 import { AudioManager } from "../audio/AudioManager";
-import { INVOICE_CONFIG, WEAPONS } from "../config/gameData";
+import { INVOICE_CONFIG, PROGRESSION_CONFIG, WEAPON_IDS, WEAPONS } from "../config/gameData";
 import type { WeaponId } from "../config/types";
 import { VOCAB } from "../config/vocab";
 import { useI18n } from "../i18n";
@@ -25,8 +25,6 @@ type TabType = "skills" | "weapons";
 interface UpgradeOverlayProps {
   onProceed: () => void;
 }
-
-const WEAPON_IDS: WeaponId[] = ["handgun", "rifle", "sniper"];
 
 /**
  * 早撃ち技能 & 銃砲店（UPGRADES）画面の西部劇風 React オーバーレイ
@@ -189,7 +187,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                       <div className="flex flex-col leading-tight">
                         <span>{VOCAB.facilities.weaponsShopLocked}</span>
                         <span className="mt-0.5 text-[11px] font-normal text-amber-700">
-                          {VOCAB.progression.shopUnlockAt(3)}
+                          {VOCAB.progression.shopUnlockAt(PROGRESSION_CONFIG.shopUnlockRound)}
                         </span>
                       </div>
                     </>

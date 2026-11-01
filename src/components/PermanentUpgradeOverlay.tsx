@@ -13,7 +13,7 @@ import {
 import { useCallback, useState } from "react";
 
 import { AudioManager } from "../audio/AudioManager";
-import { PERMANENT_UPGRADES } from "../config/gameData";
+import { PERMANENT_UPGRADE_IDS, PERMANENT_UPGRADES } from "../config/gameData";
 import type { PermanentUpgradeId } from "../config/types";
 import { VOCAB } from "../config/vocab";
 import { useI18n } from "../i18n";
@@ -24,14 +24,6 @@ interface PermanentUpgradeOverlayProps {
   onStartRun: () => void;
   onBackToTitle: () => void;
 }
-
-const PERMANENT_UPGRADE_IDS: PermanentUpgradeId[] = [
-  "start_sp",
-  "base_dmg",
-  "round_time",
-  "tp_gain",
-  "invoice_reduction",
-];
 
 const UPGRADE_ICONS: Record<PermanentUpgradeId, LucideIcon> = {
   start_sp: Coins,
