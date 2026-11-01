@@ -44,11 +44,7 @@ export class UpgradeScene extends Phaser.Scene {
   }
 
   private proceedToNext(): void {
-    if (this.gameState.isInvoiceDue()) {
-      this.scene.start("InvoiceScene");
-    } else {
-      this.gameState.prepareNextRound();
-      this.scene.start("RoundScene");
-    }
+    this.gameState.prepareNextRound();
+    this.scene.start("RoundScene");
   }
 }

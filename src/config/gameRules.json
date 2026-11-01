@@ -8,9 +8,9 @@
     "lowTimeWarningThreshold": 2.5
   },
   "invoice": {
-    "intervalRounds": 5,
-    "baseCost": 72,
-    "growthRate": 5.0,
+    "intervalRounds": 3,
+    "baseCost": 45,
+    "growthRate": 3.2,
     "minCost": 10,
     "permanentPointRate": 0.05
   },

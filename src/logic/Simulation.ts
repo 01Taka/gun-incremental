@@ -1,4 +1,4 @@
-import { ARENA_CONFIG, INVOICE_CONFIG, SIMULATION_CONFIG } from "../config/gameData";
+import { ARENA_CONFIG, SIMULATION_CONFIG } from "../config/gameData";
 import { SKILL_IDS } from "../config/skillTree";
 import type { PassiveId, SkillNodeId, TargetDefinition } from "../config/types";
 import { GameState } from "./GameState";
@@ -44,12 +44,12 @@ export class HeadlessSimulation {
         break;
       }
 
-      // 3. 強化のシミュレート (AI戦略: 請求に備えて安全マージンを残しつつ強化)
-      if (!options?.disableRunUpgrades) {
-        this.simulateUpgrades(gameState);
+      // 上納金の初登場告知（Round 3 では支払いは発生しない）
+      if (gameState.shouldShowInvoiceIntro()) {
+        gameState.invoiceIntroduced = true;
       }
 
-      // 4. 請求判定 (周期ラウンド終了ごと)
+      // 3. 請求判定 (初回支払いは Round 6、以降 3 ラウンドごと)
       if (gameState.isInvoiceDue()) {
         const canPay = gameState.canPayInvoice();
         if (canPay) {
@@ -61,6 +61,11 @@ export class HeadlessSimulation {
           gameState.triggerGameOver();
           break;
         }
+      }
+
+      // 4. 強化のシミュレート (支払い後に残った資金で安全に強化)
+      if (!options?.disableRunUpgrades) {
+        this.simulateUpgrades(gameState);
       }
 
       // 次のラウンドへ
@@ -274,10 +279,7 @@ export class HeadlessSimulation {
   }
 
   private static simulateUpgrades(gameState: GameState): void {
-    const currentRound = gameState.round;
-    const interval = INVOICE_CONFIG.intervalRounds;
-    const nextInvoiceRound = Math.ceil(currentRound / interval) * interval;
-    const roundsUntilInvoice = nextInvoiceRound - currentRound;
+    const roundsUntilInvoice = gameState.getRoundsUntilNextInvoice();
     const invoiceCost = gameState.getInvoiceAmount();
 
     // 請求までの残りラウンドに応じた現実的な温存額（序盤ラウンドは投資してスノーボール、直前は全額確保）

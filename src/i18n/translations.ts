@@ -57,6 +57,14 @@ export interface Translations {
     invoiceQuote: string;
     invoiceWarnAfford: (nextRound: number, cost: string) => string;
     invoiceWarnShort: (nextRound: number, cost: string) => string;
+    invoiceIntroTitle: string;
+    invoiceIntroStory: string;
+    invoiceIntroCardTitle: string;
+    invoiceIntroBullet1: string;
+    invoiceIntroBullet2: string;
+    invoiceIntroConfirm: string;
+    invoiceDueInRounds: (rounds: number, cost: string) => string;
+    invoiceDueNextRound: (cost: string) => string;
   };
   combat: {
     targetName: string;
@@ -240,6 +248,16 @@ export const translations: Record<Locale, Translations> = {
         `⚠️ 次の Round ${nextRound} 終了時、保安官の上納金【${cost}】が発生！ 所持金を残しておこう`,
       invoiceWarnShort: (nextRound: number, cost: string) =>
         `🚨 警告: 次の Round ${nextRound} 終了時、保安官の上納金【${cost}】が必要！（現在所持金不足）`,
+      invoiceIntroTitle: "★ 保安官の上納金 ★",
+      invoiceIntroStory:
+        "この荒野の町で銃を抜いて稼ぎ続けるなら、保安官事務所へ縄張り代（上納金）を納めなければならない。掟を守れぬ者は即座に町から叩き出される。稼いだ金をすべて武器やスキルの強化に使い切らず、手元に資金を残しておこう。",
+      invoiceIntroCardTitle: "【 掟・やるべきこと 】",
+      invoiceIntroBullet1: "3ラウンドごとに支払いが発生",
+      invoiceIntroBullet2: "要求額が支払えなければゲームオーバー",
+      invoiceIntroConfirm: "承知した（了解）",
+      invoiceDueInRounds: (rounds: number, cost: string) =>
+        `次回の上納金: あと ${rounds} ラウンド後 (${cost})`,
+      invoiceDueNextRound: (cost: string) => `⚠️ 次のラウンド終了後に徴収！ 必要額: ${cost}`,
     },
     combat: {
       targetName: "標的",
@@ -605,6 +623,16 @@ export const translations: Record<Locale, Translations> = {
         `⚠️ Sheriff's Tax [${cost}] due after Round ${nextRound}! Keep enough cash on hand!`,
       invoiceWarnShort: (nextRound: number, cost: string) =>
         `🚨 Warning: Sheriff's Tax [${cost}] due after Round ${nextRound}! (Short on cash!)`,
+      invoiceIntroTitle: "★ SHERIFF'S TAX ★",
+      invoiceIntroStory:
+        "If you want to draw iron and collect bounties in this frontier town, you must pay territory tax to the Sheriff. Those who break the law are driven out on the spot. Never spend all your earnings on upgrades—always keep enough reserve cash on hand.",
+      invoiceIntroCardTitle: "【 Frontier Rules & Action 】",
+      invoiceIntroBullet1: "Payment due every 3 rounds",
+      invoiceIntroBullet2: "Game over if unable to pay the demanded amount",
+      invoiceIntroConfirm: "Understood",
+      invoiceDueInRounds: (rounds: number, cost: string) =>
+        `Next Tax Due: In ${rounds} rounds (${cost})`,
+      invoiceDueNextRound: (cost: string) => `⚠️ Tax Due After Next Round! Required: ${cost}`,
     },
     combat: {
       targetName: "Targets",

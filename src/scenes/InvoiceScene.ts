@@ -45,7 +45,141 @@ export class InvoiceScene extends Phaser.Scene {
     });
     this.mainContainer = this.add.container(0, 0).setDepth(15);
 
-    this.showInvoiceStep();
+    if (this.gameState.shouldShowInvoiceIntro()) {
+      this.showIntroModal();
+    } else {
+      this.showInvoiceStep();
+    }
+  }
+
+  // --- 初回上納金登場の解説モーダル ---
+  private showIntroModal(): void {
+    const { width, height } = this.scale;
+    const modalContainer = this.add.container(0, 0).setDepth(30);
+
+    // 暗いオーバーレイ背景（背後クリック防止）
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x0a0503, 0.92);
+    overlay.fillRect(0, 0, width, height);
+    overlay.setInteractive(
+      new Phaser.Geom.Rectangle(0, 0, width, height),
+      Phaser.Geom.Rectangle.Contains,
+    );
+    modalContainer.add(overlay);
+
+    // --- 上部セクション（カードで囲まない領域: ストーリー意味付け ＆ 注意） ---
+    const title = addCrispText(this, width / 2, 310, VOCAB.progression.invoiceIntroTitle, {
+      fontSize: "44px",
+      fontFamily: "display",
+      fontStyle: "bold",
+      color: "#fde68a",
+      stroke: "#2b1206",
+      strokeThickness: 5,
+    }).setOrigin(0.5);
+    modalContainer.add(title);
+
+    // 装飾ライン
+    const lineG = this.add.graphics();
+    lineG.lineStyle(2, 0xd97706, 0.75);
+    lineG.lineBetween(width / 2 - 360, 360, width / 2 + 360, 360);
+    modalContainer.add(lineG);
+
+    // ストーリー＆注意文（カードで囲まずダイレクトに表示）
+    const storyText = addCrispText(this, width / 2, 395, VOCAB.progression.invoiceIntroStory, {
+      fontSize: "24px",
+      fontStyle: "bold",
+      color: "#fef3c7",
+      stroke: "#1a0803",
+      strokeThickness: 3,
+      lineSpacing: 14,
+      align: "center",
+      wordWrap: { width: 750, useAdvancedWrap: true },
+    }).setOrigin(0.5, 0);
+    modalContainer.add(storyText);
+
+    // --- 下部セクション（カードで囲む領域: 箇条書きで掟・やるべきことを記述） ---
+    const cardW = 780;
+    const cardH = 340;
+    const cardX = width / 2 - cardW / 2;
+    const cardY = 650;
+
+    const cardBg = this.add.graphics();
+    drawParchmentCard(cardBg, cardX, cardY, cardW, cardH, {
+      borderColor: 0x7f1d1d,
+      pinned: true,
+    });
+    modalContainer.add(cardBg);
+
+    const cardTitle = addCrispText(
+      this,
+      width / 2,
+      cardY + 48,
+      VOCAB.progression.invoiceIntroCardTitle,
+      {
+        fontSize: "26px",
+        fontStyle: "bold",
+        color: "#7f1d1d",
+      },
+    ).setOrigin(0.5);
+    modalContainer.add(cardTitle);
+
+    const cardLine = this.add.graphics();
+    cardLine.lineStyle(1.5, 0xa16207, 0.5);
+    cardLine.lineBetween(cardX + 40, cardY + 80, cardX + cardW - 40, cardY + 80);
+    modalContainer.add(cardLine);
+
+    // 箇条書きリスト（カード内プレートバー & アイコン付きテキスト）
+    const bullets = [
+      {
+        text: VOCAB.progression.invoiceIntroBullet1,
+        y: cardY + 110,
+        color: "#2b1206",
+      },
+      {
+        text: VOCAB.progression.invoiceIntroBullet2,
+        y: cardY + 215,
+        color: "#7f1d1d",
+      },
+    ];
+
+    bullets.forEach((b) => {
+      // 箇条書き項目のプレート枠
+      const bgBar = this.add.graphics();
+      bgBar.fillStyle(0xedd4b4, 0.85);
+      bgBar.fillRoundedRect(cardX + 35, b.y, cardW - 70, 80, 8);
+      bgBar.lineStyle(1.5, 0xb45309, 0.9);
+      bgBar.strokeRoundedRect(cardX + 35, b.y, cardW - 70, 80, 8);
+      modalContainer.add(bgBar);
+
+      // 箇条書きテキスト
+      const bulletText = addCrispText(this, cardX + 55, b.y + 40, `•  ${b.text}`, {
+        fontSize: "25px",
+        fontStyle: "bold",
+        color: b.color,
+        wordWrap: { width: cardW - 110, useAdvancedWrap: true },
+      }).setOrigin(0, 0.5);
+      modalContainer.add(bulletText);
+    });
+
+    // 承知した（了解）ボタン - モーダル表示ラウンドでは支払いは発生せずリザルトへ進む
+    const confirmBtn = createWesternButton(
+      this,
+      width / 2,
+      cardY + cardH + 75,
+      `★  ${VOCAB.progression.invoiceIntroConfirm}`,
+      "brass",
+      () => {
+        this.audio.playSynthSE("spur", 0.7);
+        this.gameState.invoiceIntroduced = true;
+        modalContainer.destroy();
+        this.scene.start("ResultScene");
+      },
+      580,
+      82,
+    );
+    modalContainer.add(confirmBtn);
+
+    this.audio.playSynthSE("bell", 0.8);
   }
 
   // --- 保安官の上納金ステップ ---
@@ -279,7 +413,6 @@ export class InvoiceScene extends Phaser.Scene {
     this.audio.playSynthSE("spur", 0.75);
     this.gameState.choosePassive(passiveId);
 
-    this.gameState.prepareNextRound();
-    this.scene.start("RoundScene");
+    this.scene.start("ResultScene");
   }
 }

@@ -450,6 +450,8 @@ export class RoundScene extends Phaser.Scene {
     this.hud.showTimeUpBanner(() => {
       if (this.gameState.isCleared) {
         this.scene.start("ClearScene");
+      } else if (this.gameState.shouldShowInvoiceIntro() || this.gameState.isInvoiceDue()) {
+        this.scene.start("InvoiceScene");
       } else {
         this.scene.start("ResultScene");
       }

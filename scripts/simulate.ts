@@ -1,4 +1,4 @@
-import { TARGET_UNLOCK_SEQUENCE } from "../src/config/gameData";
+import { INVOICE_CONFIG, TARGET_UNLOCK_SEQUENCE } from "../src/config/gameData";
 import { GameState } from "../src/logic/GameState";
 import { HeadlessSimulation } from "../src/logic/Simulation";
 import { StorageService } from "../src/logic/storage";
@@ -33,9 +33,10 @@ const zeroSkillRes = HeadlessSimulation.runSingleRun(zeroSkillGs, 2026, {
 const run1 = results[0];
 const clearRunIndex = results.findIndex((r) => r.cleared);
 
+const expectedWallRound = INVOICE_CONFIG.intervalRounds * 4; // 第3回請求 (Round 12)
 console.log("\n--- 検証結果 ---");
 console.log(
-  `初回プレイの壁 (R15 / 第3回請求): 到達 ${run1.roundsSurvived}R (支払 ${run1.invoicesPaid}回) -> ${run1.roundsSurvived === 15 && !run1.cleared ? "OK (想定通りR15でゲームオーバー・永続強化へ誘導)" : "調整検討"}`,
+  `初回プレイの壁 (R${expectedWallRound} / 第3回請求): 到達 ${run1.roundsSurvived}R (支払 ${run1.invoicesPaid}回) -> ${run1.roundsSurvived === expectedWallRound && !run1.cleared ? `OK (想定通りR${expectedWallRound}でゲームオーバー・永続強化へ誘導)` : "調整検討"}`,
 );
 console.log(
   `周回メタ進行: Run 1 (${run1.roundsSurvived}R) -> Run 2 (${results[1]?.roundsSurvived}R) -> Run 3 (${results[2]?.roundsSurvived}R) -> ${(results[1]?.roundsSurvived ?? 0) > run1.roundsSurvived ? "OK (永続強化で壁を突破)" : "要調整"}`,

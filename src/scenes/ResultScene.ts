@@ -66,10 +66,7 @@ export class ResultScene extends Phaser.Scene {
     // 懸賞金評価 & 次の賞金首手配書進捗（木札パネル）
     this.createTargetProgressCard(width, height);
 
-    // 保安官の上納金予告アラート
-    this.createInvoiceWarningCard(width);
-
-    // アクションボタン
+    // アクションボタン & 次回上納金案内
     this.createActionButtons(width);
   }
 
@@ -267,35 +264,6 @@ export class ResultScene extends Phaser.Scene {
     this.audio.playSynthSE("laser", 0.8);
   }
 
-  private createInvoiceWarningCard(width: number): void {
-    const nextRound = this.gameState.round + 1;
-    const isNextInvoice = nextRound % INVOICE_CONFIG.intervalRounds === 0;
-
-    if (!isNextInvoice) return;
-
-    const invoiceCost = this.gameState.getInvoiceAmount();
-    const canAfford = this.gameState.sp >= invoiceCost;
-
-    const alertY = 782;
-    const g = this.add.graphics().setDepth(10);
-    g.fillStyle(canAfford ? 0x3b1d0c : 0x450a0a, 0.96);
-    g.lineStyle(2.5, canAfford ? 0xd97706 : 0xef4444, 1);
-    g.fillRoundedRect(width / 2 - 390, alertY, 780, 86, 10);
-    g.strokeRoundedRect(width / 2 - 390, alertY, 780, 86, 10);
-
-    const alertMsg = canAfford
-      ? VOCAB.progression.invoiceWarnAfford(nextRound, formatMoney(invoiceCost))
-      : VOCAB.progression.invoiceWarnShort(nextRound, formatMoney(invoiceCost));
-
-    addCrispText(this, width / 2, alertY + 43, alertMsg, {
-      fontSize: "18px",
-      fontStyle: "bold",
-      color: canAfford ? "#fde68a" : "#fca5a5",
-    })
-      .setOrigin(0.5)
-      .setDepth(12);
-  }
-
   private createActionButtons(width: number): void {
     const btnY = 955;
     const spacing = 116;
@@ -325,14 +293,45 @@ export class ResultScene extends Phaser.Scene {
       550,
       78,
     ).setDepth(15);
+
+    // 上納金があらわれた後は、次のラウンドへ進むボタンの下にあと何ラウンド後に何ドル支払うかを記述
+    const hasInvoiceAppeared =
+      this.gameState.invoiceIntroduced ||
+      this.gameState.invoiceCount > 0 ||
+      this.gameState.round >= INVOICE_CONFIG.intervalRounds;
+
+    if (hasInvoiceAppeared) {
+      const roundsRemaining = this.gameState.getRoundsUntilNextInvoice();
+      const invoiceCost = this.gameState.getInvoiceAmount();
+      const formattedCost = formatMoney(invoiceCost);
+      const isUrgent = roundsRemaining === 1;
+
+      const noticeY = btnY + spacing + 66;
+      const noticeW = 660;
+      const noticeH = 60;
+
+      const g = this.add.graphics().setDepth(14);
+      g.fillStyle(isUrgent ? 0x450a0a : 0x1f1008, 0.94);
+      g.fillRoundedRect(width / 2 - noticeW / 2, noticeY, noticeW, noticeH, 8);
+      g.lineStyle(2, isUrgent ? 0xef4444 : 0xb45309, 1);
+      g.strokeRoundedRect(width / 2 - noticeW / 2, noticeY, noticeW, noticeH, 8);
+
+      const noticeText = isUrgent
+        ? VOCAB.progression.invoiceDueNextRound(formattedCost)
+        : VOCAB.progression.invoiceDueInRounds(roundsRemaining, formattedCost);
+
+      addCrispText(this, width / 2, noticeY + noticeH / 2, noticeText, {
+        fontSize: "21px",
+        fontStyle: "bold",
+        color: isUrgent ? "#fca5a5" : "#fde68a",
+      })
+        .setOrigin(0.5)
+        .setDepth(16);
+    }
   }
 
   private proceedToNext(): void {
-    if (this.gameState.isInvoiceDue()) {
-      this.scene.start("InvoiceScene");
-    } else {
-      this.gameState.prepareNextRound();
-      this.scene.start("RoundScene");
-    }
+    this.gameState.prepareNextRound();
+    this.scene.start("RoundScene");
   }
 }

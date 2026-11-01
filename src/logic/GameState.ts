@@ -60,6 +60,7 @@ export class GameState {
   public skillLevels: Record<SkillNodeId, number> = createEmptySkillLevels();
   public passives: Record<PassiveId, number> = createInitialPassives();
   public invoiceCount: number = 0; // これまでクリアした請求回数
+  public invoiceIntroduced: boolean = false; // 上納金システムが初登場告知されたか
   public unlockedTargets: TargetId[] = [
     TARGET_UNLOCK_SEQUENCE[0]?.targetId ?? ("standard" as TargetId),
   ];
@@ -123,6 +124,7 @@ export class GameState {
     this.passives = createInitialPassives();
 
     this.invoiceCount = 0;
+    this.invoiceIntroduced = false;
     this.unlockedTargets = [TARGET_UNLOCK_SEQUENCE[0]?.targetId ?? ("standard" as TargetId)];
     this.lastRoundSpEarned = 0;
     this.lastRoundTargetsDestroyed = 0;
@@ -519,8 +521,23 @@ export class GameState {
   }
 
   // --- 請求処理 ---
+  public shouldShowInvoiceIntro(): boolean {
+    return this.round === INVOICE_CONFIG.intervalRounds && !this.invoiceIntroduced;
+  }
+
   public isInvoiceDue(): boolean {
-    return this.round % INVOICE_CONFIG.intervalRounds === 0;
+    const firstDueRound = INVOICE_CONFIG.intervalRounds * 2;
+    return this.round >= firstDueRound && this.round % INVOICE_CONFIG.intervalRounds === 0;
+  }
+
+  public getRoundsUntilNextInvoice(): number {
+    const interval = INVOICE_CONFIG.intervalRounds;
+    const firstDueRound = interval * 2;
+    if (this.round < firstDueRound) {
+      return firstDueRound - this.round;
+    }
+    const nextDue = Math.floor(this.round / interval) * interval + interval;
+    return nextDue - this.round;
   }
 
   public getInvoiceAmount(): number {
