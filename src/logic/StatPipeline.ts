@@ -66,6 +66,7 @@ export interface StatAccumulator {
   shopDiscount: number; // ショップ割引率 (スキル)
   timeTargetBonus: number; // 懐中時計延長加算 (スキル)
   invoiceReduction: number; // 上納金軽減率 (永続)
+  targetRespawnRateFlat: number; // 標的復活率加算 (スキル)
 }
 
 /**
@@ -86,6 +87,7 @@ export interface EffectiveStats {
   weaponPrice: number;
   timeTargetBonus: number;
   invoiceReduction: number;
+  targetRespawnRate: number;
   getChainDamage: (sourceDamage: number) => number;
 }
 
@@ -125,6 +127,7 @@ export function createInitialAccumulator(): StatAccumulator {
     shopDiscount: 0,
     timeTargetBonus: 0,
     invoiceReduction: 0,
+    targetRespawnRateFlat: 0,
   };
 }
 
@@ -264,6 +267,10 @@ export class StatPipeline {
     const shopDiscount = Math.min(COMBAT_CONFIG.maxShopDiscount, acc.shopDiscount);
     const weaponPrice = Math.max(0, Math.floor(weapon.price * (1 - shopDiscount)));
     const timeTargetBonus = ROUND_CONFIG.timeTargetBaseExtension + acc.timeTargetBonus;
+    const targetRespawnRate = Math.min(
+      1.0,
+      ROUND_CONFIG.baseRespawnRate + acc.targetRespawnRateFlat,
+    );
 
     return {
       damage,
@@ -280,6 +287,7 @@ export class StatPipeline {
       weaponPrice,
       timeTargetBonus,
       invoiceReduction: acc.invoiceReduction,
+      targetRespawnRate,
       getChainDamage: (sourceDamage: number) =>
         Math.max(1, Math.round(sourceDamage * acc.chainDamageMultiplier)),
     };

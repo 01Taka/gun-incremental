@@ -285,6 +285,14 @@ export class GameState {
     return this.getEffectiveStats().timeTargetBonus;
   }
 
+  public getTargetRespawnRate(): number {
+    return this.getEffectiveStats().targetRespawnRate;
+  }
+
+  public rollTargetRespawn(): boolean {
+    return this.rng.next() < this.getTargetRespawnRate();
+  }
+
   public getChainDamage(sourceDamage: number): number {
     return this.getEffectiveStats().getChainDamage(sourceDamage);
   }

@@ -65,6 +65,9 @@ export function createSkillModifier(nodeId: SkillNodeId, level: number): StatMod
         case "chainDamage":
           acc.chainDamageMultiplier += totalValue;
           break;
+        case "targetRespawnRate":
+          acc.targetRespawnRateFlat += totalValue;
+          break;
       }
     },
   };

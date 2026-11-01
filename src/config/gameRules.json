@@ -2,6 +2,7 @@
   "round": {
     "baseDuration": 8.0,
     "baseTargetCount": 3,
+    "baseRespawnRate": 0.7,
     "maxTargetCountCap": 7,
     "timeTargetBaseExtension": 0.6,
     "countdownDuration": 1.1,

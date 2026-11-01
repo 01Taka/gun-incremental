@@ -408,6 +408,7 @@ export const translations: Record<Locale, Translations> = {
       shopDiscount: { label: "銃砲店の割引率", subLabel: "武器割引", unit: "%" },
       timeTargetBonus: { label: "懐中時計の延長時間", subLabel: "時間追加", unit: "秒" },
       chainDamage: { label: "ダイナマイト誘爆威力", subLabel: "誘爆倍率", unit: "%" },
+      targetRespawnRate: { label: "的の復活率", subLabel: "復活率", unit: "%" },
     },
     weapons: {
       handgun: {
@@ -783,6 +784,7 @@ export const translations: Record<Locale, Translations> = {
       shopDiscount: { label: "Gunsmith Discount", subLabel: "Discount", unit: "%" },
       timeTargetBonus: { label: "Pocket Watch Bonus", subLabel: "Watch +s", unit: "s" },
       chainDamage: { label: "Dynamite Blast Damage", subLabel: "Blast %", unit: "%" },
+      targetRespawnRate: { label: "Target Respawn Rate", subLabel: "Respawn %", unit: "%" },
     },
     weapons: {
       handgun: {

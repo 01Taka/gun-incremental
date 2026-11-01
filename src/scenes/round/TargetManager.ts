@@ -284,11 +284,17 @@ export class TargetManager {
       },
     });
 
-    this.scene.time.delayedCall(ARENA_CONFIG.targetRespawnDelayMs, () => {
-      if (this.isRoundActive && this.activeTargets.size < this.gameState.getMaxTargets()) {
-        this.spawnOneTarget();
-      }
-    });
+    // 的の復活率（スキルツリー等で強化可能）判定
+    // 画面上の的が0体になって進行不能になるのを防ぐため、全滅時は確実に補充
+    const shouldRespawn = this.gameState.rollTargetRespawn() || this.activeTargets.size === 0;
+
+    if (shouldRespawn) {
+      this.scene.time.delayedCall(ARENA_CONFIG.targetRespawnDelayMs, () => {
+        if (this.isRoundActive && this.activeTargets.size < this.gameState.getMaxTargets()) {
+          this.spawnOneTarget();
+        }
+      });
+    }
 
     return { spEarned, bonusTime };
   }

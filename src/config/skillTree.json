@@ -39,6 +39,19 @@
       "effect": { "stat": "maxTargets", "perLevel": 1 }
     },
     {
+      "id": "respawn_rate",
+      "size": "small",
+      "parent": "max_targets",
+      "unlockLevel": 1,
+      "name": "的の復活率",
+      "description": "標的を撃破したときに、新たな標的が復活・補充される確率を上げる",
+      "icon": "RefreshCw",
+      "category": "combat",
+      "maxLevel": 3,
+      "costs": [38, 130, 440],
+      "effect": { "stat": "targetRespawnRate", "perLevel": 0.1 }
+    },
+    {
       "id": "crit_rate",
       "size": "medium",
       "parent": "damage_base",

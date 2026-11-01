@@ -66,7 +66,8 @@ export type SkillStatId =
   | "targetPointMultiplier"
   | "shopDiscount"
   | "timeTargetBonus"
-  | "chainDamage";
+  | "chainDamage"
+  | "targetRespawnRate";
 
 export interface SkillDefinition {
   id: SkillNodeId;
@@ -116,6 +117,7 @@ export interface PermanentUpgradeDefinition {
 export interface RoundConfig {
   baseDuration: number; // 初期ラウンド制限時間 (秒)
   baseTargetCount: number; // 初期同時出現数
+  baseRespawnRate: number; // 初期標的復活確率 (0〜1)
   maxTargetCountCap: number; // 最大同時出現数上限
   timeTargetBaseExtension: number; // 懐中時計の基本延長時間 (秒)
   countdownDuration: number; // 開幕カウントダウン時間 (秒)

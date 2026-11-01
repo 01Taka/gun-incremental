@@ -156,7 +156,10 @@ export class HeadlessSimulation {
       activeTargets.splice(idx, 1);
 
       gameState.onTargetDestroyed(destroyed.def.id);
-      pendingRespawns.push(elapsed + respawnDelaySec);
+      const shouldRespawn = gameState.rollTargetRespawn() || activeTargets.length === 0;
+      if (shouldRespawn) {
+        pendingRespawns.push(elapsed + respawnDelaySec);
+      }
 
       if (destroyed.def.id === "time") {
         duration += gameState.getTimeTargetBonus();
@@ -327,6 +330,7 @@ export class HeadlessSimulation {
       magazine_size: 1.12,
       crit_rate: 1.1,
       reload_speed: 1.08,
+      respawn_rate: 1.15,
       max_targets: 1.05,
       time_target_bonus: 1.02,
       magazine_mult: 1.0,

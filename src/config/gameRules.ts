@@ -21,6 +21,7 @@ const roundSchema = z
   .object({
     baseDuration: z.number().positive(),
     baseTargetCount: z.number().int().min(1),
+    baseRespawnRate: z.number().min(0).max(1),
     maxTargetCountCap: z.number().int().min(1),
     timeTargetBaseExtension: z.number().nonnegative(),
     countdownDuration: z.number().nonnegative(),

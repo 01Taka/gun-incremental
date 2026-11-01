@@ -50,6 +50,7 @@ const SKILL_STAT_KEYS: Record<SkillStatId, true> = {
   shopDiscount: true,
   timeTargetBonus: true,
   chainDamage: true,
+  targetRespawnRate: true,
 };
 
 export const SKILL_STATS: Record<SkillStatId, SkillStatDefinition> = new Proxy(
