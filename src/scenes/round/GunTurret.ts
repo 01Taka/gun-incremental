@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import type { ArenaBounds, StickState } from "./types";
+import type { ActiveTarget, ArenaBounds } from "./types";
 
 export class GunTurret {
   private scene: Phaser.Scene;
@@ -14,11 +14,8 @@ export class GunTurret {
   public angle: number = -Math.PI / 2;
 
   // 角度の可動範囲（真上を中心に左右約75度: -165度 〜 -15度）
-  private readonly minAngle: number = Phaser.Math.DegToRad(-165);
-  private readonly maxAngle: number = Phaser.Math.DegToRad(-15);
-
-  // 旋回速度（rad/s）: 最大倒し時で約120度/秒
-  private readonly rotationSpeed: number = Math.PI * 0.95;
+  public readonly minAngle: number = Phaser.Math.DegToRad(-165);
+  public readonly maxAngle: number = Phaser.Math.DegToRad(-15);
 
   // バレルの長さ（銃口までのオフセット）
   public readonly barrelLength: number = 48;
@@ -29,13 +26,6 @@ export class GunTurret {
   private barrelGraphics: Phaser.GameObjects.Graphics;
   private baseGraphics: Phaser.GameObjects.Graphics;
   private laserSight: Phaser.GameObjects.Graphics;
-
-  // キーボード
-  private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  private adKeys?: {
-    A: Phaser.Input.Keyboard.Key;
-    D: Phaser.Input.Keyboard.Key;
-  };
 
   constructor(scene: Phaser.Scene, bounds: ArenaBounds) {
     this.scene = scene;
@@ -62,16 +52,7 @@ export class GunTurret {
     this.barrelContainer.add(this.barrelGraphics);
     this.container.add(this.barrelContainer);
 
-    this.updateRotation();
-
-    // キーボード設定
-    if (this.scene.input.keyboard) {
-      this.cursors = this.scene.input.keyboard.createCursorKeys();
-      this.adKeys = {
-        A: this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-        D: this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-      };
-    }
+    this.setAimRatio(0.5);
   }
 
   private drawBase(): void {
@@ -114,50 +95,21 @@ export class GunTurret {
     this.barrelGraphics.fillRect(8, -2, 28, 4);
   }
 
-  public update(
-    deltaSeconds: number,
-    stickState: StickState,
-    autoAimTargetPos?: { x: number; y: number } | null,
-  ): void {
-    // スティックの左右入力（x成分: -1.0 〜 +1.0）
-    let horizontalInput = stickState.x;
-
-    // キーボードの左右（A / D, Left / Right）
-    if (this.cursors && this.adKeys) {
-      if (this.cursors.left.isDown || this.adKeys.A.isDown) horizontalInput -= 1.0;
-      if (this.cursors.right.isDown || this.adKeys.D.isDown) horizontalInput += 1.0;
-    }
-
-    horizontalInput = Phaser.Math.Clamp(horizontalInput, -1.0, 1.0);
-
-    // スティック操作またはキー操作がある場合
-    if (Math.abs(horizontalInput) > 0.05) {
-      // スティック右 (x > 0) -> 角度を右（時計回り）に増やす
-      // スティック左 (x < 0) -> 角度を左（反時計回り）に減らす
-      this.angle += horizontalInput * this.rotationSpeed * deltaSeconds;
-    } else if (autoAimTargetPos) {
-      // 入力がない場合のオートエイム旋回
-      const targetAngle = Phaser.Math.Angle.Between(
-        this.x,
-        this.y,
-        autoAimTargetPos.x,
-        autoAimTargetPos.y,
-      );
-      // 目標角度に向けて滑らかに補間
-      const diff = Phaser.Math.Angle.Wrap(targetAngle - this.angle);
-      const step = this.rotationSpeed * deltaSeconds * 1.2;
-      if (Math.abs(diff) < step) {
-        this.angle = targetAngle;
-      } else {
-        this.angle += Math.sign(diff) * step;
-      }
-    }
-
-    // 角度のクランプ
-    this.angle = Phaser.Math.Clamp(this.angle, this.minAngle, this.maxAngle);
-
+  /**
+   * メーター（スライダー）の比率 (0.0 〜 1.0) で銃の角度を直接設定
+   */
+  public setAimRatio(ratio: number): void {
+    const clampedRatio = Phaser.Math.Clamp(ratio, 0.0, 1.0);
+    this.angle = this.minAngle + (this.maxAngle - this.minAngle) * clampedRatio;
     this.updateRotation();
-    this.drawLaserSight();
+  }
+
+  /**
+   * 任意の目標角度からスライダー比率 (0.0 〜 1.0) を計算
+   */
+  public getRatioForAngle(angleRad: number): number {
+    const clamped = Phaser.Math.Clamp(angleRad, this.minAngle, this.maxAngle);
+    return (clamped - this.minAngle) / (this.maxAngle - this.minAngle);
   }
 
   private updateRotation(): void {
@@ -165,25 +117,92 @@ export class GunTurret {
   }
 
   /**
+   * 銃口から前方に伸びる射線と的（円）の交差判定
+   * 射線と重なっている的の中で、銃から最も近いものを返す
+   */
+  public checkRayIntersection(targets: ActiveTarget[]): ActiveTarget | null {
+    const muzzle = this.getMuzzlePosition();
+    const dirX = Math.cos(this.angle);
+    const dirY = Math.sin(this.angle);
+
+    let closestTarget: ActiveTarget | null = null;
+    let minT = Infinity;
+
+    for (const target of targets) {
+      const vx = target.x - muzzle.x;
+      const vy = target.y - muzzle.y;
+
+      // 射線方向への射影長 t
+      const t = vx * dirX + vy * dirY;
+      if (t < 0) {
+        // 的が銃口より後方にある場合は除外
+        continue;
+      }
+
+      // 射線から的中心への垂直距離の2乗
+      const distSq = vx * vx + vy * vy - t * t;
+      const radiusWithMargin = target.def.radius + 4; // 少し余裕を持たせた当たり判定
+
+      if (distSq <= radiusWithMargin * radiusWithMargin) {
+        if (t < minT) {
+          minT = t;
+          closestTarget = target;
+        }
+      }
+    }
+
+    return closestTarget;
+  }
+
+  /**
    * 銃口から前方に伸びる照準レーザーサイトを描画
    */
-  private drawLaserSight(): void {
+  public drawLaserSight(lockedTarget: ActiveTarget | null): void {
     this.laserSight.clear();
-
     const muzzle = this.getMuzzlePosition();
-    const rayLength = 950;
-    const endX = muzzle.x + Math.cos(this.angle) * rayLength;
-    const endY = muzzle.y + Math.sin(this.angle) * rayLength;
 
-    // ガイドライン（半透明のサイバーブルー破線風）
-    this.laserSight.lineStyle(1.5, 0x38bdf8, 0.25);
-    this.laserSight.beginPath();
-    this.laserSight.moveTo(muzzle.x, muzzle.y);
-    this.laserSight.lineTo(endX, endY);
-    this.laserSight.strokePath();
+    if (lockedTarget) {
+      // ★ 的に当たっている時: 強力な赤色ロックオンビーム
+      const dist = Phaser.Math.Distance.Between(muzzle.x, muzzle.y, lockedTarget.x, lockedTarget.y);
+
+      // 外側の光彩
+      this.laserSight.lineStyle(6, 0xef4444, 0.4);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(
+        muzzle.x + Math.cos(this.angle) * dist,
+        muzzle.y + Math.sin(this.angle) * dist,
+      );
+      this.laserSight.strokePath();
+
+      // 内側の鋭いビーム
+      this.laserSight.lineStyle(2.5, 0xffffff, 1.0);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(
+        muzzle.x + Math.cos(this.angle) * dist,
+        muzzle.y + Math.sin(this.angle) * dist,
+      );
+      this.laserSight.strokePath();
+
+      // 着弾点のクロスマーカー
+      this.laserSight.lineStyle(2, 0xef4444, 0.9);
+      this.laserSight.strokeCircle(lockedTarget.x, lockedTarget.y, lockedTarget.def.radius + 6);
+    } else {
+      // 的に当たっていない時: 細い半透明のガイドライン
+      const rayLength = 950;
+      const endX = muzzle.x + Math.cos(this.angle) * rayLength;
+      const endY = muzzle.y + Math.sin(this.angle) * rayLength;
+
+      this.laserSight.lineStyle(1.5, 0x38bdf8, 0.25);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(endX, endY);
+      this.laserSight.strokePath();
+    }
 
     // 銃口の輝き
-    this.laserSight.fillStyle(0x38bdf8, 0.4);
+    this.laserSight.fillStyle(lockedTarget ? 0xef4444 : 0x38bdf8, 0.6);
     this.laserSight.fillCircle(muzzle.x, muzzle.y, 4);
   }
 
@@ -192,7 +211,6 @@ export class GunTurret {
    */
   public playRecoilAnimation(): void {
     this.scene.tweens.killTweensOf(this.barrelContainer);
-    // 銃身が後方に少し下がり、すぐ元の位置に戻る
     const backDist = 7;
     const offsetX = -Math.cos(this.angle) * backDist;
     const offsetY = -Math.sin(this.angle) * backDist;

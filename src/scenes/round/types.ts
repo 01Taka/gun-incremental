@@ -10,14 +10,6 @@ export interface ArenaBounds {
   bottom: number;
 }
 
-export interface StickState {
-  x: number; // -1.0 〜 1.0 (左〜右)
-  y: number; // -1.0 〜 1.0 (上〜下)
-  active: boolean; // デッドゾーンを超えて操作中か
-  angle: number; // 倒されている角度（ラジアン: -PI 〜 PI）
-  force: number; // 倒しの強さ（0.0 〜 1.0）
-}
-
 export interface ActiveTarget {
   id: string;
   def: TargetDefinition;

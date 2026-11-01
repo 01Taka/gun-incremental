@@ -4,12 +4,12 @@ import { AudioManager } from "../audio/AudioManager";
 import { EventBus } from "../EventBus";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
+import { ArcSlider } from "./round/ArcSlider";
 import { BulletManager } from "./round/BulletManager";
 import { GunTurret } from "./round/GunTurret";
 import { RoundHUD } from "./round/RoundHUD";
 import { TargetManager } from "./round/TargetManager";
 import type { ArenaBounds } from "./round/types";
-import { VirtualJoystick } from "./round/VirtualJoystick";
 
 export class RoundScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -25,7 +25,7 @@ export class RoundScene extends Phaser.Scene {
   };
 
   // サブシステム
-  private joystick!: VirtualJoystick;
+  private arcSlider!: ArcSlider;
   private gunTurret!: GunTurret;
   private bulletManager!: BulletManager;
   private targetManager!: TargetManager;
@@ -75,18 +75,15 @@ export class RoundScene extends Phaser.Scene {
     // 3. HUD（上部情報・下部コントロール）の作成
     this.hud = new RoundHUD(this, this.arenaBounds);
 
-    // 4. バーチャルスティックの作成（下部コントロールエリア内）
-    this.joystick = new VirtualJoystick(this, {
-      originX: width / 2,
-      originY: 1350,
-      baseRadius: 90,
-      knobRadius: 42,
-      maxRadius: 80,
-      deadZone: 12,
-      baseColor: 0x0f172a,
-      borderColor: 0x38bdf8,
-      knobColor: 0x0284c7,
-      label: "AIM",
+    // 4. 画面右下に1/4円弧メーター（ArcSlider）を配置（右手親指で操作しやすい扇形スライダー）
+    this.arcSlider = new ArcSlider(this, {
+      centerX: width,
+      centerY: height,
+      radius: 350,
+      trackWidth: 26,
+      startAngleDeg: 185, // 左下側（左を狙う）
+      endAngleDeg: 265, // 右上側（右を狙う）
+      initialRatio: 0.5, // 中央（真上を狙う）
     });
 
     // 5. 銃（中央下部に配置されるタレット）の作成
@@ -111,7 +108,7 @@ export class RoundScene extends Phaser.Scene {
     // 7. 弾丸（プロジェクタイル）マネージャーの作成
     this.bulletManager = new BulletManager(this, this.arenaBounds, this.targetManager, {
       onHitTarget: () => {
-        // ヒット時の追加処理（必要に応じて）
+        // ヒット時処理
       },
     });
 
@@ -204,15 +201,15 @@ export class RoundScene extends Phaser.Scene {
 
   private setupInputHandlers(): void {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      this.joystick.handlePointerDown(pointer);
+      this.arcSlider.handlePointerDown(pointer);
     });
 
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
-      this.joystick.handlePointerMove(pointer);
+      this.arcSlider.handlePointerMove(pointer);
     });
 
     const releaseHandler = (pointer: Phaser.Input.Pointer) => {
-      this.joystick.handlePointerUp(pointer);
+      this.arcSlider.handlePointerUp(pointer);
     };
 
     this.input.on("pointerup", releaseHandler);
@@ -228,24 +225,54 @@ export class RoundScene extends Phaser.Scene {
     // タイマーHUDの更新
     this.hud.updateTimer(this.timeRemaining);
 
-    // オートエイム用: 照準方向または最も近い的の探索
+    // キーボードによるスライダー更新
+    this.arcSlider.update(deltaSeconds);
+
+    // オートエイム設定時（操作中でなく、かつオートエイムが有効な場合）
     const isAutoAimOn =
       this.gameState.canToggleAutoFire() && this.gameState.persistentData.settings.autoFire;
-    const closestTarget = isAutoAimOn
-      ? this.targetManager.getClosestTarget(this.gunTurret.x, this.gunTurret.y)
-      : null;
+    if (isAutoAimOn && !this.arcSlider.isDragging) {
+      const closestTarget = this.targetManager.getClosestTarget(this.gunTurret.x, this.gunTurret.y);
+      if (closestTarget) {
+        const targetAngle = Phaser.Math.Angle.Between(
+          this.gunTurret.x,
+          this.gunTurret.y,
+          closestTarget.x,
+          closestTarget.y,
+        );
+        const targetRatio = this.gunTurret.getRatioForAngle(targetAngle);
+        // 滑らかに目標の比率へ追従
+        const diff = targetRatio - this.arcSlider.ratio;
+        const step = deltaSeconds * 1.5;
+        if (Math.abs(diff) < step) {
+          this.arcSlider.setRatio(targetRatio);
+        } else {
+          this.arcSlider.setRatio(this.arcSlider.ratio + Math.sign(diff) * step);
+        }
+      }
+    }
 
-    // 銃（タレット）の更新: スティックの左右入力（x成分）で回転
-    this.gunTurret.update(deltaSeconds, this.joystick.state, closestTarget);
+    // ★ メーターの位置で銃の角度を直接設定
+    this.gunTurret.setAimRatio(this.arcSlider.ratio);
 
-    if (closestTarget) {
-      this.hud.updateLockOn(closestTarget.def.name);
+    // ★ 射線（直線）と的の交差判定
+    const targets = this.targetManager.getTargets();
+    const lockedTarget = this.gunTurret.checkRayIntersection(targets);
+
+    // レーザーサイトの描画（当たっている時は赤色ビーム）
+    this.gunTurret.drawLaserSight(lockedTarget);
+
+    // HUDのロックオンステータス表示
+    if (lockedTarget) {
+      this.hud.updateLockOn(lockedTarget.def.name);
     } else {
       this.hud.updateLockOn(null);
     }
 
-    // 武器の間隔に応じて自動発射
-    this.attemptAutoFire();
+    // ★ 射撃が行われるのは「ひとつ以上的に直線が当たっている時だけ」！
+    if (lockedTarget) {
+      this.attemptAutoFire();
+    }
 
     // 弾丸の更新（移動・衝突判定）
     this.bulletManager.update(deltaSeconds);
