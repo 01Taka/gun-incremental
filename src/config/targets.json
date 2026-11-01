@@ -3,7 +3,7 @@
     {
       "id": "standard",
       "name": "無法者",
-      "hp": 1,
+      "hp": 3,
       "baseSp": 5,
       "weight": 100,
       "radius": 46,
@@ -15,7 +15,7 @@
     {
       "id": "hard",
       "name": "鉄板の重罪人",
-      "hp": 5,
+      "hp": 7,
       "baseSp": 25,
       "weight": 40,
       "radius": 54,
@@ -27,7 +27,7 @@
     {
       "id": "gold",
       "name": "黄金の賞金首",
-      "hp": 2,
+      "hp": 4,
       "baseSp": 80,
       "weight": 15,
       "radius": 40,
@@ -40,7 +40,7 @@
     {
       "id": "electric",
       "name": "ダイナマイト樽",
-      "hp": 3,
+      "hp": 5,
       "baseSp": 22,
       "weight": 30,
       "radius": 44,
@@ -52,7 +52,7 @@
     {
       "id": "small",
       "name": "早撃ちキッド",
-      "hp": 2,
+      "hp": 4,
       "baseSp": 22,
       "weight": 30,
       "radius": 26,
@@ -64,7 +64,7 @@
     {
       "id": "time",
       "name": "懐中時計",
-      "hp": 3,
+      "hp": 5,
       "baseSp": 12,
       "weight": 15,
       "radius": 42,
