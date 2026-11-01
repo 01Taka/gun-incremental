@@ -6,7 +6,38 @@ import type { TargetDefinition } from "../config/types";
 import { EventBus } from "../EventBus";
 import { formatNumber, formatSeconds } from "../logic/format";
 import { GameState } from "../logic/GameState";
+import { useGameSettings } from "../stores/useGameSettings";
 import { addCrispText } from "../utils/text";
+
+export interface StickState {
+  x: number; // -1.0 〜 1.0 (左〜右)
+  y: number; // -1.0 〜 1.0 (上〜下)
+  active: boolean; // デッドゾーンを超えて操作中か
+  angle: number; // 倒されている角度（ラジアン: -PI 〜 PI）
+  force: number; // 倒しの強さ（0.0 〜 1.0）
+}
+
+interface StickVisuals {
+  container: Phaser.GameObjects.Container;
+  baseBg: Phaser.GameObjects.Graphics;
+  label?: Phaser.GameObjects.Text;
+  knob: Phaser.GameObjects.Container;
+  knobGraphics: Phaser.GameObjects.Graphics;
+  pointerId: number | null;
+  baseX: number;
+  baseY: number;
+  originX: number;
+  originY: number;
+  maxRadius: number;
+  deadZone: number;
+  baseRadius: number;
+  knobRadius: number;
+  baseColor: number;
+  borderColor: number;
+  knobColor: number;
+  labelText: string;
+  state: StickState;
+}
 
 interface ActiveTarget {
   id: string;
@@ -36,11 +67,27 @@ export class RoundScene extends Phaser.Scene {
   private timeRemaining: number = 7.0;
   private isRoundActive: boolean = false;
 
+  // 照準 (レティクル) 位置・速度
+  private reticleX: number = 450;
+  private reticleY: number = 620;
+  private readonly reticleSpeed: number = 850; // px/s
+  private readonly reticleRadius: number = 28;
+
+  // ★ 初期コミットから流用したバーチャルスティック
+  private aimStick!: StickVisuals;
+
+  // キーボード操作対応 (WASD / 矢印キー)
+  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasdKeys!: {
+    W: Phaser.Input.Keyboard.Key;
+    A: Phaser.Input.Keyboard.Key;
+    S: Phaser.Input.Keyboard.Key;
+    D: Phaser.Input.Keyboard.Key;
+  };
+
   // 射撃制御
-  private isPointerDown: boolean = false;
   private lastFireTime: number = 0;
-  private pointerWorldX: number = 450;
-  private pointerWorldY: number = 620;
+  private currentAimTarget: ActiveTarget | null = null;
 
   // 的管理
   private activeTargets: Map<string, ActiveTarget> = new Map();
@@ -53,7 +100,9 @@ export class RoundScene extends Phaser.Scene {
   private roundInfoText!: Phaser.GameObjects.Text;
   private weaponButtonsContainer!: Phaser.GameObjects.Container;
   private autoFireToggleContainer!: Phaser.GameObjects.Container;
-  private reticle!: Phaser.GameObjects.Image;
+  private reticle!: Phaser.GameObjects.Container;
+  private reticleInnerRing!: Phaser.GameObjects.Graphics;
+  private lockOnStatusText!: Phaser.GameObjects.Text;
 
   // エフェクト用パーティクル
   private sparkEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -69,16 +118,24 @@ export class RoundScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
 
+    // マルチタッチポインターの有効化
+    this.input.addPointer(3);
+
     // ラウンド初期化
     this.timeRemaining = this.gameState.getRoundDuration();
     this.isRoundActive = true;
     this.activeTargets.clear();
     this.lastFireTime = 0;
+    this.currentAimTarget = null;
+
+    // 照準を正方形エリアの中央にリセット
+    this.reticleX = this.arenaLeft + this.arenaSize / 2;
+    this.reticleY = this.arenaTop + this.arenaSize / 2;
 
     // 全体背景描画
     this.createBackground(width, height);
 
-    // ★ 正方形の的出現エリア（Target Arena）を描画
+    // 正方形の的出現エリア（Target Arena）を描画
     this.createSquareTargetArena();
 
     // パーティクルエミッター
@@ -97,18 +154,16 @@ export class RoundScene extends Phaser.Scene {
     // 上部HUDの作成
     this.createTopHUD(width);
 
-    // 下部コントロールパネルの作成
+    // 下部コントロールパネル & バーチャルスティック作成
     this.createBottomControls(width, height);
 
-    // 照準 (レティクル)
-    this.reticle = this.add
-      .image(width / 2, this.arenaTop + this.arenaSize / 2, "reticle")
-      .setDepth(100);
+    // レティクル（照準）の作成
+    this.createReticleObject();
 
-    // 入力イベントの設定
+    // 入力イベント（バーチャルスティック & キーボード）
     this.setupInputHandlers();
 
-    // ラウンド開始アナウンス演出
+    // ラウンド開始バナー
     this.showRoundStartBanner();
   }
 
@@ -117,7 +172,6 @@ export class RoundScene extends Phaser.Scene {
     bg.fillGradientStyle(0x070b14, 0x070b14, 0x0f172a, 0x0f172a, 1);
     bg.fillRect(0, 0, width, height);
 
-    // 全体グリッド線
     bg.lineStyle(1, 0x1e293b, 0.3);
     for (let x = 0; x < width; x += 60) {
       bg.moveTo(x, 0);
@@ -131,16 +185,14 @@ export class RoundScene extends Phaser.Scene {
   }
 
   /**
-   * ★ 800×800 の正方形の的出現エリアを描画
+   * 800×800 の正方形の的出現エリアを描画
    */
   private createSquareTargetArena(): void {
     const g = this.add.graphics();
 
-    // 正方形内部のハイテク暗背景
     g.fillStyle(0x0a0f1d, 0.95);
     g.fillRoundedRect(this.arenaLeft, this.arenaTop, this.arenaSize, this.arenaSize, 16);
 
-    // 正方形内部のグリッド（100px刻み）
     g.lineStyle(1, 0x1e293b, 0.6);
     for (let x = this.arenaLeft + 80; x < this.arenaRight; x += 80) {
       g.moveTo(x, this.arenaTop);
@@ -152,7 +204,6 @@ export class RoundScene extends Phaser.Scene {
     }
     g.strokePath();
 
-    // 中央の十字照準ライン
     const centerX = this.arenaLeft + this.arenaSize / 2;
     const centerY = this.arenaTop + this.arenaSize / 2;
     g.lineStyle(1.5, 0x0284c7, 0.35);
@@ -160,44 +211,37 @@ export class RoundScene extends Phaser.Scene {
     g.strokeCircle(centerX, centerY, 240);
     g.strokeCircle(centerX, centerY, 360);
 
-    // 正方形の外枠フレーム
     g.lineStyle(3, 0x0284c7, 0.9);
     g.strokeRoundedRect(this.arenaLeft, this.arenaTop, this.arenaSize, this.arenaSize, 16);
 
-    // 四隅のサイバーターゲットブラケット
     const cornerSize = 40;
     const cornerThick = 4;
     g.lineStyle(cornerThick, 0x38bdf8, 1);
 
-    // 左上
     g.beginPath();
     g.moveTo(this.arenaLeft + cornerSize, this.arenaTop);
     g.lineTo(this.arenaLeft, this.arenaTop);
     g.lineTo(this.arenaLeft, this.arenaTop + cornerSize);
     g.strokePath();
 
-    // 右上
     g.beginPath();
     g.moveTo(this.arenaRight - cornerSize, this.arenaTop);
     g.lineTo(this.arenaRight, this.arenaTop);
     g.lineTo(this.arenaRight, this.arenaTop + cornerSize);
     g.strokePath();
 
-    // 左下
     g.beginPath();
     g.moveTo(this.arenaLeft, this.arenaBottom - cornerSize);
     g.lineTo(this.arenaLeft, this.arenaBottom);
     g.lineTo(this.arenaLeft + cornerSize, this.arenaBottom);
     g.strokePath();
 
-    // 右下
     g.beginPath();
     g.moveTo(this.arenaRight - cornerSize, this.arenaBottom);
     g.lineTo(this.arenaRight, this.arenaBottom);
     g.lineTo(this.arenaRight, this.arenaBottom - cornerSize);
     g.strokePath();
 
-    // 正方形エリアのラベル表示
     addCrispText(this, centerX, this.arenaTop - 18, "TARGET SHOOTING ARENA", {
       fontSize: "14px",
       fontFamily: "monospace",
@@ -214,14 +258,12 @@ export class RoundScene extends Phaser.Scene {
     topBar.lineTo(width, 180);
     topBar.strokePath();
 
-    // ラウンド表示
     this.roundInfoText = addCrispText(this, 50, 30, `ROUND ${this.gameState.round}`, {
       fontSize: "36px",
       fontStyle: "bold",
       color: "#38bdf8",
     });
 
-    // タイマー表示 (中央)
     this.timerText = addCrispText(
       this,
       width / 2,
@@ -235,7 +277,13 @@ export class RoundScene extends Phaser.Scene {
       },
     ).setOrigin(0.5, 0);
 
-    // 所持SP表示 (右上)
+    this.lockOnStatusText = addCrispText(this, width / 2, 40, "AIMING...", {
+      fontSize: "18px",
+      fontStyle: "bold",
+      color: "#64748b",
+      fontFamily: "monospace",
+    }).setOrigin(0.5, 0);
+
     this.spText = addCrispText(
       this,
       width - 50,
@@ -248,7 +296,6 @@ export class RoundScene extends Phaser.Scene {
       },
     ).setOrigin(1, 0);
 
-    // 今回ラウンド獲得SP
     this.roundSpText = addCrispText(
       this,
       width - 50,
@@ -261,33 +308,294 @@ export class RoundScene extends Phaser.Scene {
     ).setOrigin(1, 0);
   }
 
+  /**
+   * 画面下部コントロール領域 & 初期コミット流用バーチャルスティックの構築
+   */
   private createBottomControls(width: number, height: number): void {
     const bottomBar = this.add.graphics();
     bottomBar.fillStyle(0x0f172a, 0.96);
-    bottomBar.fillRect(0, 1050, width, height - 1050);
+    bottomBar.fillRect(0, 1040, width, height - 1040);
     bottomBar.lineStyle(2, 0x1e293b, 1);
-    bottomBar.moveTo(0, 1050);
-    bottomBar.lineTo(width, 1050);
+    bottomBar.moveTo(0, 1040);
+    bottomBar.lineTo(width, 1040);
     bottomBar.strokePath();
 
-    // 武器選択ボタンコンテナ
-    this.weaponButtonsContainer = this.add.container(50, 1080);
+    // 武器選択ボタン (上部に横並び配置)
+    this.weaponButtonsContainer = this.add.container(50, 1065);
     this.refreshWeaponButtons();
 
-    // オート射撃切り替えトグルコンテナ
-    this.autoFireToggleContainer = this.add.container(width / 2, 1260);
+    // オート射撃切り替えトグル
+    this.autoFireToggleContainer = this.add.container(width - 150, 1145);
     this.refreshAutoFireToggle();
 
-    // 操作説明テキスト
-    addCrispText(this, width / 2, 1360, "タップ / クリックで射撃  •  長押しで連射", {
-      fontSize: "19px",
-      color: "#94a3b8",
+    // ★ 初期コミット（ControllerScene）の設計を流用したバーチャルスティックを生成
+    this.aimStick = this.createVirtualStick({
+      originX: width / 2,
+      originY: 1350,
+      baseRadius: 90,
+      knobRadius: 42,
+      maxRadius: 80,
+      deadZone: 12,
+      baseColor: 0x0f172a,
+      borderColor: 0x38bdf8,
+      knobColor: 0x0284c7,
+      label: "AIM",
+    });
+
+    // スティック描画
+    this.drawFullStickGraphics(this.aimStick);
+
+    // 操作ガイド表示
+    addCrispText(this, width / 2, 1210, "🕹️ スティックで照準を移動 ➔ 的に合わせると自動発射！", {
+      fontSize: "20px",
+      fontStyle: "bold",
+      color: "#38bdf8",
     }).setOrigin(0.5);
 
-    addCrispText(this, width / 2, 1400, "5ラウンドごとにSPの請求が発生します", {
-      fontSize: "16px",
+    addCrispText(this, width / 2, 1510, "（PCの場合は WASD / 矢印キー でも照準を操作可能）", {
+      fontSize: "15px",
       color: "#64748b",
     }).setOrigin(0.5);
+  }
+
+  // ==========================================
+  // 初期コミット流用: バーチャルスティック生成と描画
+  // ==========================================
+
+  protected createVirtualStick(options: {
+    originX: number;
+    originY: number;
+    baseRadius: number;
+    knobRadius: number;
+    maxRadius: number;
+    deadZone: number;
+    baseColor: number;
+    borderColor: number;
+    knobColor: number;
+    label: string;
+  }): StickVisuals {
+    const {
+      originX,
+      originY,
+      baseRadius,
+      knobRadius,
+      maxRadius,
+      deadZone,
+      baseColor,
+      borderColor,
+      knobColor,
+      label,
+    } = options;
+
+    const container = this.add.container(originX, originY);
+    const baseBg = this.add.graphics();
+    container.add(baseBg);
+
+    // スティック中央テキストラベル
+    const stickLabel = addCrispText(this, 0, 0, label, {
+      fontSize: "20px",
+      fontFamily: "monospace",
+      fontStyle: "bold",
+      color: "#94a3b8",
+    }).setOrigin(0.5);
+    container.add(stickLabel);
+
+    // ノブ（スティック頭）
+    const knob = this.add.container(0, 0);
+    const knobGraphics = this.add.graphics();
+    knob.add(knobGraphics);
+    container.add(knob);
+
+    return {
+      container,
+      baseBg,
+      label: stickLabel,
+      knob,
+      knobGraphics,
+      pointerId: null,
+      baseX: originX,
+      baseY: originY,
+      originX,
+      originY,
+      maxRadius,
+      deadZone,
+      baseRadius,
+      knobRadius,
+      baseColor,
+      borderColor,
+      knobColor,
+      labelText: label,
+      state: {
+        x: 0,
+        y: 0,
+        active: false,
+        angle: 0,
+        force: 0,
+      },
+    };
+  }
+
+  /**
+   * 初期コミット流用: リッチなスティック描画（装飾線・二重リング等）
+   */
+  protected drawFullStickGraphics(stick: StickVisuals) {
+    if (stick.label) {
+      stick.label.setVisible(true);
+    }
+
+    stick.baseBg.clear();
+    stick.baseBg.fillStyle(stick.baseColor, 0.55);
+    stick.baseBg.fillCircle(0, 0, stick.baseRadius);
+    stick.baseBg.lineStyle(4, stick.borderColor, 0.85);
+    stick.baseBg.strokeCircle(0, 0, stick.baseRadius);
+    stick.baseBg.lineStyle(2, stick.borderColor, 0.35);
+    stick.baseBg.strokeCircle(0, 0, stick.baseRadius * 0.5);
+    stick.baseBg.lineStyle(1.5, stick.borderColor, 0.3);
+    stick.baseBg.lineBetween(-stick.baseRadius * 0.75, 0, stick.baseRadius * 0.75, 0);
+    stick.baseBg.lineBetween(0, -stick.baseRadius * 0.75, 0, stick.baseRadius * 0.75);
+
+    stick.knobGraphics.clear();
+    stick.knobGraphics.fillStyle(stick.knobColor, 0.9);
+    stick.knobGraphics.fillCircle(0, 0, stick.knobRadius);
+    stick.knobGraphics.lineStyle(3.5, 0xffffff, 0.95);
+    stick.knobGraphics.strokeCircle(0, 0, stick.knobRadius);
+    stick.knobGraphics.fillStyle(0xffffff, 0.85);
+    stick.knobGraphics.fillCircle(0, 0, 7);
+  }
+
+  /**
+   * 初期コミット流用: スティックのタッチ開始
+   */
+  protected activateStick(stick: StickVisuals, pointer: Phaser.Input.Pointer) {
+    stick.pointerId = pointer.id;
+
+    const isDynamic = useGameSettings.getState().joystickType === "dynamic";
+
+    if (isDynamic) {
+      this.tweens.killTweensOf(stick.container);
+      stick.baseX = pointer.x;
+      stick.baseY = pointer.y;
+      stick.container.setPosition(pointer.x, pointer.y);
+    } else {
+      stick.baseX = stick.originX;
+      stick.baseY = stick.originY;
+      stick.container.setPosition(stick.originX, stick.originY);
+    }
+
+    stick.container.setAlpha(1.0);
+    this.updateStickPosition(stick, pointer.x, pointer.y);
+  }
+
+  /**
+   * 初期コミット流用: スティックノブの位置と入力ベクトルの更新
+   */
+  protected updateStickPosition(stick: StickVisuals, pointerX: number, pointerY: number) {
+    let dx = pointerX - stick.baseX;
+    let dy = pointerY - stick.baseY;
+    let distance = Math.hypot(dx, dy);
+    let angle = Math.atan2(dy, dx);
+
+    const isDynamic = useGameSettings.getState().joystickType === "dynamic";
+
+    if (isDynamic && distance > stick.maxRadius) {
+      const excess = distance - stick.maxRadius;
+      stick.baseX += Math.cos(angle) * excess;
+      stick.baseY += Math.sin(angle) * excess;
+      stick.container.setPosition(stick.baseX, stick.baseY);
+
+      dx = pointerX - stick.baseX;
+      dy = pointerY - stick.baseY;
+      distance = Math.hypot(dx, dy);
+      angle = Math.atan2(dy, dx);
+    }
+
+    const clampedDist = Math.min(distance, stick.maxRadius);
+    const knobX = Math.cos(angle) * clampedDist;
+    const knobY = Math.sin(angle) * clampedDist;
+
+    stick.knob.setPosition(knobX, knobY);
+
+    if (distance > stick.deadZone) {
+      const force = Math.min(distance / stick.maxRadius, 1.0);
+      stick.state.x = Math.cos(angle) * force;
+      stick.state.y = Math.sin(angle) * force;
+      stick.state.active = true;
+      stick.state.angle = angle;
+      stick.state.force = force;
+    } else {
+      stick.state.x = 0;
+      stick.state.y = 0;
+      stick.state.active = false;
+      stick.state.force = 0;
+    }
+  }
+
+  /**
+   * 初期コミット流用: スティック解放時のリセット処理 (スムーズなスプリング復帰)
+   */
+  protected releaseStick(stick: StickVisuals) {
+    stick.pointerId = null;
+    stick.state.x = 0;
+    stick.state.y = 0;
+    stick.state.active = false;
+    stick.state.force = 0;
+
+    this.tweens.killTweensOf(stick.knob);
+    this.tweens.add({
+      targets: stick.knob,
+      x: 0,
+      y: 0,
+      duration: 100,
+      ease: Phaser.Math.Easing.Sine.Out,
+    });
+
+    const isDynamic = useGameSettings.getState().joystickType === "dynamic";
+    if (isDynamic) {
+      this.tweens.killTweensOf(stick.container);
+      this.tweens.add({
+        targets: stick.container,
+        x: stick.originX,
+        y: stick.originY,
+        alpha: 0.85,
+        duration: 200,
+        ease: Phaser.Math.Easing.Sine.Out,
+        onComplete: () => {
+          stick.baseX = stick.originX;
+          stick.baseY = stick.originY;
+        },
+      });
+    } else {
+      stick.container.setAlpha(0.85);
+    }
+  }
+
+  // ==========================================
+  // 照準 (レティクル) オブジェクトの作成
+  // ==========================================
+
+  private createReticleObject(): void {
+    this.reticle = this.add.container(this.reticleX, this.reticleY).setDepth(100);
+
+    const outerRing = this.add.image(0, 0, "reticle");
+    this.reticleInnerRing = this.add.graphics();
+    this.updateReticleVisual(false);
+
+    this.reticle.add([outerRing, this.reticleInnerRing]);
+  }
+
+  private updateReticleVisual(isLocked: boolean): void {
+    this.reticleInnerRing.clear();
+    if (isLocked) {
+      this.reticleInnerRing.lineStyle(2, 0xef4444, 0.9);
+      this.reticleInnerRing.strokeCircle(0, 0, this.reticleRadius + 4);
+
+      this.reticleInnerRing.lineStyle(3, 0xfacc15, 1);
+      const b = 18;
+      this.reticleInnerRing.strokeRect(-b, -b, b * 2, b * 2);
+    } else {
+      this.reticleInnerRing.lineStyle(1.5, 0x38bdf8, 0.4);
+      this.reticleInnerRing.strokeCircle(0, 0, this.reticleRadius);
+    }
   }
 
   public refreshWeaponButtons(): void {
@@ -295,7 +603,7 @@ export class RoundScene extends Phaser.Scene {
 
     const owned = this.gameState.ownedWeapons;
     const buttonWidth = 250;
-    const buttonHeight = 70;
+    const buttonHeight = 65;
     const gap = 25;
 
     owned.forEach((weaponId, index) => {
@@ -307,11 +615,11 @@ export class RoundScene extends Phaser.Scene {
       const bg = this.add.graphics();
       bg.fillStyle(isEquipped ? 0x0284c7 : 0x1e293b, 1);
       bg.lineStyle(isEquipped ? 3 : 1.5, isEquipped ? 0x38bdf8 : 0x475569, 1);
-      bg.fillRoundedRect(0, 0, buttonWidth, buttonHeight, 12);
-      bg.strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 12);
+      bg.fillRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
+      bg.strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
 
-      const label = addCrispText(this, buttonWidth / 2, 22, def.name, {
-        fontSize: "20px",
+      const label = addCrispText(this, buttonWidth / 2, 20, def.name, {
+        fontSize: "19px",
         fontStyle: isEquipped ? "bold" : "normal",
         color: isEquipped ? "#ffffff" : "#cbd5e1",
       }).setOrigin(0.5);
@@ -319,10 +627,10 @@ export class RoundScene extends Phaser.Scene {
       const subLabel = addCrispText(
         this,
         buttonWidth / 2,
-        48,
-        `威力:${def.damage} | 速度:${def.fireInterval}s`,
+        45,
+        `威力:${def.damage} | 間隔:${def.fireInterval}s`,
         {
-          fontSize: "14px",
+          fontSize: "13px",
           color: isEquipped ? "#bae6fd" : "#94a3b8",
         },
       ).setOrigin(0.5);
@@ -347,26 +655,20 @@ export class RoundScene extends Phaser.Scene {
     if (!this.gameState.canToggleAutoFire()) return;
 
     const isOn = this.gameState.persistentData.settings.autoFire;
-    const btnW = 380;
-    const btnH = 60;
+    const btnW = 220;
+    const btnH = 46;
 
     const bg = this.add.graphics();
     bg.fillStyle(isOn ? 0x16a34a : 0x334155, 1);
     bg.lineStyle(2, isOn ? 0x4ade80 : 0x64748b, 1);
-    bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
-    bg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+    bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 8);
+    bg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 8);
 
-    const label = addCrispText(
-      this,
-      0,
-      0,
-      `オート射撃: ${isOn ? "【 ON (自動連射中) 】" : "【 OFF 】"}`,
-      {
-        fontSize: "20px",
-        fontStyle: "bold",
-        color: "#ffffff",
-      },
-    ).setOrigin(0.5);
+    const label = addCrispText(this, 0, 0, `オートエイム: ${isOn ? "ON" : "OFF"}`, {
+      fontSize: "16px",
+      fontStyle: "bold",
+      color: "#ffffff",
+    }).setOrigin(0.5);
 
     this.autoFireToggleContainer.add([bg, label]);
     this.autoFireToggleContainer.setSize(btnW, btnH);
@@ -380,36 +682,42 @@ export class RoundScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * バーチャルスティック＆キーボード入力ハンドラの設定
+   */
   private setupInputHandlers(): void {
-    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
-      this.pointerWorldX = pointer.x;
-      this.pointerWorldY = pointer.y;
-      this.reticle.setPosition(pointer.x, pointer.y);
-    });
+    if (this.input.keyboard) {
+      this.cursors = this.input.keyboard.createCursorKeys();
+      this.wasdKeys = {
+        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+        A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+        D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+      };
+    }
 
+    // タッチ / マウスポインター処理
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      // 正方形の射撃エリア内のみ射撃実行
-      if (
-        pointer.x < this.arenaLeft ||
-        pointer.x > this.arenaRight ||
-        pointer.y < this.arenaTop ||
-        pointer.y > this.arenaBottom
-      ) {
-        return;
+      // 画面下部のスティック操作領域（y > 1150）でスティック開始
+      if (pointer.y > 1180 && this.aimStick.pointerId === null) {
+        this.activateStick(this.aimStick, pointer);
       }
-
-      this.isPointerDown = true;
-      this.pointerWorldX = pointer.x;
-      this.pointerWorldY = pointer.y;
-      this.reticle.setPosition(pointer.x, pointer.y);
-
-      // 初弾の発射
-      this.attemptFire();
     });
 
-    this.input.on("pointerup", () => {
-      this.isPointerDown = false;
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      if (pointer.id === this.aimStick.pointerId) {
+        this.updateStickPosition(this.aimStick, pointer.x, pointer.y);
+      }
     });
+
+    const releaseHandler = (pointer: Phaser.Input.Pointer) => {
+      if (pointer.id === this.aimStick.pointerId) {
+        this.releaseStick(this.aimStick);
+      }
+    };
+
+    this.input.on("pointerup", releaseHandler);
+    this.input.on("pointerupoutside", releaseHandler);
   }
 
   private showRoundStartBanner(): void {
@@ -451,7 +759,6 @@ export class RoundScene extends Phaser.Scene {
 
     const def = this.gameState.rollTarget();
 
-    // ★ 的のスポーン座標は「正方形エリア」の内側に完全に制限する
     const margin = def.radius + 20;
     const minX = this.arenaLeft + margin;
     const maxX = this.arenaRight - margin;
@@ -484,7 +791,6 @@ export class RoundScene extends Phaser.Scene {
     const sprite = this.add.image(0, 0, `target_${def.id}`);
     container.add(sprite);
 
-    // HPゲージ
     let hpBar: Phaser.GameObjects.Graphics | undefined;
     if (def.hp > 1) {
       hpBar = this.add.graphics();
@@ -492,7 +798,6 @@ export class RoundScene extends Phaser.Scene {
       container.add(hpBar);
     }
 
-    // 出現アニメーション
     container.setScale(0);
     this.tweens.add({
       targets: container,
@@ -538,47 +843,159 @@ export class RoundScene extends Phaser.Scene {
     bar.fillRect(startX, startY, barWidth * ratio, barHeight);
   }
 
-  // --- 射撃ロジック ---
-  private attemptFire(): void {
+  // --- 毎フレーム更新（スティック照準移動 ＆ エイム自動射撃） ---
+  update(_time: number, delta: number): void {
     if (!this.isRoundActive) return;
 
-    const now = this.time.now;
-    const intervalMs = this.gameState.getFireInterval() * 1000;
+    const deltaSeconds = delta / 1000;
+    this.timeRemaining -= deltaSeconds;
 
-    if (now - this.lastFireTime < intervalMs) {
-      return;
+    // タイマー更新
+    this.timerText.setText(`TIME: ${formatSeconds(this.timeRemaining)}`);
+    if (this.timeRemaining <= 2.5) {
+      this.timerText.setColor("#ef4444");
+    } else {
+      this.timerText.setColor("#22c55e");
     }
-    this.lastFireTime = now;
 
-    this.performShot(this.pointerWorldX, this.pointerWorldY);
-  }
+    // 1. スティック移動入力の取得 (バーチャルスティック + キーボード)
+    let moveX = this.aimStick.state.x;
+    let moveY = this.aimStick.state.y;
 
-  private performShot(targetX: number, targetY: number): void {
-    this.audio.playSynthSE("laser", 0.6);
-    this.cameras.main.shake(60, 0.003);
+    if (this.cursors && this.wasdKeys) {
+      if (this.cursors.left.isDown || this.wasdKeys.A.isDown) moveX -= 1;
+      if (this.cursors.right.isDown || this.wasdKeys.D.isDown) moveX += 1;
+      if (this.cursors.up.isDown || this.wasdKeys.W.isDown) moveY -= 1;
+      if (this.cursors.down.isDown || this.wasdKeys.S.isDown) moveY += 1;
+    }
 
-    const hole = this.add.image(targetX, targetY, "bullet_hole").setDepth(5);
-    this.tweens.add({
-      targets: hole,
-      alpha: 0,
-      duration: 1500,
-      onComplete: () => hole.destroy(),
-    });
+    // オートエイム設定
+    const isAutoAimOn =
+      this.gameState.canToggleAutoFire() && this.gameState.persistentData.settings.autoFire;
 
-    let hitTarget: ActiveTarget | null = null;
-    let minDistance = Infinity;
-
-    for (const t of this.activeTargets.values()) {
-      const dist = Phaser.Math.Distance.Between(targetX, targetY, t.x, t.y);
-      if (dist <= t.def.radius && dist < minDistance) {
-        minDistance = dist;
-        hitTarget = t;
+    if (isAutoAimOn && this.activeTargets.size > 0 && moveX === 0 && moveY === 0) {
+      let closestTarget: ActiveTarget | null = null;
+      let closestDist = Infinity;
+      for (const t of this.activeTargets.values()) {
+        const d = Phaser.Math.Distance.Between(this.reticleX, this.reticleY, t.x, t.y);
+        if (d < closestDist) {
+          closestDist = d;
+          closestTarget = t;
+        }
+      }
+      if (closestTarget) {
+        const angle = Phaser.Math.Angle.Between(
+          this.reticleX,
+          this.reticleY,
+          closestTarget.x,
+          closestTarget.y,
+        );
+        moveX = Math.cos(angle) * 0.95;
+        moveY = Math.sin(angle) * 0.95;
       }
     }
 
-    if (hitTarget) {
-      this.handleTargetHit(hitTarget, targetX, targetY);
+    // 入力強度の正規化
+    const inputMagnitude = Math.hypot(moveX, moveY);
+    if (inputMagnitude > 1.0) {
+      moveX /= inputMagnitude;
+      moveY /= inputMagnitude;
     }
+
+    // 2. 照準（レティクル）の移動
+    if (inputMagnitude > 0.05) {
+      this.reticleX += moveX * this.reticleSpeed * deltaSeconds;
+      this.reticleY += moveY * this.reticleSpeed * deltaSeconds;
+
+      this.reticleX = Phaser.Math.Clamp(this.reticleX, this.arenaLeft + 15, this.arenaRight - 15);
+      this.reticleY = Phaser.Math.Clamp(this.reticleY, this.arenaTop + 15, this.arenaBottom - 15);
+    }
+
+    this.reticle.setPosition(this.reticleX, this.reticleY);
+
+    // 3. ★ エイム判定（照準が的と重なっているか判定）
+    let lockedTarget: ActiveTarget | null = null;
+    let minDistance = Infinity;
+
+    for (const t of this.activeTargets.values()) {
+      const dist = Phaser.Math.Distance.Between(this.reticleX, this.reticleY, t.x, t.y);
+      if (dist <= t.def.radius + this.reticleRadius && dist < minDistance) {
+        minDistance = dist;
+        lockedTarget = t;
+      }
+    }
+
+    this.currentAimTarget = lockedTarget;
+
+    // ★ エイムが的に合っている間は最速間隔で自動発射！
+    if (lockedTarget) {
+      this.updateReticleVisual(true);
+      this.lockOnStatusText.setText(`🎯 LOCK ON: ${lockedTarget.def.name}`);
+      this.lockOnStatusText.setColor("#ef4444");
+
+      this.attemptAutoFire(lockedTarget);
+    } else {
+      this.updateReticleVisual(false);
+      this.lockOnStatusText.setText("AIMING...");
+      this.lockOnStatusText.setColor("#64748b");
+    }
+
+    // 4. 金の的などの寿命カウントダウン
+    for (const t of Array.from(this.activeTargets.values())) {
+      if (typeof t.remainingLife === "number") {
+        t.remainingLife -= deltaSeconds;
+        if (t.remainingLife <= 0.8) {
+          t.container.setAlpha(Math.floor(this.time.now / 80) % 2 === 0 ? 0.3 : 1.0);
+        }
+        if (t.remainingLife <= 0) {
+          this.activeTargets.delete(t.id);
+          this.tweens.add({
+            targets: t.container,
+            scale: 0,
+            alpha: 0,
+            duration: 200,
+            onComplete: () => {
+              t.container.destroy();
+              if (this.isRoundActive && this.activeTargets.size < this.gameState.getMaxTargets()) {
+                this.spawnOneTarget();
+              }
+            },
+          });
+        }
+      }
+    }
+
+    if (this.timeRemaining <= 0) {
+      this.onRoundTimeUp();
+    }
+  }
+
+  /**
+   * エイムが合っている間の自動連射ロジック
+   */
+  private attemptAutoFire(target: ActiveTarget): void {
+    const now = this.time.now;
+    const intervalMs = this.gameState.getFireInterval() * 1000;
+
+    if (now - this.lastFireTime >= intervalMs) {
+      this.lastFireTime = now;
+      this.performAutoShot(target);
+    }
+  }
+
+  private performAutoShot(target: ActiveTarget): void {
+    this.audio.playSynthSE("laser", 0.6);
+    this.cameras.main.shake(50, 0.0025);
+
+    const hole = this.add.image(this.reticleX, this.reticleY, "bullet_hole").setDepth(5);
+    this.tweens.add({
+      targets: hole,
+      alpha: 0,
+      duration: 1200,
+      onComplete: () => hole.destroy(),
+    });
+
+    this.handleTargetHit(target, this.reticleX, this.reticleY);
   }
 
   private handleTargetHit(target: ActiveTarget, hitX: number, hitY: number): void {
@@ -610,6 +1027,10 @@ export class RoundScene extends Phaser.Scene {
 
   private destroyTarget(target: ActiveTarget, killingDamage: number): void {
     this.activeTargets.delete(target.id);
+    if (this.currentAimTarget === target) {
+      this.currentAimTarget = null;
+    }
+
     this.audio.playSynthSE("explosion", 0.8);
 
     const spEarned = this.gameState.onTargetDestroyed(target.def.id);
@@ -758,65 +1179,6 @@ export class RoundScene extends Phaser.Scene {
       ease: "Back.easeOut",
       onComplete: () => popup.destroy(),
     });
-  }
-
-  update(_time: number, delta: number): void {
-    if (!this.isRoundActive) return;
-
-    const deltaSeconds = delta / 1000;
-    this.timeRemaining -= deltaSeconds;
-
-    this.timerText.setText(`TIME: ${formatSeconds(this.timeRemaining)}`);
-    if (this.timeRemaining <= 2.5) {
-      this.timerText.setColor("#ef4444");
-    } else {
-      this.timerText.setColor("#22c55e");
-    }
-
-    for (const t of Array.from(this.activeTargets.values())) {
-      if (typeof t.remainingLife === "number") {
-        t.remainingLife -= deltaSeconds;
-        if (t.remainingLife <= 0.8) {
-          t.container.setAlpha(Math.floor(this.time.now / 80) % 2 === 0 ? 0.3 : 1.0);
-        }
-        if (t.remainingLife <= 0) {
-          this.activeTargets.delete(t.id);
-          this.tweens.add({
-            targets: t.container,
-            scale: 0,
-            alpha: 0,
-            duration: 200,
-            onComplete: () => {
-              t.container.destroy();
-              if (this.isRoundActive && this.activeTargets.size < this.gameState.getMaxTargets()) {
-                this.spawnOneTarget();
-              }
-            },
-          });
-        }
-      }
-    }
-
-    const isAutoOn =
-      this.gameState.canToggleAutoFire() && this.gameState.persistentData.settings.autoFire;
-
-    if (isAutoOn) {
-      if (this.activeTargets.size > 0) {
-        const firstTarget = this.activeTargets.values().next().value;
-        if (firstTarget) {
-          this.pointerWorldX = firstTarget.x;
-          this.pointerWorldY = firstTarget.y;
-          this.reticle.setPosition(firstTarget.x, firstTarget.y);
-          this.attemptFire();
-        }
-      }
-    } else if (this.isPointerDown) {
-      this.attemptFire();
-    }
-
-    if (this.timeRemaining <= 0) {
-      this.onRoundTimeUp();
-    }
   }
 
   private onRoundTimeUp(): void {
