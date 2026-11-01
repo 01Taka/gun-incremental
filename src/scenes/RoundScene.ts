@@ -4,12 +4,12 @@ import { AudioManager } from "../audio/AudioManager";
 import { EventBus } from "../EventBus";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
-import { ArcSlider } from "./round/ArcSlider";
 import { BulletManager } from "./round/BulletManager";
 import { GunTurret } from "./round/GunTurret";
 import { RoundHUD } from "./round/RoundHUD";
 import { TargetManager } from "./round/TargetManager";
 import type { ArenaBounds } from "./round/types";
+import { VerticalSlider } from "./round/VerticalSlider";
 
 export class RoundScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -25,7 +25,7 @@ export class RoundScene extends Phaser.Scene {
   };
 
   // サブシステム
-  private arcSlider!: ArcSlider;
+  private verticalSlider!: VerticalSlider;
   private gunTurret!: GunTurret;
   private bulletManager!: BulletManager;
   private targetManager!: TargetManager;
@@ -75,15 +75,12 @@ export class RoundScene extends Phaser.Scene {
     // 3. HUD（上部情報・下部コントロール）の作成
     this.hud = new RoundHUD(this, this.arenaBounds);
 
-    // 4. 中央付近に1/4円弧メーター（ArcSlider）を配置（同じ形状のまま水平中心を画面中央へ配置）
-    this.arcSlider = new ArcSlider(this, {
-      centerX: width / 2 + 190, // 640 (スライダーの水平中心が画面中央 x:450 に一致)
-      centerY: height, // 1600
-      radius: 350,
-      trackWidth: 26,
-      startAngleDeg: 185, // 左下側（左を狙う）
-      endAngleDeg: 265, // 右上側（右を狙う）
-      initialRatio: 0.5, // 中央（真上を狙う）
+    // 4. 縦型直線スライダー（VerticalSlider）を配置（タッチ位置が中央基準になる動的スライダー）
+    this.verticalSlider = new VerticalSlider(this, {
+      defaultCenterX: width / 2,
+      defaultCenterY: 1370,
+      halfLength: 150,
+      trackWidth: 20,
     });
 
     // 5. 銃（中央下部に配置されるタレット）の作成
@@ -201,15 +198,15 @@ export class RoundScene extends Phaser.Scene {
 
   private setupInputHandlers(): void {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      this.arcSlider.handlePointerDown(pointer);
+      this.verticalSlider.handlePointerDown(pointer);
     });
 
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
-      this.arcSlider.handlePointerMove(pointer);
+      this.verticalSlider.handlePointerMove(pointer);
     });
 
     const releaseHandler = (pointer: Phaser.Input.Pointer) => {
-      this.arcSlider.handlePointerUp(pointer);
+      this.verticalSlider.handlePointerUp(pointer);
     };
 
     this.input.on("pointerup", releaseHandler);
@@ -226,12 +223,12 @@ export class RoundScene extends Phaser.Scene {
     this.hud.updateTimer(this.timeRemaining);
 
     // キーボードによるスライダー更新
-    this.arcSlider.update(deltaSeconds);
+    this.verticalSlider.update(deltaSeconds);
 
     // オートエイム設定時（操作中でなく、かつオートエイムが有効な場合）
     const isAutoAimOn =
       this.gameState.canToggleAutoFire() && this.gameState.persistentData.settings.autoFire;
-    if (isAutoAimOn && !this.arcSlider.isDragging) {
+    if (isAutoAimOn && !this.verticalSlider.isDragging) {
       const closestTarget = this.targetManager.getClosestTarget(this.gunTurret.x, this.gunTurret.y);
       if (closestTarget) {
         const targetAngle = Phaser.Math.Angle.Between(
@@ -242,18 +239,18 @@ export class RoundScene extends Phaser.Scene {
         );
         const targetRatio = this.gunTurret.getRatioForAngle(targetAngle);
         // 滑らかに目標の比率へ追従
-        const diff = targetRatio - this.arcSlider.ratio;
+        const diff = targetRatio - this.verticalSlider.ratio;
         const step = deltaSeconds * 1.5;
         if (Math.abs(diff) < step) {
-          this.arcSlider.setRatio(targetRatio);
+          this.verticalSlider.setRatio(targetRatio);
         } else {
-          this.arcSlider.setRatio(this.arcSlider.ratio + Math.sign(diff) * step);
+          this.verticalSlider.setRatio(this.verticalSlider.ratio + Math.sign(diff) * step);
         }
       }
     }
 
-    // ★ メーターの位置で銃の角度を直接設定
-    this.gunTurret.setAimRatio(this.arcSlider.ratio);
+    // ★ スライダーの位置（比率）で銃の角度を直接設定
+    this.gunTurret.setAimRatio(this.verticalSlider.ratio);
 
     // ★ 射線（直線）と的の交差判定
     const targets = this.targetManager.getTargets();
