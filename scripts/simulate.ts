@@ -1,3 +1,4 @@
+import { TARGET_UNLOCK_SEQUENCE } from "../src/config/gameData";
 import { HeadlessSimulation } from "../src/logic/Simulation";
 
 console.log("==================================================");
@@ -8,7 +9,7 @@ const results = HeadlessSimulation.runCampaign(7);
 
 results.forEach((res, i) => {
   console.log(
-    `[Run ${i + 1}] 到達Round: ${res.roundsSurvived} | 請求支払数: ${res.invoicesPaid} | 支払総額: ${res.totalInvoicesPaidAmount} SP | 解放的: ${res.targetsUnlockedCount}/6 | 獲得永続pt: +${res.permanentPointsGained} | クリア: ${res.cleared ? "YES" : "NO"}`,
+    `[Run ${i + 1}] 到達Round: ${res.roundsSurvived} | 請求支払数: ${res.invoicesPaid} | 支払総額: ${res.totalInvoicesPaidAmount} SP | 解放的: ${res.targetsUnlockedCount}/${TARGET_UNLOCK_SEQUENCE.length} | 獲得永続pt: +${res.permanentPointsGained} | クリア: ${res.cleared ? "YES" : "NO"}`,
   );
 });
 

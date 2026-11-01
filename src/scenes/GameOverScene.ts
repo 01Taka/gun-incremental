@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
+import { TARGET_UNLOCK_SEQUENCE } from "../config/gameData";
 import { EventBus } from "../EventBus";
 import { formatNumber } from "../logic/format";
 import { GameState } from "../logic/GameState";
@@ -83,7 +84,10 @@ export class GameOverScene extends Phaser.Scene {
       { label: "累計獲得SP", val: `${formatNumber(stats.totalSpEarned)} SP` },
       { label: "支払総額", val: `${formatNumber(stats.totalInvoicesPaidAmount)} SP` },
       { label: "破壊した的の総数", val: `${stats.targetsDestroyedTotal} 個` },
-      { label: "解放した的の数", val: `${this.gameState.unlockedTargets.length} / 6 種` },
+      {
+        label: "解放した的の数",
+        val: `${this.gameState.unlockedTargets.length} / ${TARGET_UNLOCK_SEQUENCE.length} 種`,
+      },
     ];
 
     items.forEach((item, index) => {

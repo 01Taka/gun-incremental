@@ -156,9 +156,9 @@ export class GunTurret {
 
   /**
    * 銃口から前方に伸びる照準レーザーサイトを高視認性で描画
-   * （エイムが合っている時の過剰なハイライト演出は廃止）
+   * リロード中は色をオレンジ/アンバー系（点滅や減光）に切り替えて装填中であることを直感的に伝える
    */
-  public drawLaserSight(): void {
+  public drawLaserSight(isReloading: boolean = false): void {
     this.laserSight.clear();
     const muzzle = this.getMuzzlePosition();
 
@@ -166,32 +166,63 @@ export class GunTurret {
     const endX = muzzle.x + Math.cos(this.angle) * rayLength;
     const endY = muzzle.y + Math.sin(this.angle) * rayLength;
 
-    // 1. 外側のネオングロー (太さ 6px, シアン)
-    this.laserSight.lineStyle(6, 0x38bdf8, 0.35);
-    this.laserSight.beginPath();
-    this.laserSight.moveTo(muzzle.x, muzzle.y);
-    this.laserSight.lineTo(endX, endY);
-    this.laserSight.strokePath();
+    if (isReloading) {
+      // リロード中: オレンジ/アンバー系（注意・装填中）
+      // 1. 外側のネオングロー (太さ 5px, オレンジ)
+      this.laserSight.lineStyle(5, 0xf59e0b, 0.25);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(endX, endY);
+      this.laserSight.strokePath();
 
-    // 2. メインのエネルギービーム (太さ 3px, ディープブルー)
-    this.laserSight.lineStyle(3, 0x0284c7, 0.85);
-    this.laserSight.beginPath();
-    this.laserSight.moveTo(muzzle.x, muzzle.y);
-    this.laserSight.lineTo(endX, endY);
-    this.laserSight.strokePath();
+      // 2. メインのエネルギービーム (太さ 2.5px, 濃いアンバー)
+      this.laserSight.lineStyle(2.5, 0xd97706, 0.7);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(endX, endY);
+      this.laserSight.strokePath();
 
-    // 3. 中心のシャープな高輝度コアライン (太さ 1.5px, 白)
-    this.laserSight.lineStyle(1.5, 0xffffff, 0.95);
-    this.laserSight.beginPath();
-    this.laserSight.moveTo(muzzle.x, muzzle.y);
-    this.laserSight.lineTo(endX, endY);
-    this.laserSight.strokePath();
+      // 3. 中心のコアライン (太さ 1px, 薄いイエロー/白)
+      this.laserSight.lineStyle(1, 0xfef3c7, 0.85);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(endX, endY);
+      this.laserSight.strokePath();
 
-    // 銃口のマズルグロー
-    this.laserSight.fillStyle(0x38bdf8, 0.5);
-    this.laserSight.fillCircle(muzzle.x, muzzle.y, 8);
-    this.laserSight.fillStyle(0xffffff, 0.9);
-    this.laserSight.fillCircle(muzzle.x, muzzle.y, 4);
+      // 銃口のマズルグロー (アンバー)
+      this.laserSight.fillStyle(0xf59e0b, 0.4);
+      this.laserSight.fillCircle(muzzle.x, muzzle.y, 7);
+      this.laserSight.fillStyle(0xfef3c7, 0.8);
+      this.laserSight.fillCircle(muzzle.x, muzzle.y, 3);
+    } else {
+      // 通常時: シアン/スカイブルー系（射撃可能）
+      // 1. 外側のネオングロー (太さ 6px, シアン)
+      this.laserSight.lineStyle(6, 0x38bdf8, 0.35);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(endX, endY);
+      this.laserSight.strokePath();
+
+      // 2. メインのエネルギービーム (太さ 3px, ディープブルー)
+      this.laserSight.lineStyle(3, 0x0284c7, 0.85);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(endX, endY);
+      this.laserSight.strokePath();
+
+      // 3. 中心のシャープな高輝度コアライン (太さ 1.5px, 白)
+      this.laserSight.lineStyle(1.5, 0xffffff, 0.95);
+      this.laserSight.beginPath();
+      this.laserSight.moveTo(muzzle.x, muzzle.y);
+      this.laserSight.lineTo(endX, endY);
+      this.laserSight.strokePath();
+
+      // 銃口のマズルグロー
+      this.laserSight.fillStyle(0x38bdf8, 0.5);
+      this.laserSight.fillCircle(muzzle.x, muzzle.y, 8);
+      this.laserSight.fillStyle(0xffffff, 0.9);
+      this.laserSight.fillCircle(muzzle.x, muzzle.y, 4);
+    }
   }
 
   /**

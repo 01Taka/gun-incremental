@@ -1,0 +1,77 @@
+{
+  "targets": [
+    {
+      "id": "standard",
+      "name": "標準",
+      "hp": 1,
+      "baseSp": 5,
+      "weight": 100,
+      "radius": 46,
+      "color": "#38bdf8",
+      "border": "#0284c7",
+      "unlockPoints": 0,
+      "description": "HP低・SP低。もっとも標準的な的。"
+    },
+    {
+      "id": "hard",
+      "name": "硬い的",
+      "hp": 5,
+      "baseSp": 25,
+      "weight": 40,
+      "radius": 54,
+      "color": "#94a3b8",
+      "border": "#475569",
+      "unlockPoints": 200,
+      "description": "HP高・SP中。装甲が硬く複数回攻撃が必要。"
+    },
+    {
+      "id": "gold",
+      "name": "金の的",
+      "hp": 2,
+      "baseSp": 80,
+      "weight": 15,
+      "radius": 40,
+      "color": "#facc15",
+      "border": "#ca8a04",
+      "lifetime": 1.5,
+      "unlockPoints": 900,
+      "description": "SP高・消滅が早い。短時間で消えるため最優先で狙おう。"
+    },
+    {
+      "id": "electric",
+      "name": "電撃の的",
+      "hp": 3,
+      "baseSp": 22,
+      "weight": 30,
+      "radius": 44,
+      "color": "#a855f7",
+      "border": "#7e22ce",
+      "unlockPoints": 2800,
+      "description": "破壊時に放電し、画面内の他の的に連鎖ダメージを与える。"
+    },
+    {
+      "id": "small",
+      "name": "小さい的",
+      "hp": 2,
+      "baseSp": 22,
+      "weight": 30,
+      "radius": 26,
+      "color": "#ec4899",
+      "border": "#be185d",
+      "unlockPoints": 8500,
+      "description": "当てにくいがSP高め。素早く正確に狙う的。"
+    },
+    {
+      "id": "time",
+      "name": "時間の的",
+      "hp": 3,
+      "baseSp": 12,
+      "weight": 15,
+      "radius": 42,
+      "color": "#22c55e",
+      "border": "#15803d",
+      "unlockPoints": 25000,
+      "description": "破壊するとラウンド残り時間が延長される貴重な的。"
+    }
+  ]
+}

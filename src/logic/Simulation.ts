@@ -1,3 +1,4 @@
+import { SKILL_IDS, SKILLS } from "../config/skillTree";
 import type { PassiveId, SkillNodeId } from "../config/types";
 import { GameState } from "./GameState";
 
@@ -17,10 +18,25 @@ export class HeadlessSimulation {
     gameState.startNewRun(seed);
 
     while (true) {
-      // 1. ラウンドのシミュレート
+      // 1. ラウンドのシミュレート (マガジン装弾数と空時自動リロードを考慮)
       const duration = gameState.getRoundDuration();
       const fireInterval = gameState.getFireInterval();
-      const shotsTotal = Math.floor(duration / fireInterval);
+      const magazineSize = gameState.getMagazineSize();
+      const reloadTime = gameState.getReloadTime();
+
+      let shotsTotal = 0;
+      let elapsed = fireInterval;
+      let ammo = magazineSize;
+      while (elapsed <= duration) {
+        shotsTotal++;
+        ammo--;
+        if (ammo <= 0) {
+          elapsed += reloadTime;
+          ammo = magazineSize;
+        } else {
+          elapsed += fireInterval;
+        }
+      }
 
       // 人間操作を模した命中率 (85%〜95%)
       const accuracy = 0.9;
@@ -112,17 +128,24 @@ export class HeadlessSimulation {
     }
 
     // スキル購入 (優先度: 基礎ダメージ > SP倍率 > 時間延長 > 連射間隔 > 的ポイント)
-    const priorityList: SkillNodeId[] = [
+    // JSON に存在しないIDは除外し、優先リストにない新規ノードは末尾に追加する
+    const preferred: SkillNodeId[] = [
       "damage_base",
       "sp_multiplier",
       "round_time",
       "fire_rate",
-      "max_targets",
+      "magazine_size",
+      "reload_speed",
       "crit_rate",
       "target_point_mult",
+      "max_targets",
       "shop_discount",
       "time_target_bonus",
       "chain_damage",
+    ];
+    const priorityList: SkillNodeId[] = [
+      ...preferred.filter((id) => id in SKILLS),
+      ...SKILL_IDS.filter((id) => !preferred.includes(id)),
     ];
 
     let upgraded = true;

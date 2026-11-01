@@ -2,17 +2,19 @@ import {
   INVOICE_CONFIG,
   PERMANENT_UPGRADES,
   ROUND_CONFIG,
-  SKILLS,
+  TARGET_IDS,
   TARGET_UNLOCK_SEQUENCE,
   TARGETS,
   WEAPONS,
 } from "../config/gameData";
+import { createEmptySkillLevels, SKILL_IDS, SKILLS } from "../config/skillTree";
 import type {
   PassiveId,
   PermanentUpgradeId,
   PersistentSaveData,
   RunStats,
   SkillNodeId,
+  SkillStatId,
   TargetDefinition,
   TargetId,
   WeaponDefinition,
@@ -20,6 +22,14 @@ import type {
 } from "../config/types";
 import { globalRng, type SeededRandom } from "./SeededRandom";
 import { StorageService } from "./storage";
+
+function createInitialTargetsDestroyed(): Record<TargetId, number> {
+  const result = {} as Record<TargetId, number>;
+  for (const id of TARGET_IDS) {
+    result[id] = 0;
+  }
+  return result;
+}
 
 export class GameState {
   private static instance: GameState | null = null;
@@ -34,18 +44,7 @@ export class GameState {
   public targetPoints: number = 0;
   public equippedWeapon: WeaponId = "handgun";
   public ownedWeapons: WeaponId[] = ["handgun"];
-  public skillLevels: Record<SkillNodeId, number> = {
-    damage_base: 0,
-    round_time: 0,
-    fire_rate: 0,
-    sp_multiplier: 0,
-    max_targets: 0,
-    crit_rate: 0,
-    target_point_mult: 0,
-    shop_discount: 0,
-    time_target_bonus: 0,
-    chain_damage: 0,
-  };
+  public skillLevels: Record<SkillNodeId, number> = createEmptySkillLevels();
   public passives: Record<PassiveId, number> = {
     sp_bonus: 0,
     dmg_bonus: 0,
@@ -55,7 +54,9 @@ export class GameState {
     tp_bonus: 0,
   };
   public invoiceCount: number = 0; // これまでクリアした請求回数
-  public unlockedTargets: TargetId[] = ["standard"];
+  public unlockedTargets: TargetId[] = [
+    TARGET_UNLOCK_SEQUENCE[0]?.targetId ?? ("standard" as TargetId),
+  ];
 
   // 直近ラウンド結果
   public lastRoundSpEarned: number = 0;
@@ -69,14 +70,7 @@ export class GameState {
     totalInvoicesPaidAmount: 0,
     invoicesPassed: 0,
     targetsDestroyedTotal: 0,
-    targetsDestroyedByType: {
-      standard: 0,
-      hard: 0,
-      gold: 0,
-      electric: 0,
-      small: 0,
-      time: 0,
-    },
+    targetsDestroyedByType: createInitialTargetsDestroyed(),
     weaponsPurchased: ["handgun"],
     cleared: false,
   };
@@ -118,18 +112,7 @@ export class GameState {
     this.equippedWeapon = "handgun";
     this.ownedWeapons = ["handgun"];
 
-    this.skillLevels = {
-      damage_base: 0,
-      round_time: 0,
-      fire_rate: 0,
-      sp_multiplier: 0,
-      max_targets: 0,
-      crit_rate: 0,
-      target_point_mult: 0,
-      shop_discount: 0,
-      time_target_bonus: 0,
-      chain_damage: 0,
-    };
+    this.skillLevels = createEmptySkillLevels();
 
     this.passives = {
       sp_bonus: 0,
@@ -141,7 +124,7 @@ export class GameState {
     };
 
     this.invoiceCount = 0;
-    this.unlockedTargets = ["standard"];
+    this.unlockedTargets = [TARGET_UNLOCK_SEQUENCE[0]?.targetId ?? ("standard" as TargetId)];
     this.lastRoundSpEarned = 0;
     this.lastRoundTargetsDestroyed = 0;
     this.lastRoundNewlyUnlockedTargets = [];
@@ -152,14 +135,7 @@ export class GameState {
       totalInvoicesPaidAmount: 0,
       invoicesPassed: 0,
       targetsDestroyedTotal: 0,
-      targetsDestroyedByType: {
-        standard: 0,
-        hard: 0,
-        gold: 0,
-        electric: 0,
-        small: 0,
-        time: 0,
-      },
+      targetsDestroyedByType: createInitialTargetsDestroyed(),
       weaponsPurchased: ["handgun"],
       cleared: false,
     };
@@ -226,6 +202,21 @@ export class GameState {
   }
 
   // --- 実効パラメータ計算 ---
+  /**
+   * 指定ステータスに対するスキル効果の合計値。
+   * skillTree.json で同じ stat を持つ全ノードの (レベル × perLevel) を合算する。
+   */
+  public getSkillStat(stat: SkillStatId): number {
+    let total = 0;
+    for (const id of SKILL_IDS) {
+      const def = SKILLS[id];
+      if (def.effect.stat === stat) {
+        total += (this.skillLevels[id] ?? 0) * def.effect.perLevel;
+      }
+    }
+    return total;
+  }
+
   public getWeapon(id: WeaponId = this.equippedWeapon): WeaponDefinition {
     return WEAPONS[id];
   }
@@ -236,7 +227,7 @@ export class GameState {
    */
   public calculateDamage(isCrit: boolean): number {
     const weapon = this.getWeapon();
-    const skillBonus = this.skillLevels.damage_base * SKILLS.damage_base.effectPerLevel;
+    const skillBonus = this.getSkillStat("damage");
     const permBonus = this.getPermanentBaseDamage();
     const passiveMult = 1 + this.passives.dmg_bonus * 0.15;
 
@@ -248,19 +239,32 @@ export class GameState {
   }
 
   public rollCrit(): boolean {
-    const critRate = this.skillLevels.crit_rate * SKILLS.crit_rate.effectPerLevel;
+    const critRate = this.getSkillStat("critRate");
     return this.rng.next() < critRate;
   }
 
-  public getFireInterval(): number {
-    const weapon = this.getWeapon();
-    const reduction = this.skillLevels.fire_rate * SKILLS.fire_rate.effectPerLevel;
+  public getFireInterval(id: WeaponId = this.equippedWeapon): number {
+    const weapon = this.getWeapon(id);
+    const reduction = Math.min(0.8, this.getSkillStat("fireRateReduction"));
     return Math.max(0.08, weapon.fireInterval * (1 - reduction));
+  }
+
+  public getMagazineSize(id: WeaponId = this.equippedWeapon): number {
+    const weapon = this.getWeapon(id);
+    const flatBonus = this.getSkillStat("magazineCapacity");
+    const multBonus = this.getSkillStat("magazineMultiplier");
+    return Math.max(1, Math.round((weapon.magazineSize + flatBonus) * (1 + multBonus)));
+  }
+
+  public getReloadTime(id: WeaponId = this.equippedWeapon): number {
+    const weapon = this.getWeapon(id);
+    const reduction = Math.min(0.8, this.getSkillStat("reloadTimeReduction"));
+    return Math.max(0.2, weapon.reloadTime * (1 - reduction));
   }
 
   public getRoundDuration(): number {
     const base = ROUND_CONFIG.baseDuration;
-    const skillBonus = this.skillLevels.round_time * SKILLS.round_time.effectPerLevel;
+    const skillBonus = this.getSkillStat("roundTime");
     const permBonus = this.getPermanentRoundTime();
     const passiveBonus = this.passives.time_bonus * 1.0;
     return base + skillBonus + permBonus + passiveBonus;
@@ -268,27 +272,26 @@ export class GameState {
 
   public getMaxTargets(): number {
     const base = ROUND_CONFIG.baseTargetCount;
-    const skillBonus = this.skillLevels.max_targets * SKILLS.max_targets.effectPerLevel;
+    const skillBonus = this.getSkillStat("maxTargets");
     const passiveBonus = this.passives.target_bonus * 1;
     return Math.min(ROUND_CONFIG.maxTargetCountCap, base + skillBonus + passiveBonus);
   }
 
   public getSpMultiplier(): number {
-    const skillMult = 1 + this.skillLevels.sp_multiplier * SKILLS.sp_multiplier.effectPerLevel;
+    const skillMult = 1 + this.getSkillStat("spMultiplier");
     const passiveMult = 1 + this.passives.sp_bonus * 0.1;
     return skillMult * passiveMult;
   }
 
   public getTargetPointMultiplier(): number {
-    const skillMult =
-      1 + this.skillLevels.target_point_mult * SKILLS.target_point_mult.effectPerLevel;
+    const skillMult = 1 + this.getSkillStat("targetPointMultiplier");
     const passiveMult = 1 + this.passives.tp_bonus * 0.1;
     const permMult = 1 + this.getPermanentTargetPointBonus();
     return skillMult * passiveMult * permMult;
   }
 
   public getShopDiscount(): number {
-    const skillDisc = this.skillLevels.shop_discount * SKILLS.shop_discount.effectPerLevel;
+    const skillDisc = this.getSkillStat("shopDiscount");
     const passiveDisc = this.passives.shop_discount * 0.1;
     return Math.min(0.5, skillDisc + passiveDisc); // 最大50%引
   }
@@ -301,34 +304,40 @@ export class GameState {
 
   public getTimeTargetBonus(): number {
     const base = ROUND_CONFIG.timeTargetBaseExtension;
-    const bonus = this.skillLevels.time_target_bonus * SKILLS.time_target_bonus.effectPerLevel;
+    const bonus = this.getSkillStat("timeTargetBonus");
     return base + bonus;
   }
 
   public getChainDamage(sourceDamage: number): number {
-    const mult = 1 + this.skillLevels.chain_damage * SKILLS.chain_damage.effectPerLevel;
+    const mult = 1 + this.getSkillStat("chainDamage");
     return Math.max(1, Math.round(sourceDamage * mult));
   }
 
   // --- スキル購入 ---
+  public getSkillLevel(id: SkillNodeId): number {
+    return this.skillLevels[id] ?? 0;
+  }
+
+  /** 親ノードの必要レベル (unlockLevel) を満たしているか。ルートは常に true */
+  public isSkillRequirementMet(id: SkillNodeId): boolean {
+    const req = SKILLS[id]?.requirement;
+    if (!req) return true;
+    return this.getSkillLevel(req.nodeId) >= req.level;
+  }
+
   public canUnlockSkill(id: SkillNodeId): boolean {
-    const def = SKILLS[id];
-    if (this.skillLevels[id] >= def.maxLevel) return false;
-    if (def.requirement) {
-      const currentReqLevel = this.skillLevels[def.requirement.nodeId] || 0;
-      if (currentReqLevel < def.requirement.level) {
-        return false;
-      }
-    }
-    const cost = def.costs[this.skillLevels[id]];
+    const cost = this.getSkillCost(id);
+    if (cost === null) return false;
+    if (!this.isSkillRequirementMet(id)) return false;
     return this.sp >= cost;
   }
 
   public getSkillCost(id: SkillNodeId): number | null {
     const def = SKILLS[id];
-    const curLevel = this.skillLevels[id];
+    if (!def) return null;
+    const curLevel = this.getSkillLevel(id);
     if (curLevel >= def.maxLevel) return null;
-    return def.costs[curLevel];
+    return def.costs[curLevel] ?? null;
   }
 
   public buySkill(id: SkillNodeId): boolean {
@@ -337,7 +346,7 @@ export class GameState {
     if (cost === null || this.sp < cost) return false;
 
     this.sp -= cost;
-    this.skillLevels[id] += 1;
+    this.skillLevels[id] = this.getSkillLevel(id) + 1;
     return true;
   }
 
@@ -423,8 +432,8 @@ export class GameState {
       }
     }
 
-    // 全6種解放でクリア
-    if (this.unlockedTargets.length >= 6) {
+    // 全種解放でクリア
+    if (this.unlockedTargets.length >= TARGET_UNLOCK_SEQUENCE.length) {
       this.isCleared = true;
       this.runStats.cleared = true;
       this.persistentData.stats.cleared = true;
@@ -462,8 +471,12 @@ export class GameState {
     );
 
     if (nextStepIndex === -1) {
+      const lastTargetId =
+        TARGET_UNLOCK_SEQUENCE.length > 0
+          ? TARGET_UNLOCK_SEQUENCE[TARGET_UNLOCK_SEQUENCE.length - 1].targetId
+          : ("standard" as TargetId);
       return {
-        currentTarget: TARGETS.time,
+        currentTarget: TARGETS[lastTargetId] ?? null,
         nextTarget: null,
         currentStepPoints: 1,
         requiredStepPoints: 1,

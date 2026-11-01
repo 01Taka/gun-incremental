@@ -8,6 +8,8 @@ export interface WeaponDefinition {
   description: string;
   fireInterval: number; // 秒単位 (例: 0.3)
   damage: number;
+  magazineSize: number; // 1マガジンの装弾数
+  reloadTime: number; // リロード所要時間 (秒)
   price: number; // SP
   unlockRound: number; // ショップに並ぶラウンド
 }
@@ -24,36 +26,61 @@ export interface TargetDefinition {
   color: number; // 0xRRGGBB
   border: number;
   lifetime?: number; // 秒 (無指定ならラウンド中持続)
+  unlockPoints?: number; // 解放に必要な累計的ポイント
   description: string;
 }
 
-export type SkillNodeId =
-  | "damage_base"
-  | "round_time"
-  | "fire_rate"
-  | "sp_multiplier"
-  | "max_targets"
-  | "crit_rate"
-  | "target_point_mult"
-  | "shop_discount"
-  | "time_target_bonus"
-  | "chain_damage";
+// スキルノードIDは skillTree.json で自由に定義できるため string
+export type SkillNodeId = string;
+
+/**
+ * 魚の骨型スキルツリーのノード種別
+ * - large  (大): 背骨。ルートから真下へ一直線に伸びる
+ * - medium (中): 肋骨。大ノードの左右へ水平に伸びる
+ * - small  (小): 中ノードから真下へ伸びる (背骨と並行)
+ */
+export type SkillNodeSize = "large" | "medium" | "small";
+
+export type SkillTreeSide = "left" | "right";
+
+/**
+ * スキル効果が加算されるステータス。
+ * 同じ stat を持つノードが複数あれば効果は合算される。
+ */
+export type SkillStatId =
+  | "damage"
+  | "critRate"
+  | "fireRateReduction"
+  | "magazineCapacity"
+  | "magazineMultiplier"
+  | "reloadTimeReduction"
+  | "roundTime"
+  | "maxTargets"
+  | "spMultiplier"
+  | "targetPointMultiplier"
+  | "shopDiscount"
+  | "timeTargetBonus"
+  | "chainDamage";
 
 export interface SkillDefinition {
   id: SkillNodeId;
+  size: SkillNodeSize;
+  parent?: SkillNodeId; // ルートのみ未指定
+  side?: SkillTreeSide; // 大→中 の接続時のみ指定
   name: string;
   description: string;
   icon: string;
   category: "combat" | "economy";
-  treePos: { x: number; y: number };
   maxLevel: number;
   costs: number[]; // 各レベルのコスト
   requirement?: {
-    nodeId: SkillNodeId;
-    level: number;
+    nodeId: SkillNodeId; // = parent
+    level: number; // = unlockLevel
   };
-  effectPerLevel: number;
-  effectUnit: string;
+  effect: {
+    stat: SkillStatId;
+    perLevel: number;
+  };
 }
 
 export type PassiveId =

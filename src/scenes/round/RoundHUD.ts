@@ -18,6 +18,9 @@ export class RoundHUD {
   private roundSpText!: Phaser.GameObjects.Text;
   private roundInfoText!: Phaser.GameObjects.Text;
   private lockOnStatusText!: Phaser.GameObjects.Text;
+  private ammoText!: Phaser.GameObjects.Text;
+  private reloadBarGraphics!: Phaser.GameObjects.Graphics;
+  private countdownText?: Phaser.GameObjects.Text;
 
   private weaponButtonsContainer!: Phaser.GameObjects.Container;
   private autoFireToggleContainer!: Phaser.GameObjects.Container;
@@ -71,6 +74,16 @@ export class RoundHUD {
         color: "#22c55e",
       },
     ).setOrigin(0.5, 0);
+
+    // 残弾数 & リロード表示
+    this.ammoText = addCrispText(this.scene, width / 2, hudTop + 125, "AMMO: -- / --", {
+      fontSize: "19px",
+      fontStyle: "bold",
+      fontFamily: "monospace",
+      color: "#f8fafc",
+    }).setOrigin(0.5, 0);
+
+    this.reloadBarGraphics = this.scene.add.graphics();
 
     this.lockOnStatusText = addCrispText(this.scene, width / 2, hudTop + 25, "AIMING...", {
       fontSize: "18px",
@@ -151,6 +164,11 @@ export class RoundHUD {
     }
   }
 
+  public setReadyStatus(): void {
+    this.lockOnStatusText.setText("READY...");
+    this.lockOnStatusText.setColor("#facc15");
+  }
+
   public updateLockOn(targetName: string | null): void {
     if (targetName) {
       this.lockOnStatusText.setText("SHOOTING");
@@ -158,6 +176,62 @@ export class RoundHUD {
     } else {
       this.lockOnStatusText.setText("AIMING");
       this.lockOnStatusText.setColor("#64748b");
+    }
+  }
+
+  public updateAmmo(
+    currentAmmo: number,
+    maxAmmo: number,
+    isReloading: boolean,
+    reloadProgress: number,
+  ): void {
+    const hudTop = this.bounds.bottom + 15;
+    const { width } = this.scene.scale;
+    const barWidth = 140;
+    const barHeight = 6;
+    const barX = width / 2 - barWidth / 2;
+    const barY = hudTop + 150;
+
+    this.reloadBarGraphics.clear();
+
+    if (isReloading) {
+      this.ammoText.setText(`RELOADING... ${Math.floor(reloadProgress * 100)}%`);
+      this.ammoText.setColor("#f59e0b");
+
+      // リロード進捗バー描画
+      this.reloadBarGraphics.fillStyle(0x334155, 0.8);
+      this.reloadBarGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 3);
+      this.reloadBarGraphics.fillStyle(0xf59e0b, 1);
+      this.reloadBarGraphics.fillRoundedRect(
+        barX,
+        barY,
+        barWidth * Math.min(1, Math.max(0, reloadProgress)),
+        barHeight,
+        3,
+      );
+    } else {
+      this.ammoText.setText(`AMMO: ${currentAmmo} / ${maxAmmo}`);
+      if (currentAmmo <= 2) {
+        this.ammoText.setColor("#ef4444");
+      } else if (currentAmmo <= maxAmmo * 0.4) {
+        this.ammoText.setColor("#eab308");
+      } else {
+        this.ammoText.setColor("#38bdf8");
+      }
+
+      // 残弾比率バー描画
+      const ratio = maxAmmo > 0 ? currentAmmo / maxAmmo : 0;
+      this.reloadBarGraphics.fillStyle(0x1e293b, 0.8);
+      this.reloadBarGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 3);
+      const color = ratio <= 0.25 ? 0xef4444 : ratio <= 0.5 ? 0xeab308 : 0x0284c7;
+      this.reloadBarGraphics.fillStyle(color, 1);
+      this.reloadBarGraphics.fillRoundedRect(
+        barX,
+        barY,
+        barWidth * Math.min(1, Math.max(0, ratio)),
+        barHeight,
+        3,
+      );
     }
   }
 
@@ -192,13 +266,14 @@ export class RoundHUD {
         color: isEquipped ? "#ffffff" : "#cbd5e1",
       }).setOrigin(0.5);
 
+      const maxMag = this.gameState.getMagazineSize(weaponId);
       const subLabel = addCrispText(
         this.scene,
         buttonWidth / 2,
         45,
-        `威力:${def.damage} | 間隔:${def.fireInterval}s`,
+        `威力:${def.damage} | 間隔:${def.fireInterval}s | 装弾:${maxMag}`,
         {
-          fontSize: "13px",
+          fontSize: "12px",
           color: isEquipped ? "#bae6fd" : "#94a3b8",
         },
       ).setOrigin(0.5);
@@ -252,7 +327,45 @@ export class RoundHUD {
     });
   }
 
+  public showCountdownNumber(count: number): void {
+    this.clearCountdownText();
+
+    const centerX = this.bounds.left + this.bounds.size / 2;
+    const centerY = this.bounds.top + this.bounds.size / 2;
+
+    const textObj = addCrispText(this.scene, centerX, centerY, String(count), {
+      fontSize: "96px",
+      fontStyle: "bold",
+      color: "#f8fafc",
+      stroke: "#0284c7",
+      strokeThickness: 6,
+    })
+      .setOrigin(0.5)
+      .setDepth(200)
+      .setScale(1.45)
+      .setAlpha(0.95);
+
+    this.countdownText = textObj;
+
+    this.scene.tweens.add({
+      targets: textObj,
+      scale: 1.0,
+      duration: 260,
+      ease: "Cubic.easeOut",
+    });
+  }
+
+  private clearCountdownText(): void {
+    if (this.countdownText) {
+      this.scene.tweens.killTweensOf(this.countdownText);
+      this.countdownText.destroy();
+      this.countdownText = undefined;
+    }
+  }
+
   public showStartBanner(): void {
+    this.clearCountdownText();
+
     const centerX = this.bounds.left + this.bounds.size / 2;
     const centerY = this.bounds.top + this.bounds.size / 2;
 
@@ -264,13 +377,14 @@ export class RoundHUD {
       strokeThickness: 5,
     })
       .setOrigin(0.5)
-      .setDepth(200);
+      .setDepth(200)
+      .setScale(0.9);
 
     this.scene.tweens.add({
       targets: banner,
       scale: 1.4,
       alpha: 0,
-      duration: 700,
+      duration: 600,
       ease: "Power2",
       onComplete: () => {
         banner.destroy();

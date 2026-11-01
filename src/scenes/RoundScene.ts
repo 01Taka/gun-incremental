@@ -11,7 +11,12 @@ import { TargetManager } from "./round/TargetManager";
 import type { ArenaBounds } from "./round/types";
 import { VerticalSlider } from "./round/VerticalSlider";
 
+type RoundPhase = "countdown" | "playing" | "ended";
+
 export class RoundScene extends Phaser.Scene {
+  // ラウンド開始前の3カウント合計時間（秒）
+  private static readonly COUNTDOWN_DURATION = 1.0;
+
   private gameState!: GameState;
   private audio!: AudioManager;
 
@@ -33,8 +38,17 @@ export class RoundScene extends Phaser.Scene {
 
   // ラウンド進行状態
   private timeRemaining: number = 7.0;
-  private isRoundActive: boolean = false;
-  private lastFireTime: number = 0;
+  private phase: RoundPhase = "countdown";
+  private countdownRemaining: number = RoundScene.COUNTDOWN_DURATION;
+  private lastDisplayedCount: number = 0;
+  private lastFireTime: number = -Infinity;
+
+  // マガジン & リロード管理
+  private currentAmmo: number = 0;
+  private isReloading: boolean = false;
+  private reloadTimeRemaining: number = 0;
+  private totalReloadDuration: number = 1.0;
+  private reloadStage: number = 0; // 0: 待機, 1: マガジン排出済み, 2: マガジン挿入済み
 
   // エフェクト用パーティクル
   private sparkEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -53,10 +67,19 @@ export class RoundScene extends Phaser.Scene {
     // マルチタッチポインターの有効化
     this.input.addPointer(3);
 
-    // ラウンド状態の初期化
+    // ラウンド状態の初期化（まずは約1秒の3カウントダウンから開始）
     this.timeRemaining = this.gameState.getRoundDuration();
-    this.isRoundActive = true;
-    this.lastFireTime = 0;
+    this.phase = "countdown";
+    this.countdownRemaining = RoundScene.COUNTDOWN_DURATION;
+    this.lastDisplayedCount = 3;
+    this.lastFireTime = -Infinity;
+
+    // マガジン装填
+    this.currentAmmo = this.gameState.getMagazineSize();
+    this.isReloading = false;
+    this.reloadTimeRemaining = 0;
+    this.totalReloadDuration = this.gameState.getReloadTime();
+    this.reloadStage = 0;
 
     // 1. 全体背景と正方形アリーナの描画
     this.createBackground(width, height);
@@ -112,8 +135,14 @@ export class RoundScene extends Phaser.Scene {
     // 8. 入力イベント設定
     this.setupInputHandlers();
 
-    // 9. ラウンド開始バナー
-    this.hud.showStartBanner();
+    // 9. 初期照準の描画 & ラウンド開始前の3カウント開始
+    this.gunTurret.setAimRatio(this.verticalSlider.ratio);
+    this.gunTurret.drawLaserSight();
+    this.hud.setReadyStatus();
+    this.hud.updateAmmo(this.currentAmmo, this.gameState.getMagazineSize(), false, 0);
+    this.hud.refreshWeaponButtons(() => this.onWeaponEquipped());
+    this.hud.showCountdownNumber(3);
+    this.audio.playSE("countdown", { volume: 0.7 });
   }
 
   private createBackground(width: number, height: number): void {
@@ -214,15 +243,11 @@ export class RoundScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (!this.isRoundActive) return;
+    if (this.phase === "ended") return;
 
     const deltaSeconds = delta / 1000;
-    this.timeRemaining -= deltaSeconds;
 
-    // タイマーHUDの更新
-    this.hud.updateTimer(this.timeRemaining);
-
-    // キーボードによるスライダー更新
+    // キーボードによるスライダー更新（カウントダウン中も事前エイム可能）
     this.verticalSlider.update(deltaSeconds);
 
     // オートエイム設定時（操作中でなく、かつオートエイムが有効な場合）
@@ -249,25 +274,71 @@ export class RoundScene extends Phaser.Scene {
       }
     }
 
-    // ★ スライダーの位置（比率）で銃の角度を直接設定
+    // ★ スライダーの位置（比率）で銃の角度を直接設定 & レーザーサイト描画
     this.gunTurret.setAimRatio(this.verticalSlider.ratio);
+    this.gunTurret.drawLaserSight(this.isReloading);
+
+    // カウントダウン中の処理（タイマー減少・射撃・的の寿命減少は行わない）
+    if (this.phase === "countdown") {
+      this.countdownRemaining -= deltaSeconds;
+      if (this.countdownRemaining > 0) {
+        const count = Math.ceil((this.countdownRemaining / RoundScene.COUNTDOWN_DURATION) * 3);
+        if (count < this.lastDisplayedCount && count >= 1) {
+          this.lastDisplayedCount = count;
+          this.hud.showCountdownNumber(count);
+          this.audio.playSE("countdown", { volume: 0.7 });
+        }
+        return;
+      }
+
+      this.startRound();
+      const initialTarget = this.gunTurret.checkRayIntersection(this.targetManager.getTargets());
+      this.hud.updateLockOn(initialTarget ? initialTarget.def.name : null);
+      if (initialTarget) {
+        this.attemptAutoFire();
+      }
+      return;
+    }
+
+    // リロード処理の更新
+    if (this.isReloading) {
+      this.reloadTimeRemaining -= deltaSeconds;
+      const progress = 1 - Math.max(0, this.reloadTimeRemaining / this.totalReloadDuration);
+      this.hud.updateAmmo(0, this.gameState.getMagazineSize(), true, progress);
+
+      // 実銃のようなリロード演出：中間（約48%進行）で新マガジンの挿入音を再生
+      if (this.reloadStage === 1 && progress >= 0.48) {
+        this.reloadStage = 2;
+        this.audio.playSynthSE("reload_insert", 0.65);
+      }
+
+      if (this.reloadTimeRemaining <= 0) {
+        this.finishReload();
+      }
+    } else {
+      this.hud.updateAmmo(this.currentAmmo, this.gameState.getMagazineSize(), false, 0);
+    }
+
+    this.timeRemaining -= deltaSeconds;
+
+    // タイマーHUDの更新
+    this.hud.updateTimer(this.timeRemaining);
 
     // ★ 射線（直線）と的の交差判定
     const targets = this.targetManager.getTargets();
     const lockedTarget = this.gunTurret.checkRayIntersection(targets);
 
-    // 射線（レーザーサイト）を高視認性で描画
-    this.gunTurret.drawLaserSight();
-
     // HUDのロックオンステータス表示
-    if (lockedTarget) {
+    if (this.isReloading) {
+      this.hud.updateLockOn(null);
+    } else if (lockedTarget) {
       this.hud.updateLockOn(lockedTarget.def.name);
     } else {
       this.hud.updateLockOn(null);
     }
 
     // ★ 射撃が行われるのは「ひとつ以上的に直線が当たっている時だけ」！
-    if (lockedTarget) {
+    if (lockedTarget && !this.isReloading) {
       this.attemptAutoFire();
     }
 
@@ -282,7 +353,50 @@ export class RoundScene extends Phaser.Scene {
     }
   }
 
+  private startRound(): void {
+    this.phase = "playing";
+    this.lastFireTime = -Infinity;
+    this.audio.playSE("start", { volume: 0.85 });
+    this.hud.showStartBanner();
+  }
+
+  private onWeaponEquipped(): void {
+    // 武器を切り替えたら装填数を再設定
+    const maxAmmo = this.gameState.getMagazineSize();
+    this.currentAmmo = maxAmmo;
+    this.isReloading = false;
+    this.reloadTimeRemaining = 0;
+    this.reloadStage = 0;
+    this.hud.updateAmmo(this.currentAmmo, maxAmmo, false, 0);
+  }
+
+  private startReload(): void {
+    if (this.isReloading) return;
+    this.isReloading = true;
+    this.totalReloadDuration = this.gameState.getReloadTime();
+    this.reloadTimeRemaining = this.totalReloadDuration;
+    this.reloadStage = 1;
+    this.audio.playSynthSE("reload", 0.65);
+    this.hud.updateAmmo(0, this.gameState.getMagazineSize(), true, 0);
+  }
+
+  private finishReload(): void {
+    this.isReloading = false;
+    this.currentAmmo = this.gameState.getMagazineSize();
+    this.reloadTimeRemaining = 0;
+    this.reloadStage = 0;
+    this.audio.playSynthSE("reload_complete", 0.7);
+    this.hud.updateAmmo(this.currentAmmo, this.currentAmmo, false, 0);
+  }
+
   private attemptAutoFire(): void {
+    if (this.isReloading) return;
+
+    if (this.currentAmmo <= 0) {
+      this.startReload();
+      return;
+    }
+
     const now = this.time.now;
     const intervalMs = this.gameState.getFireInterval() * 1000;
 
@@ -293,16 +407,30 @@ export class RoundScene extends Phaser.Scene {
   }
 
   private fireBullet(): void {
-    this.audio.playSynthSE("laser", 0.55);
+    if (this.currentAmmo <= 0) {
+      this.startReload();
+      return;
+    }
+
+    this.currentAmmo--;
+    this.hud.updateAmmo(this.currentAmmo, this.gameState.getMagazineSize(), false, 0);
+
+    // 火薬を使ったカジュアルな射撃音
+    this.audio.playSynthSE("shoot", 0.65);
     this.cameras.main.shake(40, 0.0018);
 
     const muzzle = this.gunTurret.getMuzzlePosition();
     this.bulletManager.spawnBullet(muzzle.x, muzzle.y, this.gunTurret.angle);
     this.gunTurret.playRecoilAnimation();
+
+    // 撃ち尽くした場合は即座に自動リロードを開始
+    if (this.currentAmmo <= 0) {
+      this.startReload();
+    }
   }
 
   private onRoundTimeUp(): void {
-    this.isRoundActive = false;
+    this.phase = "ended";
     this.timeRemaining = 0;
     this.targetManager.setRoundActive(false);
     this.hud.updateTimer(0);
