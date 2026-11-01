@@ -15,13 +15,13 @@ export class RoundScene extends Phaser.Scene {
   private gameState!: GameState;
   private audio!: AudioManager;
 
-  // 正方形の的出現エリア定義 (幅800 × 高さ800)
+  // 正方形の的出現エリア定義 (幅800 × 高さ800, 画面最上部に配置)
   public readonly arenaBounds: ArenaBounds = {
     left: 50,
-    top: 220,
+    top: 40,
     size: 800,
     right: 850,
-    bottom: 1020,
+    bottom: 840,
   };
 
   // サブシステム

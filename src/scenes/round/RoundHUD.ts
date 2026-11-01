@@ -34,24 +34,35 @@ export class RoundHUD {
   }
 
   private createTopHUD(width: number): void {
+    const hudTop = this.bounds.bottom + 15; // 855 (アリーナ直下)
+    const hudHeight = 165;
+
     const topBar = this.scene.add.graphics();
     topBar.fillStyle(0x0f172a, 0.96);
-    topBar.fillRect(0, 0, width, 180);
+    topBar.fillRect(0, hudTop, width, hudHeight);
     topBar.lineStyle(2, 0x1e293b, 1);
-    topBar.moveTo(0, 180);
-    topBar.lineTo(width, 180);
+    topBar.moveTo(0, hudTop);
+    topBar.lineTo(width, hudTop);
+    topBar.moveTo(0, hudTop + hudHeight);
+    topBar.lineTo(width, hudTop + hudHeight);
     topBar.strokePath();
 
-    this.roundInfoText = addCrispText(this.scene, 50, 30, `ROUND ${this.gameState.round}`, {
-      fontSize: "36px",
-      fontStyle: "bold",
-      color: "#38bdf8",
-    });
+    this.roundInfoText = addCrispText(
+      this.scene,
+      50,
+      hudTop + 22,
+      `ROUND ${this.gameState.round}`,
+      {
+        fontSize: "36px",
+        fontStyle: "bold",
+        color: "#38bdf8",
+      },
+    );
 
     this.timerText = addCrispText(
       this.scene,
       width / 2,
-      95,
+      hudTop + 75,
       `TIME: ${formatSeconds(this.gameState.getRoundDuration())}`,
       {
         fontSize: "44px",
@@ -61,7 +72,7 @@ export class RoundHUD {
       },
     ).setOrigin(0.5, 0);
 
-    this.lockOnStatusText = addCrispText(this.scene, width / 2, 40, "AIMING...", {
+    this.lockOnStatusText = addCrispText(this.scene, width / 2, hudTop + 25, "AIMING...", {
       fontSize: "18px",
       fontStyle: "bold",
       color: "#64748b",
@@ -71,7 +82,7 @@ export class RoundHUD {
     this.spText = addCrispText(
       this.scene,
       width - 50,
-      25,
+      hudTop + 18,
       `所持: ${formatNumber(this.gameState.sp)} SP`,
       {
         fontSize: "24px",
@@ -83,7 +94,7 @@ export class RoundHUD {
     this.roundSpText = addCrispText(
       this.scene,
       width - 50,
-      60,
+      hudTop + 52,
       `獲得: +${formatNumber(this.gameState.lastRoundSpEarned)} SP`,
       {
         fontSize: "20px",
