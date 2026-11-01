@@ -228,38 +228,115 @@ export class ResultScene extends Phaser.Scene {
   }
 
   private showUnlockPopup(width: number, height: number, names: string): void {
-    const banner = this.add.container(width / 2, height / 2).setDepth(150);
+    // 1. 背景の Blur フィルタ（Phaser 4 のカメラフィルタ機能）
+    let blurFilter: Phaser.Filters.Blur | null = null;
+    let modalCamera: Phaser.Cameras.Scene2D.Camera | null = null;
+
+    const modalRoot = this.add.container(0, 0).setDepth(200);
+
+    try {
+      if (this.cameras.main.filters?.internal?.addBlur) {
+        blurFilter = this.cameras.main.filters.internal.addBlur(0, 2, 2, 1);
+        modalCamera = this.cameras.add(0, 0, width, height);
+        this.cameras.main.ignore(modalRoot);
+        const bgChildren = this.children.list.filter((obj) => obj !== modalRoot);
+        modalCamera.ignore(bgChildren);
+      }
+    } catch {
+      // フィルタ非対応環境フォールバック
+    }
+
+    const closeModal = () => {
+      this.audio.playSynthSE("spur", 0.6);
+      if (blurFilter) {
+        try {
+          this.cameras.main.filters.internal.remove(blurFilter);
+        } catch {
+          // ignore
+        }
+      }
+      if (modalCamera) {
+        this.cameras.remove(modalCamera);
+      }
+      modalRoot.destroy();
+    };
+
+    // 2. 全画面オーバーレイ（背後クリック遮断 ＆ 暗転演出）
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x0a0503, 0.78);
+    overlay.fillRect(0, 0, width, height);
+    overlay.setInteractive(
+      new Phaser.Geom.Rectangle(0, 0, width, height),
+      Phaser.Geom.Rectangle.Contains,
+    );
+    overlay.on("pointerdown", closeModal);
+    modalRoot.add(overlay);
+
+    // 3. 高さを上げた指名手配書モーダルカード本体 (width: 740, height: 460)
+    const cardW = 740;
+    const cardH = 460;
+
+    const cardContainer = this.add.container(width / 2, height / 2);
+    modalRoot.add(cardContainer);
+
     const bg = this.add.graphics();
-    drawParchmentCard(bg, -330, -115, 660, 230, {
+    drawParchmentCard(bg, -cardW / 2, -cardH / 2, cardW, cardH, {
       borderColor: 0x7f1d1d,
       pinned: true,
     });
+    cardContainer.add(bg);
 
-    const t1 = addCrispText(this, 0, -52, VOCAB.resultScreen.unlockPopupBanner, {
-      fontSize: "30px",
+    // ヘッダータイトル
+    const t1 = addCrispText(this, 0, -cardH / 2 + 65, VOCAB.resultScreen.unlockPopupBanner, {
+      fontSize: "36px",
       fontFamily: "display",
       fontStyle: "bold",
       color: "#7f1d1d",
     }).setOrigin(0.5);
+    cardContainer.add(t1);
 
-    const t2 = addCrispText(this, 0, 10, VOCAB.resultScreen.unlockPopupBody(names), {
-      fontSize: "23px",
+    // 装飾ライン
+    const lineG = this.add.graphics();
+    lineG.lineStyle(1.8, 0xa16207, 0.6);
+    lineG.lineBetween(-cardW / 2 + 40, -cardH / 2 + 105, cardW / 2 - 40, -cardH / 2 + 105);
+    cardContainer.add(lineG);
+
+    // 🎯 アイコンバッジプレート
+    const badgeG = this.add.graphics();
+    badgeG.fillStyle(0xecd8be, 0.9);
+    badgeG.fillCircle(0, -32, 42);
+    badgeG.lineStyle(2, 0xb45309, 1);
+    badgeG.strokeCircle(0, -32, 42);
+    cardContainer.add(badgeG);
+
+    const iconText = addCrispText(this, 0, -32, "🎯", {
+      fontSize: "42px",
+    }).setOrigin(0.5);
+    cardContainer.add(iconText);
+
+    // 解放メッセージ本文
+    const t2 = addCrispText(this, 0, 52, VOCAB.resultScreen.unlockPopupBody(names), {
+      fontSize: "25px",
       fontStyle: "bold",
       color: "#2b1206",
+      align: "center",
+      lineSpacing: 10,
+      wordWrap: { width: cardW - 80, useAdvancedWrap: true },
     }).setOrigin(0.5);
+    cardContainer.add(t2);
 
-    const t3 = addCrispText(this, 0, 64, VOCAB.resultScreen.unlockPopupClose, {
-      fontSize: "18px",
-      color: "#5c2d10",
-    }).setOrigin(0.5);
-
-    banner.add([bg, t1, t2, t3]);
-    banner.setSize(660, 230);
-    banner.setInteractive({ useHandCursor: true });
-    banner.on("pointerdown", () => {
-      this.audio.playSynthSE("spur", 0.6);
-      banner.destroy();
-    });
+    // 閉じるボタン（押しやすい西部劇ボタンスタイル）
+    const closeBtn = createWesternButton(
+      this,
+      0,
+      cardH / 2 - 68,
+      `★  ${VOCAB.resultScreen.unlockPopupClose}`,
+      "brass",
+      closeModal,
+      480,
+      68,
+    );
+    cardContainer.add(closeBtn);
 
     this.audio.playSynthSE("laser", 0.8);
   }
