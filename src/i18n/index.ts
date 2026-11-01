@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 
 import { type Locale, type Translations, translations } from "./translations";
 
@@ -8,6 +8,30 @@ interface I18nState {
   setLocale: (locale: Locale) => void;
   toggleLocale: () => void;
 }
+
+const memoryStorageMap = new Map<string, string>();
+const safeStateStorage: StateStorage = {
+  getItem: (name: string) => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      return window.localStorage.getItem(name);
+    }
+    return memoryStorageMap.get(name) ?? null;
+  },
+  setItem: (name: string, value: string) => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(name, value);
+      return;
+    }
+    memoryStorageMap.set(name, value);
+  },
+  removeItem: (name: string) => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.removeItem(name);
+      return;
+    }
+    memoryStorageMap.delete(name);
+  },
+};
 
 export const useI18n = create<I18nState>()(
   persist(
@@ -21,6 +45,7 @@ export const useI18n = create<I18nState>()(
     }),
     {
       name: "game-language-storage",
+      storage: createJSONStorage(() => safeStateStorage),
     },
   ),
 );

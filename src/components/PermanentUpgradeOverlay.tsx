@@ -41,15 +41,8 @@ const UPGRADE_ICONS: Record<PermanentUpgradeId, LucideIcon> = {
   invoice_reduction: Percent,
 };
 
-function formatEffectLabel(eff: number, unit: string): string {
-  if (unit === "$") {
-    return `+$${eff}`;
-  }
-  return `+${eff}${unit}`;
-}
-
 /**
- * 酒場の鍛錬（永続強化 / SALOON）画面の西部劇風 React オーバーレイ
+ * 酒場（永続強化 / SALOON）画面の西部劇風 React オーバーレイ
  */
 export function PermanentUpgradeOverlay({
   onStartRun,
@@ -98,7 +91,7 @@ export function PermanentUpgradeOverlay({
                 {VOCAB.facilities.saloon}（{VOCAB.facilities.saloonSub}）
               </h1>
               <span className="font-western-display text-[10px] font-bold tracking-wider text-amber-400/80">
-                SALOON &amp; OUTLAW CREED
+                SALOON — PERMANENT UPGRADES
               </span>
             </div>
           </div>
@@ -114,10 +107,11 @@ export function PermanentUpgradeOverlay({
           </div>
         </header>
 
-        {/* 中央: ガンマンの流儀カード一覧 */}
+        {/* 中央: 永続強化カード一覧 */}
         <div className="flex-1 touch-pan-y space-y-2.5 overflow-y-auto overscroll-contain px-3 py-3 sm:space-y-3 sm:px-4">
           {PERMANENT_UPGRADE_IDS.map((id) => {
             const def = PERMANENT_UPGRADES[id];
+            const localizedUpgrade = VOCAB.permanentUpgrades[id];
             const Icon = UPGRADE_ICONS[id];
             const curLevel = gameState.persistentData.permanentUpgrades[id] || 0;
             const isMax = curLevel >= def.maxLevel;
@@ -148,18 +142,18 @@ export function PermanentUpgradeOverlay({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                         <h2 className="text-base font-extrabold text-amber-50 sm:text-lg">
-                          {def.name}
+                          {localizedUpgrade.name}
                         </h2>
                         <span
                           className={`text-xs font-extrabold sm:text-sm ${
                             isMax ? "text-amber-300" : "text-amber-400/90"
                           }`}
                         >
-                          {isMax ? "★ 極意皆伝" : `Lv.${curLevel} / ${def.maxLevel}`}
+                          {isMax ? VOCAB.skillTreeUi.maxBadge : `Lv.${curLevel} / ${def.maxLevel}`}
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-amber-200/75 sm:text-sm">
-                        {def.description}
+                        {localizedUpgrade.description}
                       </p>
                     </div>
                   </div>
@@ -227,7 +221,7 @@ export function PermanentUpgradeOverlay({
                       >
                         {isPast && <Check className="h-3 w-3 flex-shrink-0 text-amber-400" />}
                         <span className="truncate">
-                          {isCurrent ? "▶ " : ""}Lv.{lvl}: {formatEffectLabel(eff, def.effectUnit)}
+                          {isCurrent ? "▶ " : ""}Lv.{lvl}: {VOCAB.saloonUi.formatEffect(id, eff)}
                         </span>
                       </div>
                     );

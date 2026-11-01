@@ -2,7 +2,6 @@ import confetti from "canvas-confetti";
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
-import { WEAPONS } from "../config/gameData";
 import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { formatMoney } from "../logic/format";
@@ -48,18 +47,12 @@ export class ClearScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(10);
 
-    addCrispText(
-      this,
-      width / 2,
-      248,
-      "全6人の賞金首（WANTED）を制覇した伝説の早撃ち！\n「この町は俺には狭すぎる……次の荒野へ行くか」",
-      {
-        fontSize: "21px",
-        fontStyle: "bold",
-        color: "#fde68a",
-        align: "center",
-      },
-    )
+    addCrispText(this, width / 2, 248, VOCAB.records.clearSubtitle, {
+      fontSize: "20px",
+      fontStyle: "bold",
+      color: "#fde68a",
+      align: "center",
+    })
       .setOrigin(0.5)
       .setDepth(10);
 
@@ -109,24 +102,27 @@ export class ClearScene extends Phaser.Scene {
     });
 
     const stats = this.gameState.runStats;
-    const weaponNames = stats.weaponsPurchased.map((id) => WEAPONS[id].name).join(" / ");
+    const weaponNames = stats.weaponsPurchased.map((id) => VOCAB.weapons[id].name).join(" / ");
 
     const records = [
-      { label: "制覇到達決闘", val: VOCAB.progression.roundName(stats.round) },
-      { label: `納めた${VOCAB.progression.invoiceShort}の回数`, val: `${stats.invoicesPassed} 回` },
+      { label: VOCAB.records.roundCleared, val: VOCAB.progression.roundName(stats.round) },
       {
-        label: `稼いだ${VOCAB.currency.earnedMoney}総額`,
+        label: VOCAB.records.invoicesPaidCount,
+        val: VOCAB.records.countValue(stats.invoicesPassed),
+      },
+      {
+        label: VOCAB.records.totalBountyEarned,
         val: `${formatMoney(stats.totalSpEarned)}`,
       },
       {
-        label: `${VOCAB.progression.invoiceTerm}総額`,
+        label: VOCAB.records.totalTaxesPaid,
         val: `${formatMoney(stats.totalInvoicesPaidAmount)}`,
       },
       {
-        label: `仕留めた${VOCAB.combat.targetName}総数`,
-        val: `${stats.targetsDestroyedTotal} ${VOCAB.combat.targetUnit}`,
+        label: VOCAB.records.totalTargetsHit,
+        val: VOCAB.records.targetsHitValue(stats.targetsDestroyedTotal),
       },
-      { label: "愛用した銃器", val: weaponNames },
+      { label: VOCAB.records.gunsAcquired, val: weaponNames },
     ];
 
     records.forEach((item, index) => {
@@ -139,7 +135,7 @@ export class ClearScene extends Phaser.Scene {
       }).setDepth(12);
 
       addCrispText(this, width / 2 + 285, y, item.val, {
-        fontSize: "22px",
+        fontSize: item.val.length > 26 ? "16px" : "22px",
         fontStyle: "bold",
         color: "#2b1206",
       })

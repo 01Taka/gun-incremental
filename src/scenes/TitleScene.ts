@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { AudioManager } from "../audio/AudioManager";
 import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
+import { useI18n } from "../i18n";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
 import {
@@ -23,6 +24,17 @@ export class TitleScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const gameState = GameState.getInstance();
     const audio = AudioManager.getInstance();
+    const locale = useI18n.getState().locale;
+
+    // 言語切り替え時にタイトル画面のテキストを即時更新
+    const unsubscribeI18n = useI18n.subscribe((state, prevState) => {
+      if (state.locale !== prevState.locale && this.scene.isActive()) {
+        this.scene.restart();
+      }
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      unsubscribeI18n();
+    });
 
     // エンニオ・モリコーネ風の口笛・ギター・ハーモニカBGMを開始
     audio.playBGM("western_town");
@@ -84,8 +96,9 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(12);
 
-    addCrispText(this, width / 2, posterY + 190, "荒野の早撃ち", {
-      fontSize: "66px",
+    addCrispText(this, width / 2, posterY + 190, VOCAB.titleScreen.mainTitleTop, {
+      fontSize: locale === "en" ? "52px" : "66px",
+      fontFamily: locale === "en" ? "display" : undefined,
       fontStyle: "bold",
       color: "#2b1206",
       stroke: "#ecd9b5",
@@ -94,15 +107,16 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(12);
 
-    addCrispText(this, width / 2, posterY + 272, "賞 金 稼 ぎ", {
-      fontSize: "54px",
+    addCrispText(this, width / 2, posterY + 272, VOCAB.titleScreen.mainTitleBottom, {
+      fontSize: locale === "en" ? "44px" : "54px",
+      fontFamily: locale === "en" ? "display" : undefined,
       fontStyle: "bold",
       color: "#7f1d1d",
     })
       .setOrigin(0.5)
       .setDepth(12);
 
-    addCrispText(this, width / 2, posterY + 344, "7秒の早撃ち決闘 × 銃器改造 × 保安官の上納金", {
+    addCrispText(this, width / 2, posterY + 344, VOCAB.titleScreen.tagline, {
       fontSize: "20px",
       fontStyle: "bold",
       color: "#4a250d",
@@ -110,8 +124,8 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(12);
 
-    addCrispText(this, width / 2, posterY + 394, "「この町は俺には狭すぎる」", {
-      fontSize: "22px",
+    addCrispText(this, width / 2, posterY + 394, VOCAB.titleScreen.posterQuote, {
+      fontSize: locale === "en" ? "19px" : "22px",
       fontStyle: "bold",
       color: "#6b2710",
     })
@@ -134,19 +148,13 @@ export class TitleScene extends Phaser.Scene {
       rivets: true,
     });
 
-    addCrispText(
-      this,
-      width / 2,
-      statsY + 42,
-      `★ 所持${VOCAB.currency.metaPoints}: ${permPoints}`,
-      {
-        fontSize: "27px",
-        color: "#fbbf24",
-        fontStyle: "bold",
-        stroke: "#1c0a04",
-        strokeThickness: 3,
-      },
-    )
+    addCrispText(this, width / 2, statsY + 42, VOCAB.titleScreen.heldBadges(permPoints), {
+      fontSize: "27px",
+      color: "#fbbf24",
+      fontStyle: "bold",
+      stroke: "#1c0a04",
+      strokeThickness: 3,
+    })
       .setOrigin(0.5)
       .setDepth(12);
 
@@ -154,7 +162,7 @@ export class TitleScene extends Phaser.Scene {
       this,
       width / 2,
       statsY + 90,
-      `最高到達: ${VOCAB.progression.roundName(highestRound)}   |   決闘歴: ${totalRuns} 回`,
+      VOCAB.titleScreen.careerRecord(highestRound, totalRuns),
       {
         fontSize: "19px",
         color: "#d6b384",
@@ -184,7 +192,7 @@ export class TitleScene extends Phaser.Scene {
     const permBtnText =
       permPoints > 0
         ? `★  ${VOCAB.actions.trainSaloonWithPoints(permPoints)}`
-        : `★  ${VOCAB.facilities.saloon}（${VOCAB.facilities.saloonSub}）`;
+        : `★  ${VOCAB.actions.trainSaloon}`;
     createWesternButton(
       this,
       width / 2,
@@ -202,7 +210,7 @@ export class TitleScene extends Phaser.Scene {
     showCinemaTitleCard(this, {
       actLabel: "A FISTFUL OF BOUNTY",
       title: "HIGH NOON",
-      quote: "「風が止んだら……抜け」",
+      quote: VOCAB.titleScreen.introQuote,
       y: 1210,
       holdMs: 1100,
       fadeMs: 550,

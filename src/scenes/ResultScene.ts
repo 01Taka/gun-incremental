@@ -1,9 +1,10 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
-import { TARGETS } from "../config/gameData";
+import { TARGET_UNLOCK_SEQUENCE } from "../config/gameData";
 import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
+import { useI18n } from "../i18n";
 import { formatMoney, formatNumber } from "../logic/format";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
@@ -105,7 +106,7 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(12);
 
-    addCrispText(this, width / 2 + 195, cardY + 52, `現在の${VOCAB.currency.moneyName}`, {
+    addCrispText(this, width / 2 + 195, cardY + 52, VOCAB.resultScreen.currentCash, {
       fontSize: "21px",
       fontStyle: "bold",
       color: "#5c2d10",
@@ -125,7 +126,7 @@ export class ResultScene extends Phaser.Scene {
       this,
       width / 2,
       cardY + 185,
-      `仕留めた${VOCAB.combat.targetName}: ${this.gameState.lastRoundTargetsDestroyed} ${VOCAB.combat.targetUnit}`,
+      VOCAB.resultScreen.targetsHit(this.gameState.lastRoundTargetsDestroyed),
       {
         fontSize: "21px",
         fontStyle: "bold",
@@ -150,7 +151,7 @@ export class ResultScene extends Phaser.Scene {
 
     const progress = this.gameState.getTargetUnlockProgress();
 
-    addCrispText(this, width / 2, cardY + 38, `📜 WANTED手配網 ＆ ${VOCAB.currency.bountyScore}`, {
+    addCrispText(this, width / 2, cardY + 38, VOCAB.resultScreen.unlockSectionTitle, {
       fontSize: "25px",
       fontStyle: "bold",
       color: "#fde68a",
@@ -159,11 +160,14 @@ export class ResultScene extends Phaser.Scene {
       .setDepth(12);
 
     if (progress.nextTarget) {
+      const nextTargetName = VOCAB.targets[progress.nextTarget.id].name;
+      const nextStep = TARGET_UNLOCK_SEQUENCE.find((s) => s.targetId === progress.nextTarget!.id);
+
       addCrispText(
         this,
         width / 2,
         cardY + 88,
-        `次の${VOCAB.combat.targetName}: 【${progress.nextTarget.name}】 (${progress.percent}%)`,
+        VOCAB.resultScreen.nextTargetProgress(nextTargetName, progress.percent),
         {
           fontSize: "22px",
           fontStyle: "bold",
@@ -194,7 +198,10 @@ export class ResultScene extends Phaser.Scene {
         this,
         width / 2,
         cardY + 195,
-        `累計${VOCAB.currency.bountyScore}: ${formatNumber(this.gameState.targetPoints)}`,
+        VOCAB.resultScreen.totalWantedPoints(
+          formatNumber(this.gameState.targetPoints),
+          formatNumber(nextStep?.requiredPoints ?? 0),
+        ),
         {
           fontSize: "20px",
           color: "#d6b384",
@@ -203,24 +210,21 @@ export class ResultScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setDepth(12);
     } else {
-      addCrispText(
-        this,
-        width / 2,
-        cardY + 120,
-        `★ 全ての${VOCAB.combat.targetName}の手配書が揃った！ ★`,
-        {
-          fontSize: "26px",
-          fontStyle: "bold",
-          color: "#fbbf24",
-        },
-      )
+      addCrispText(this, width / 2, cardY + 120, VOCAB.resultScreen.allTargetsUnlocked, {
+        fontSize: "26px",
+        fontStyle: "bold",
+        color: "#fbbf24",
+      })
         .setOrigin(0.5)
         .setDepth(12);
     }
 
     if (this.gameState.lastRoundNewlyUnlockedTargets.length > 0) {
+      const locale = useI18n.getState().locale;
       const unlockedNames = this.gameState.lastRoundNewlyUnlockedTargets
-        .map((id) => `【${TARGETS[id].name}】`)
+        .map((id) =>
+          locale === "en" ? `[${VOCAB.targets[id].name}]` : `【${VOCAB.targets[id].name}】`,
+        )
         .join(" ");
       this.showUnlockPopup(width, height, unlockedNames);
     }
@@ -234,20 +238,20 @@ export class ResultScene extends Phaser.Scene {
       pinned: true,
     });
 
-    const t1 = addCrispText(this, 0, -52, "★ NEW WANTED OUTLAW! ★", {
+    const t1 = addCrispText(this, 0, -52, VOCAB.resultScreen.unlockPopupBanner, {
       fontSize: "30px",
       fontFamily: "display",
       fontStyle: "bold",
       color: "#7f1d1d",
     }).setOrigin(0.5);
 
-    const t2 = addCrispText(this, 0, 10, `賞金首 ${names} が荒野に出現！`, {
-      fontSize: "25px",
+    const t2 = addCrispText(this, 0, 10, VOCAB.resultScreen.unlockPopupBody(names), {
+      fontSize: "23px",
       fontStyle: "bold",
       color: "#2b1206",
     }).setOrigin(0.5);
 
-    const t3 = addCrispText(this, 0, 64, "（タップして手配書を閉じる）", {
+    const t3 = addCrispText(this, 0, 64, VOCAB.resultScreen.unlockPopupClose, {
       fontSize: "18px",
       color: "#5c2d10",
     }).setOrigin(0.5);
@@ -280,8 +284,8 @@ export class ResultScene extends Phaser.Scene {
     g.strokeRoundedRect(width / 2 - 390, alertY, 780, 86, 10);
 
     const alertMsg = canAfford
-      ? `⚠️ 次の第${nextRound}決闘後、${VOCAB.progression.invoiceTerm}【${formatMoney(invoiceCost)}】！ ${VOCAB.currency.moneyName}の温存を忘れるな！`
-      : `🚨 警告: 次の第${nextRound}決闘後、${VOCAB.progression.invoiceTerm}【${formatMoney(invoiceCost)}】！ 現在${VOCAB.currency.moneyName}が足りねえ！`;
+      ? VOCAB.progression.invoiceWarnAfford(nextRound, formatMoney(invoiceCost))
+      : VOCAB.progression.invoiceWarnShort(nextRound, formatMoney(invoiceCost));
 
     addCrispText(this, width / 2, alertY + 43, alertMsg, {
       fontSize: "18px",

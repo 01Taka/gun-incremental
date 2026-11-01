@@ -36,7 +36,7 @@ export class GameOverScene extends Phaser.Scene {
       withAtmosphere: true,
     });
 
-    addCrispText(this, width / 2, 175, "💀 OUTLAW'S END 💀", {
+    addCrispText(this, width / 2, 175, VOCAB.records.gameOverTitle, {
       fontSize: "54px",
       fontFamily: "display",
       fontStyle: "bold",
@@ -47,7 +47,7 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(10);
 
-    addCrispText(this, width / 2, 250, "「俺の墓標に名は要らねえ……次はもっと速く抜くだけさ」", {
+    addCrispText(this, width / 2, 250, VOCAB.records.gameOverQuote, {
       fontSize: "20px",
       fontStyle: "bold",
       color: "#e7d0a7",
@@ -74,23 +74,29 @@ export class GameOverScene extends Phaser.Scene {
     const stats = this.gameState.runStats;
 
     const items = [
-      { label: "到達した決闘", val: VOCAB.progression.roundName(stats.round) },
-      { label: `納めた${VOCAB.progression.invoiceShort}の回数`, val: `${stats.invoicesPassed} 回` },
+      { label: VOCAB.records.roundReached, val: VOCAB.progression.roundName(stats.round) },
       {
-        label: `稼いだ${VOCAB.currency.earnedMoney}総額`,
+        label: VOCAB.records.invoicesPaidCount,
+        val: VOCAB.records.countValue(stats.invoicesPassed),
+      },
+      {
+        label: VOCAB.records.totalBountyEarned,
         val: `${formatMoney(stats.totalSpEarned)}`,
       },
       {
-        label: `${VOCAB.progression.invoiceTerm}総額`,
+        label: VOCAB.records.totalTaxesPaid,
         val: `${formatMoney(stats.totalInvoicesPaidAmount)}`,
       },
       {
-        label: `仕留めた${VOCAB.combat.targetName}の総数`,
-        val: `${stats.targetsDestroyedTotal} ${VOCAB.combat.targetUnit}`,
+        label: VOCAB.records.totalTargetsHit,
+        val: VOCAB.records.targetsHitValue(stats.targetsDestroyedTotal),
       },
       {
-        label: `手配書を暴いた${VOCAB.combat.targetName}`,
-        val: `${this.gameState.unlockedTargets.length} / ${TARGET_UNLOCK_SEQUENCE.length} ${VOCAB.combat.targetUnit}`,
+        label: VOCAB.records.targetsUnlocked,
+        val: VOCAB.records.targetsUnlockedValue(
+          this.gameState.unlockedTargets.length,
+          TARGET_UNLOCK_SEQUENCE.length,
+        ),
       },
     ];
 
@@ -125,28 +131,28 @@ export class GameOverScene extends Phaser.Scene {
       rivets: true,
     });
 
-    addCrispText(
-      this,
-      width / 2,
-      cardY + 40,
-      `★ 上納総額の2%を「${VOCAB.currency.metaPoints}」として獲得！ ★`,
-      {
-        fontSize: "21px",
-        fontStyle: "bold",
-        color: "#fde68a",
-      },
-    )
+    addCrispText(this, width / 2, cardY + 40, VOCAB.records.badgeConversionNote, {
+      fontSize: "21px",
+      fontStyle: "bold",
+      color: "#fde68a",
+    })
       .setOrigin(0.5)
       .setDepth(12);
 
     const gained = this.gameState.lastGainedPermanentPoints;
     const currentTotal = this.gameState.persistentData.permanentPoints;
 
-    addCrispText(this, width / 2, cardY + 100, `★ +${gained} 獲得！ (現在所持: ${currentTotal})`, {
-      fontSize: "34px",
-      fontStyle: "bold",
-      color: "#fbbf24",
-    })
+    addCrispText(
+      this,
+      width / 2,
+      cardY + 100,
+      VOCAB.records.badgeGainedSummary(gained, currentTotal),
+      {
+        fontSize: "32px",
+        fontStyle: "bold",
+        color: "#fbbf24",
+      },
+    )
       .setOrigin(0.5)
       .setDepth(12);
   }

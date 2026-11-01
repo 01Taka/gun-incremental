@@ -10,7 +10,7 @@
       "color": "#c27849",
       "border": "#6b3410",
       "unlockPoints": 0,
-      "description": "荒野をうろつく小悪党。まずはこいつで早撃ちの腕を慣らせ。"
+      "description": "HPが低い標準的な標的。まずはこいつで早撃ちの腕を慣らそう。"
     },
     {
       "id": "hard",
@@ -22,11 +22,11 @@
       "color": "#8c7a6b",
       "border": "#3f3228",
       "unlockPoints": 200,
-      "description": "胸にストーブの鉄板を仕込んだタフな賞金首。鉛玉を叩き込め。"
+      "description": "胸に鉄板を仕込んだ硬い標的。HPは高いが賞金も弾む。"
     },
     {
       "id": "gold",
-      "name": "黄金の大悪党",
+      "name": "黄金の賞金首",
       "hp": 2,
       "baseSp": 80,
       "weight": 15,
@@ -35,11 +35,11 @@
       "border": "#854d0e",
       "lifetime": 1.5,
       "unlockPoints": 900,
-      "description": "莫大な懸賞金が懸かった逃げ足の速い大物。煙に巻かれる前に撃て。"
+      "description": "賞金が高い大物だが、短時間で逃げて消えるため最優先で狙おう。"
     },
     {
       "id": "electric",
-      "name": "火薬樽の爆破魔",
+      "name": "ダイナマイト樽",
       "hp": 3,
       "baseSp": 22,
       "weight": 30,
@@ -47,7 +47,7 @@
       "color": "#dc2626",
       "border": "#7f1d1d",
       "unlockPoints": 2800,
-      "description": "ダイナマイトを背負った危険人物。撃ち抜けば周囲の賞金首もろとも吹き飛ばす。"
+      "description": "撃ち抜くと爆発し、画面内の他の標的にも誘爆ダメージを与える。"
     },
     {
       "id": "small",
@@ -59,11 +59,11 @@
       "color": "#d97706",
       "border": "#78350f",
       "unlockPoints": 8500,
-      "description": "小柄で素早い凄腕の賞金首。狙いを絞って眉間を撃ち抜け。"
+      "description": "小さくて当てにくいが、賞金が高めの素早い賞金首。"
     },
     {
       "id": "time",
-      "name": "真昼の懐中時計",
+      "name": "懐中時計",
       "hp": 3,
       "baseSp": 12,
       "weight": 15,
@@ -71,7 +71,7 @@
       "color": "#ca8a04",
       "border": "#713f12",
       "unlockPoints": 25000,
-      "description": "保安官が落とした金時計。撃ち抜けば決闘の刻限が延びる。"
+      "description": "撃ち抜くとラウンドの残り時間が延長される貴重な標的。"
     }
   ]
 }

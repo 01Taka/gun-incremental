@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { VOCAB } from "../../config/vocab";
 import { addCrispText } from "../../utils/text";
 
 export interface VerticalSliderOptions {
@@ -62,21 +63,21 @@ export class VerticalSlider {
 
     // 3. ラベル（上: 右照準, 下: 左照準, 中央: 正面）
     const halfL = options.halfLength;
-    this.topLabel = addCrispText(this.scene, 0, -halfL - 22, "▲ RIGHT", {
+    this.topLabel = addCrispText(this.scene, 0, -halfL - 22, VOCAB.combat.sliderRight, {
       fontSize: "14px",
       fontFamily: "monospace",
       fontStyle: "bold",
       color: "#fbbf24",
     }).setOrigin(0.5);
 
-    this.bottomLabel = addCrispText(this.scene, 0, halfL + 22, "▼ LEFT", {
+    this.bottomLabel = addCrispText(this.scene, 0, halfL + 22, VOCAB.combat.sliderLeft, {
       fontSize: "14px",
       fontFamily: "monospace",
       fontStyle: "bold",
       color: "#fbbf24",
     }).setOrigin(0.5);
 
-    this.centerLabel = addCrispText(this.scene, 42, 0, "◄ 正面", {
+    this.centerLabel = addCrispText(this.scene, 42, 0, VOCAB.combat.sliderCenter, {
       fontSize: "13px",
       color: "#d6b384",
     }).setOrigin(0, 0.5);

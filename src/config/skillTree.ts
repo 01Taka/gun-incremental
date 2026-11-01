@@ -36,39 +36,34 @@ export interface SkillStatDefinition {
   unit: string; // 表示単位 ("%" の場合は割合として表示)
 }
 
-export const SKILL_STATS: Record<SkillStatId, SkillStatDefinition> = {
-  damage: { label: VOCAB.stats.damage.label, unit: VOCAB.stats.damage.unit },
-  critRate: { label: VOCAB.stats.critRate.label, unit: VOCAB.stats.critRate.unit },
-  fireRateReduction: {
-    label: VOCAB.stats.fireRateReduction.label,
-    unit: VOCAB.stats.fireRateReduction.unit,
-  },
-  magazineCapacity: {
-    label: VOCAB.stats.magazineCapacity.label,
-    unit: VOCAB.stats.magazineCapacity.unit,
-  },
-  magazineMultiplier: {
-    label: VOCAB.stats.magazineMultiplier.label,
-    unit: VOCAB.stats.magazineMultiplier.unit,
-  },
-  reloadTimeReduction: {
-    label: VOCAB.stats.reloadTimeReduction.label,
-    unit: VOCAB.stats.reloadTimeReduction.unit,
-  },
-  roundTime: { label: VOCAB.stats.roundTime.label, unit: VOCAB.stats.roundTime.unit },
-  maxTargets: { label: VOCAB.stats.maxTargets.label, unit: VOCAB.stats.maxTargets.unit },
-  spMultiplier: { label: VOCAB.stats.spMultiplier.label, unit: VOCAB.stats.spMultiplier.unit },
-  targetPointMultiplier: {
-    label: VOCAB.stats.targetPointMultiplier.label,
-    unit: VOCAB.stats.targetPointMultiplier.unit,
-  },
-  shopDiscount: { label: VOCAB.stats.shopDiscount.label, unit: VOCAB.stats.shopDiscount.unit },
-  timeTargetBonus: {
-    label: VOCAB.stats.timeTargetBonus.label,
-    unit: VOCAB.stats.timeTargetBonus.unit,
-  },
-  chainDamage: { label: VOCAB.stats.chainDamage.label, unit: VOCAB.stats.chainDamage.unit },
+const SKILL_STAT_KEYS: Record<SkillStatId, true> = {
+  damage: true,
+  critRate: true,
+  fireRateReduction: true,
+  magazineCapacity: true,
+  magazineMultiplier: true,
+  reloadTimeReduction: true,
+  roundTime: true,
+  maxTargets: true,
+  spMultiplier: true,
+  targetPointMultiplier: true,
+  shopDiscount: true,
+  timeTargetBonus: true,
+  chainDamage: true,
 };
+
+export const SKILL_STATS: Record<SkillStatId, SkillStatDefinition> = new Proxy(
+  SKILL_STAT_KEYS as unknown as Record<SkillStatId, SkillStatDefinition>,
+  {
+    get(_target, prop: string) {
+      if (prop in SKILL_STAT_KEYS) {
+        const stat = VOCAB.stats[prop as SkillStatId];
+        return { label: stat.label, unit: stat.unit };
+      }
+      return undefined;
+    },
+  },
+);
 
 // ------------------------------------------
 // 接続ルール

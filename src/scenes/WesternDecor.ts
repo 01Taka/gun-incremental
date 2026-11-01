@@ -1,38 +1,22 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
+import { VOCAB } from "../config/vocab";
 import { addCrispText } from "../utils/text";
 
-export const WESTERN_QUOTES: readonly string[] = [
-  "「この町は俺には狭すぎる」",
-  "「鉛玉は嘘をつかねえ」",
-  "「棺桶を二つ用意しておけ」",
-  "「早撃ちに二番目はねえ」",
-  "「夕陽が沈む前にケリをつける」",
-  "「風が止んだら……抜け」",
-  "「賞金首は生かして帰さねえ」",
-  "「死人に口なし、賞金に文句なしだ」",
-];
-
-export const STAGE_SUBTITLES: readonly string[] = [
-  "赤土の荒野 — RED DUST GULCH",
-  "朽ちた酒場前 — OLD SALOON",
-  "廃駅の線路 — GHOST DEPOT",
-  "サボテン渓谷 — CACTUS CANYON",
-  "真昼の処刑台 — GALLOWS HILL",
-];
-
 export function getWesternQuote(indexOrSeed: number): string {
-  const idx = Math.abs(Math.floor(indexOrSeed)) % WESTERN_QUOTES.length;
-  return WESTERN_QUOTES[idx];
+  const quotes = VOCAB.quotes;
+  const idx = Math.abs(Math.floor(indexOrSeed)) % quotes.length;
+  return quotes[idx];
 }
 
 export function getStageSubtitle(round: number): string {
   if (round % 5 === 0) {
-    return "保安官の縄張り — SHERIFF'S RECKONING";
+    return VOCAB.sheriffStageSubtitle;
   }
-  const idx = Math.abs(round - 1) % STAGE_SUBTITLES.length;
-  return STAGE_SUBTITLES[idx];
+  const subtitles = VOCAB.stageSubtitles;
+  const idx = Math.abs(round - 1) % subtitles.length;
+  return subtitles[idx];
 }
 
 export interface BackdropOptions {

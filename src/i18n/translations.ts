@@ -1,9 +1,25 @@
 /**
  * i18n 多言語対応システム（日本語 / 英語）
- * 西部劇（マカロニ・ウェスタン）世界観のトーン＆マナーを保持
+ *
+ * 西部劇（マカロニ・ウェスタン）の雰囲気を活かしつつ、
+ * ゲームルール・数値効果・文節の区切りが一読で直感的に分かる表現に統一しています。
  */
 
+import type {
+  PassiveId,
+  PermanentUpgradeId,
+  SkillNodeId,
+  SkillStatId,
+  TargetId,
+  WeaponId,
+} from "../config/types";
+
 export type Locale = "ja" | "en";
+
+export interface LocalizedItemText {
+  name: string;
+  description: string;
+}
 
 export interface Translations {
   currency: {
@@ -17,12 +33,21 @@ export interface Translations {
   };
   progression: {
     roundName: (round: number) => string;
+    roundHudLabel: (round: number) => string;
     roundSuffix: (round: number) => string;
     roundHeader: (round: number) => string;
+    nextInvoiceHeader: (dueRound: number, amount: string) => string;
+    shopUnlockAt: (round: number) => string;
     invoiceTitle: (count: number) => string;
     invoiceTerm: string;
     invoiceShort: string;
     invoiceDueDesc: string;
+    invoiceAmountLabel: string;
+    invoiceStatusAfford: (cash: string) => string;
+    invoiceStatusShort: (cash: string) => string;
+    invoiceQuote: string;
+    invoiceWarnAfford: (nextRound: number, cost: string) => string;
+    invoiceWarnShort: (nextRound: number, cost: string) => string;
   };
   combat: {
     targetName: string;
@@ -30,30 +55,41 @@ export interface Translations {
     draw: string;
     roundEnd: string;
     timeRemaining: string;
-    timeExtension: string;
+    timeExtensionPopup: (sec: string) => string;
+    lockOnReady: string;
     lockOnAiming: string;
-    lockOnDeadeye: string;
-    lockOnStandoff: string;
+    lockOnTarget: (name: string) => string;
     critHit: string;
     autoFireAim: string;
-    cylinderIconSub: string;
-    cylinderSpinning: string;
+    autoFireUnlockedMsg: string;
+    cylinderReloading: (pct: number) => string;
+    cylinderReloadSub: string;
     cylinderReserveAmmo: (extra: number) => string;
+    weaponSwitchSub: (dmg: number, interval: number, mag: number) => string;
     dragAimHint: string;
     autoFireHint: string;
     keyboardAimHint: string;
+    sliderRight: string;
+    sliderLeft: string;
+    sliderCenter: string;
+    loadingGun: string;
   };
   facilities: {
     skills: string;
     skillsTree: string;
     weaponsShop: string;
-    weaponsShopSub: string;
+    weaponsShopMenu: string;
+    weaponsShopLocked: string;
     saloon: string;
     saloonSub: string;
     passivesTitle: string;
     passivesSub: string;
+    passivesDesc: string;
+    passiveOwnedCount: (count: number) => string;
+    passiveUnowned: string;
     settings: string;
     settingsSaloon: string;
+    sidebarQuote: string;
   };
   actions: {
     startDuel: string;
@@ -71,22 +107,75 @@ export interface Translations {
     buyWeapon: string;
     mastered: string;
     trainCost: (cost: number | string) => string;
+    upgradeSkill: (cost: string) => string;
   };
-  stats: {
-    damage: { label: string; subLabel: string; unit: string };
-    critRate: { label: string; subLabel: string; unit: string };
-    fireRateReduction: { label: string; subLabel: string; unit: string };
-    magazineCapacity: { label: string; subLabel: string; unit: string };
-    magazineMultiplier: { label: string; subLabel: string; unit: string };
-    reloadTimeReduction: { label: string; subLabel: string; unit: string };
-    roundTime: { label: string; subLabel: string; unit: string };
-    maxTargets: { label: string; subLabel: string; unit: string };
-    spMultiplier: { label: string; subLabel: string; unit: string };
-    targetPointMultiplier: { label: string; subLabel: string; unit: string };
-    shopDiscount: { label: string; subLabel: string; unit: string };
-    timeTargetBonus: { label: string; subLabel: string; unit: string };
-    chainDamage: { label: string; subLabel: string; unit: string };
+  titleScreen: {
+    mainTitleTop: string;
+    mainTitleBottom: string;
+    tagline: string;
+    posterQuote: string;
+    heldBadges: (points: number) => string;
+    careerRecord: (highestRound: number, totalRuns: number) => string;
+    introQuote: string;
   };
+  resultScreen: {
+    currentCash: string;
+    targetsHit: (count: number) => string;
+    unlockSectionTitle: string;
+    nextTargetProgress: (name: string, pct: number) => string;
+    totalWantedPoints: (cur: string, req: string) => string;
+    allTargetsUnlocked: string;
+    unlockPopupBanner: string;
+    unlockPopupBody: (names: string) => string;
+    unlockPopupClose: string;
+  };
+  records: {
+    gameOverTitle: string;
+    gameOverQuote: string;
+    clearSubtitle: string;
+    roundReached: string;
+    roundCleared: string;
+    invoicesPaidCount: string;
+    countValue: (n: number) => string;
+    totalBountyEarned: string;
+    totalTaxesPaid: string;
+    totalTargetsHit: string;
+    targetsHitValue: (n: number) => string;
+    targetsUnlocked: string;
+    targetsUnlockedValue: (cur: number, total: number) => string;
+    gunsAcquired: string;
+    badgeConversionNote: string;
+    badgeGainedSummary: (gained: number, total: number) => string;
+  };
+  skillTreeUi: {
+    locked: string;
+    maxBadge: string;
+    noEffectYet: string;
+    maxLevelReached: string;
+    prerequisite: (name: string, level: number) => string;
+    prereqUnmet: string;
+    moveLeft: string;
+    moveUp: string;
+    moveDown: string;
+    moveRight: string;
+  };
+  gunsmithUi: {
+    statLine1: (dmg: number, interval: string, rps: string) => string;
+    statLine2: (ammo: number, reload: string) => string;
+    offSuffix: (pct: string) => string;
+  };
+  saloonUi: {
+    formatEffect: (id: PermanentUpgradeId, eff: number) => string;
+  };
+  stats: Record<SkillStatId, { label: string; subLabel: string; unit: string }>;
+  weapons: Record<WeaponId, LocalizedItemText>;
+  targets: Record<TargetId, LocalizedItemText>;
+  skills: Record<SkillNodeId, LocalizedItemText>;
+  passives: Record<PassiveId, LocalizedItemText>;
+  permanentUpgrades: Record<PermanentUpgradeId, LocalizedItemText>;
+  quotes: readonly string[];
+  stageSubtitles: readonly string[];
+  sheriffStageSubtitle: string;
   ui: {
     language: string;
     languageJa: string;
@@ -115,84 +204,324 @@ export const translations: Record<Locale, Translations> = {
       symbol: "$",
       moneyName: "所持金",
       earnedMoney: "獲得賞金",
-      bountyScore: "懸賞金評価",
-      bountyScoreAbbr: "評価pt",
+      bountyScore: "手配ポイント",
+      bountyScoreAbbr: "pt",
       metaPoints: "名声バッジ",
-      metaPointsAbbr: "名声",
+      metaPointsAbbr: "名声バッジ",
     },
     progression: {
-      roundName: (round: number) => `第 ${round} 決闘`,
-      roundSuffix: (round: number) => `第${round}決闘後`,
-      roundHeader: (round: number) => `第 ${round} 決闘 — 賞金精算`,
-      invoiceTitle: (count: number) => `保安官の上納金 (第 ${count} 回)`,
+      roundName: (round: number) => `Round ${round}`,
+      roundHudLabel: (round: number) => `ROUND ${round}`,
+      roundSuffix: (round: number) => `Round ${round} 終了後`,
+      roundHeader: (round: number) => `Round ${round} — 賞金精算`,
+      nextInvoiceHeader: (dueRound: number, amount: string) =>
+        `次回上納金 (R${dueRound}): ${amount}`,
+      shopUnlockAt: (round: number) => `Round ${round} で開店`,
+      invoiceTitle: (count: number) => `保安官の上納金（第 ${count} 回）`,
       invoiceTerm: "保安官の上納金",
       invoiceShort: "上納金",
       invoiceDueDesc:
-        "5決闘ごとの縄張り代・上納金の徴収書だ。\n支払えなければ、この町から追放（ゲームオーバー）となる。",
+        "5ラウンドごとに徴収される縄張り代だ。\n支払えなければ町から追放（ゲームオーバー）となる。",
+      invoiceAmountLabel: "— 今回の支払額 —",
+      invoiceStatusAfford: (cash: string) =>
+        `現在の所持金: ${cash}\n（支払い可能 — 次のラウンドへ進める）`,
+      invoiceStatusShort: (cash: string) =>
+        `現在の所持金: ${cash}\n（所持金不足 — これ以上は進めない！）`,
+      invoiceQuote: "「この町で銃を抜くなら、保安官事務所への上納金を置いていきな」",
+      invoiceWarnAfford: (nextRound: number, cost: string) =>
+        `⚠️ 次の Round ${nextRound} 終了時、保安官の上納金【${cost}】が発生！ 所持金を残しておこう`,
+      invoiceWarnShort: (nextRound: number, cost: string) =>
+        `🚨 警告: 次の Round ${nextRound} 終了時、保安官の上納金【${cost}】が必要！（現在所持金不足）`,
     },
     combat: {
-      targetName: "賞金首",
-      targetUnit: "人",
+      targetName: "標的",
+      targetUnit: "個",
       draw: "DRAW!",
       roundEnd: "決着！",
       timeRemaining: "制限時間",
-      timeExtension: "刻限延長",
-      lockOnAiming: "AIMING...",
-      lockOnDeadeye: "DEADEYE",
-      lockOnStandoff: "STANDOFF...",
-      critHit: "DEADEYE!",
-      autoFireAim: "自動早撃ち照準",
-      cylinderIconSub: "6連シリンダー",
-      cylinderSpinning: "装填中",
-      cylinderReserveAmmo: (extra: number) => `予備弾帯 +${extra}発`,
-      dragAimHint: "🤠 画面のどこでもタッチ＆上下ドラッグで照準！（タップで正面へ）",
-      autoFireHint: "🔫 賞金首を射線に捉えた瞬間、自動で早撃ち発砲！",
-      keyboardAimHint: "（PC: A / D または 矢印キー でも照準調整可能）",
+      timeExtensionPopup: (sec: string) => `時間 +${sec}秒!`,
+      lockOnReady: "銃を構えろ...",
+      lockOnAiming: "照準中...",
+      lockOnTarget: (name: string) => `🎯 狙い: ${name}`,
+      critHit: "急所!",
+      autoFireAim: "自動エイム",
+      autoFireUnlockedMsg: "全3種の銃を入手！「自動エイム」が利用可能になった！",
+      cylinderReloading: (pct: number) => `リロード ${pct}%`,
+      cylinderReloadSub: "再装填中...",
+      cylinderReserveAmmo: (extra: number) => `6発 + 予備${extra}発`,
+      weaponSwitchSub: (dmg: number, interval: number, mag: number) =>
+        `威力: ${dmg} | 間隔: ${interval}秒 | 装弾: ${mag}発`,
+      dragAimHint: "🤠 画面のどこでも上下ドラッグで照準！（タップで正面へ）",
+      autoFireHint: "🔫 標的を射線に捉えると自動で発砲！",
+      keyboardAimHint: "（PC: A / D または 矢印キー でも照準操作が可能）",
+      sliderRight: "▲ 右へ",
+      sliderLeft: "▼ 左へ",
+      sliderCenter: "◄ 正面",
+      loadingGun: "銃を手入れしています...",
     },
     facilities: {
-      skills: "早撃ち技能",
-      skillsTree: "早撃ち技能ツリー",
+      skills: "スキル強化",
+      skillsTree: "スキル強化ツリー",
       weaponsShop: "銃砲店",
-      weaponsShopSub: "GUNSMITH",
-      saloon: "酒場の鍛錬",
-      saloonSub: "ガンマンの流儀",
-      passivesTitle: "ガンマンの心得",
-      passivesSub: "保安官の黙認 — ガンマンの心得",
+      weaponsShopMenu: "銃砲店（武器購入）",
+      weaponsShopLocked: "銃砲店（準備中）",
+      saloon: "酒場",
+      saloonSub: "永続強化",
+      passivesTitle: "ボーナス",
+      passivesSub: "保安官の黙認 — ボーナス習得",
+      passivesDesc: "3つのボーナスから1つを選んで習得しよう（重複習得可）",
+      passiveOwnedCount: (count: number) => `現在の習得数: ×${count}`,
+      passiveUnowned: "未習得",
       settings: "設定",
-      settingsSaloon: "酒場の設定",
+      settingsSaloon: "ゲーム設定",
+      sidebarQuote: "「いい銃と速い腕、生き残るには両方要るぜ」",
     },
     actions: {
-      startDuel: "荒野へ繰り出す（決闘開始）",
-      nextDuel: "次の決闘場へ進む",
-      toUpgrade: "早撃ち技能 ＆ 銃砲店へ",
-      trainSaloon: "酒場で鍛える（名声強化）",
-      trainSaloonWithPoints: (points: number) => `酒場で鍛える（名声: ${points}）`,
+      startDuel: "荒野へ繰り出す（ゲーム開始）",
+      nextDuel: "次のラウンドへ",
+      toUpgrade: "スキル強化 ＆ 銃砲店へ",
+      trainSaloon: "酒場で永続強化",
+      trainSaloonWithPoints: (points: number) => `酒場で永続強化（バッジ: ${points}）`,
       backToTitle: "タイトルへ戻る",
-      backToTitleFromSaloon: "酒場の表へ出る（タイトル）",
+      backToTitleFromSaloon: "タイトルへ戻る",
       payInvoice: "上納金を支払う",
-      bankruptSurrender: "支払い不能（荒野へ追放）",
-      choosePassive: "選び取る",
-      equipWeapon: "愛銃に持ち替える",
-      equipped: "ホルスターに装備中",
-      buyWeapon: "買い取る",
-      mastered: "習得完了",
-      trainCost: (cost: number | string) => `鍛える (★ ${cost})`,
+      bankruptSurrender: "支払い不能（ゲームオーバー）",
+      choosePassive: "習得する",
+      equipWeapon: "装備する",
+      equipped: "装備中",
+      buyWeapon: "購入する",
+      mastered: "習得済み",
+      trainCost: (cost: number | string) => `強化する (★ ${cost})`,
+      upgradeSkill: (cost: string) => `強化する (${cost})`,
+    },
+    titleScreen: {
+      mainTitleTop: "荒野の早撃ち",
+      mainTitleBottom: "賞 金 稼 ぎ",
+      tagline: "7秒の早撃ち × 銃器改造 × 保安官の上納金",
+      posterQuote: "「この町は俺には狭すぎる」",
+      heldBadges: (points: number) => `★ 所持名声バッジ: ${points}`,
+      careerRecord: (highestRound: number, totalRuns: number) =>
+        `最高到達: Round ${highestRound}   |   総プレイ回数: ${totalRuns} 回`,
+      introQuote: "「風が止んだら……抜け」",
+    },
+    resultScreen: {
+      currentCash: "現在の所持金",
+      targetsHit: (count: number) => `撃破した標的: ${count} 個`,
+      unlockSectionTitle: "📜 次の標的（賞金首）解放ゲージ",
+      nextTargetProgress: (name: string, pct: number) => `次の解放: 【${name}】 (${pct}%)`,
+      totalWantedPoints: (cur: string, req: string) => `手配ポイント: ${cur} / ${req} pt`,
+      allTargetsUnlocked: "★ 全6種の標的をすべて解放済み！ ★",
+      unlockPopupBanner: "★ NEW WANTED! ★",
+      unlockPopupBody: (names: string) => `新たな標的 ${names} が出現するようになった！`,
+      unlockPopupClose: "（タップして閉じる）",
+    },
+    records: {
+      gameOverTitle: "💀 GAME OVER 💀",
+      gameOverQuote: "「俺の墓標に名は要らねえ……次はもっと速く抜くだけさ」",
+      clearSubtitle:
+        "全6種の標的（WANTED）を解放し、荒野を制覇した！\n「この町は俺には狭すぎる……次の荒野へ行くか」",
+      roundReached: "到達ラウンド",
+      roundCleared: "クリア到達ラウンド",
+      invoicesPaidCount: "上納金の支払い回数",
+      countValue: (n: number) => `${n} 回`,
+      totalBountyEarned: "累計獲得賞金",
+      totalTaxesPaid: "上納金の支払総額",
+      totalTargetsHit: "撃破した標的の総数",
+      targetsHitValue: (n: number) => `${n} 個`,
+      targetsUnlocked: "解放した標的の種類",
+      targetsUnlockedValue: (cur: number, total: number) => `${cur} / ${total} 種`,
+      gunsAcquired: "入手した銃器",
+      badgeConversionNote: "★ 上納金総額の2%を「名声バッジ」として獲得！ ★",
+      badgeGainedSummary: (gained: number, total: number) =>
+        `★ +${gained} 獲得！ （所持合計: ${total}）`,
+    },
+    skillTreeUi: {
+      locked: "未解放",
+      maxBadge: "★ MAX",
+      noEffectYet: "現在 +0",
+      maxLevelReached: "★ 最大レベル習得済み",
+      prerequisite: (name: string, level: number) => `解放条件: ${name} Lv.${level}`,
+      prereqUnmet: "解放条件: 未達成",
+      moveLeft: "左へ移動",
+      moveUp: "上へ移動",
+      moveDown: "下へ移動",
+      moveRight: "右へ移動",
+    },
+    gunsmithUi: {
+      statLine1: (dmg: number, interval: string, rps: string) =>
+        `威力: ${dmg}  |  発射間隔: ${interval}秒 (${rps}発/秒)`,
+      statLine2: (ammo: number, reload: string) => `装弾数: ${ammo}発  |  リロード: ${reload}秒`,
+      offSuffix: (pct: string) => ` (${pct} OFF)`,
+    },
+    saloonUi: {
+      formatEffect: (id: PermanentUpgradeId, eff: number) => {
+        switch (id) {
+          case "start_sp":
+            return `+$${eff}`;
+          case "base_dmg":
+            return `威力 +${eff}`;
+          case "round_time":
+            return `+${eff}秒`;
+          case "tp_gain":
+            return `+${eff}%`;
+          case "invoice_reduction":
+            return `-${eff}%`;
+        }
+      },
     },
     stats: {
-      damage: { label: "基礎威力", subLabel: "攻撃力", unit: "威力" },
-      critRate: { label: "会心率 (急所撃ち)", subLabel: "急所率", unit: "%" },
-      fireRateReduction: { label: "早撃ち間隔短縮", subLabel: "連射速度", unit: "%" },
-      magazineCapacity: { label: "装填弾数", subLabel: "シリンダー容量", unit: "発" },
-      magazineMultiplier: { label: "装填増加率", subLabel: "弾数倍率", unit: "%" },
-      reloadTimeReduction: { label: "再装填時間短縮", subLabel: "リロード速度", unit: "%" },
-      roundTime: { label: "決闘の制限時間", subLabel: "ラウンド時間", unit: "秒" },
-      maxTargets: { label: "同時出現賞金首", subLabel: "出現数", unit: "人" },
-      spMultiplier: { label: "獲得賞金倍率", subLabel: "獲得賞金UP", unit: "%" },
-      targetPointMultiplier: { label: "懸賞金評価倍率", subLabel: "手配書進捗UP", unit: "%" },
-      shopDiscount: { label: "銃砲店割引", subLabel: "武器割引", unit: "%" },
-      timeTargetBonus: { label: "懐中時計延長量", subLabel: "時計追加秒", unit: "秒" },
-      chainDamage: { label: "誘爆ダメージ倍率", subLabel: "爆発連鎖", unit: "%" },
+      damage: { label: "基礎威力（ダメージ）", subLabel: "威力", unit: "" },
+      critRate: { label: "会心率（急所撃ち）", subLabel: "会心率", unit: "%" },
+      fireRateReduction: { label: "発射間隔の短縮", subLabel: "連射速度", unit: "%" },
+      magazineCapacity: { label: "装弾数", subLabel: "装弾数", unit: "発" },
+      magazineMultiplier: { label: "装弾数の増加率", subLabel: "弾数倍率", unit: "%" },
+      reloadTimeReduction: { label: "リロード時間短縮", subLabel: "リロード", unit: "%" },
+      roundTime: { label: "ラウンド制限時間", subLabel: "制限時間", unit: "秒" },
+      maxTargets: { label: "同時出現数", subLabel: "出現数", unit: "個" },
+      spMultiplier: { label: "獲得賞金ボーナス", subLabel: "獲得賞金", unit: "%" },
+      targetPointMultiplier: { label: "手配ポイントボーナス", subLabel: "手配pt", unit: "%" },
+      shopDiscount: { label: "銃砲店の割引率", subLabel: "武器割引", unit: "%" },
+      timeTargetBonus: { label: "懐中時計の延長時間", subLabel: "時間追加", unit: "秒" },
+      chainDamage: { label: "ダイナマイト誘爆威力", subLabel: "誘爆倍率", unit: "%" },
     },
+    weapons: {
+      handgun: {
+        name: "ピースメイカー",
+        description: "連射とリロードが速い、扱いやすい6連発リボルバー。",
+      },
+      rifle: {
+        name: "ウィンチェスター銃",
+        description: "中威力で装弾数が多いレバーアクション連発銃。",
+      },
+      sniper: {
+        name: "シャープス大口径銃",
+        description: "装弾数は少なくリロードも重いが、硬い標的も一撃で砕く高威力ライフル。",
+      },
+    },
+    targets: {
+      standard: {
+        name: "無法者",
+        description: "HPが低い標準的な標的。まずはこいつで早撃ちの腕を慣らそう。",
+      },
+      hard: {
+        name: "鉄板の重罪人",
+        description: "胸に鉄板を仕込んだ硬い標的。HPは高いが賞金も弾む。",
+      },
+      gold: {
+        name: "黄金の賞金首",
+        description: "賞金が高い大物だが、短時間で逃げて消えるため最優先で狙おう。",
+      },
+      electric: {
+        name: "ダイナマイト樽",
+        description: "撃ち抜くと爆発し、画面内の他の標的にも誘爆ダメージを与える。",
+      },
+      small: {
+        name: "早撃ちキッド",
+        description: "小さくて当てにくいが、賞金が高めの素早い賞金首。",
+      },
+      time: {
+        name: "懐中時計",
+        description: "撃ち抜くとラウンドの残り時間が延長される貴重な標的。",
+      },
+    },
+    skills: {
+      damage_base: {
+        name: "鉛弾の威力",
+        description: "すべての銃の基礎ダメージを上げる",
+      },
+      fire_rate: {
+        name: "早撃ち連射",
+        description: "発射間隔を短縮し、連射速度を上げる",
+      },
+      max_targets: {
+        name: "標的の増加",
+        description: "画面に同時出現する標的の最大数を増やす",
+      },
+      crit_rate: {
+        name: "急所撃ち",
+        description: "ダメージが2倍になる会心（急所）率を上げる",
+      },
+      chain_damage: {
+        name: "ダイナマイト誘爆",
+        description: "「ダイナマイト樽」撃破時に周囲へ与える誘爆ダメージを強化する",
+      },
+      round_time: {
+        name: "制限時間延長",
+        description: "1ラウンドの制限時間を延ばす",
+      },
+      time_target_bonus: {
+        name: "懐中時計の延長",
+        description: "「懐中時計」撃破時の残り時間プラス量を増やす",
+      },
+      magazine_size: {
+        name: "装弾数アップ",
+        description: "すべての銃の装弾数を増やし、リロード回数を減らす",
+      },
+      reload_speed: {
+        name: "早業リロード",
+        description: "弾切れ時のリロード時間を短縮する",
+      },
+      sp_multiplier: {
+        name: "獲得賞金アップ",
+        description: "標的を撃破したときに得られる賞金（$）を増やす",
+      },
+      target_point_mult: {
+        name: "手配ポイント増加",
+        description: "新しい標的を解放する「手配ポイント」の獲得量を増やす",
+      },
+      shop_discount: {
+        name: "銃砲店の割引",
+        description: "銃砲店で購入する武器の価格を割り引く",
+      },
+    },
+    passives: {
+      sp_bonus: { name: "賞金稼ぎの嗅覚", description: "獲得賞金（$） +10%" },
+      dmg_bonus: { name: "大口径鉛弾", description: "すべての銃の基礎威力 +15%" },
+      time_bonus: { name: "早撃ちの集中", description: "ラウンド制限時間 +1.0秒" },
+      target_bonus: { name: "一斉指名手配", description: "標的の同時出現数 +1" },
+      shop_discount: { name: "銃砲店の顔パス", description: "銃砲店の武器価格 -10%" },
+      tp_bonus: { name: "広域指名手配", description: "手配ポイント（新標的の解放） +10%" },
+    },
+    permanentUpgrades: {
+      start_sp: {
+        name: "砂金の軍資金",
+        description: "ゲーム開始時の初期所持金（$）を増やす",
+      },
+      base_dmg: {
+        name: "伝説の早撃ち術",
+        description: "ゲーム開始時からの基礎威力を増やす",
+      },
+      round_time: {
+        name: "死線の集中力",
+        description: "ラウンドの制限時間を延長する",
+      },
+      tp_gain: {
+        name: "手配書コレクター",
+        description: "新しい標的を解放する「手配ポイント」の獲得量を増やす",
+      },
+      invoice_reduction: {
+        name: "保安官への袖の下",
+        description: "5ラウンドごとの「保安官の上納金」を軽減する",
+      },
+    },
+    quotes: [
+      "「この町は俺には狭すぎる」",
+      "「鉛玉は嘘をつかねえ」",
+      "「棺桶を二つ用意しておけ」",
+      "「早撃ちに二番目はねえ」",
+      "「夕陽が沈む前にケリをつける」",
+      "「風が止んだら……抜け」",
+      "「賞金首は逃がさねえ」",
+      "「死人に口なし、賞金に文句なしだ」",
+    ],
+    stageSubtitles: [
+      "赤土の荒野 — RED DUST GULCH",
+      "朽ちた酒場前 — OLD SALOON",
+      "廃駅の線路 — GHOST DEPOT",
+      "サボテン渓谷 — CACTUS CANYON",
+      "真昼の決闘場 — HIGH NOON",
+    ],
+    sheriffStageSubtitle: "保安官の縄張り — SHERIFF'S TAX",
     ui: {
       language: "言語 / Language",
       languageJa: "日本語",
@@ -202,16 +531,16 @@ export const translations: Record<Locale, Translations> = {
       fullscreenOff: "通常表示",
       fullscreenToggle: "全画面にする",
       fullscreenExit: "全画面解除",
-      cursorFollow: "カーソルを追従",
+      cursorFollow: "マウスカーソル追従",
       cursorFollowDescOn: "マウス位置へ直接エイム",
-      cursorFollowDescOff: "スライダー操作を使用",
+      cursorFollowDescOff: "上下ドラッグのレバー操作を使用",
       mobileDisabled: "スマホ版（無効）",
       pcCursorFollowActive: "無効（カーソル追従中）",
-      joystickPosition: "レバー操作位置",
-      joystickDynamic: "追従（Dynamic）",
-      joystickFixed: "固定（Fixed）",
+      joystickPosition: "照準レバーの表示位置",
+      joystickDynamic: "追従（タッチ位置）",
+      joystickFixed: "固定（画面下部）",
       bgmVolume: "BGM 音量（口笛・ギター）",
-      seVolume: "効果音（銃声・拍車・シリンダー）",
+      seVolume: "効果音（銃声・拍車・リロード）",
     },
   },
 
@@ -219,104 +548,343 @@ export const translations: Record<Locale, Translations> = {
     currency: {
       symbol: "$",
       moneyName: "Cash",
-      earnedMoney: "Bounty Won",
-      bountyScore: "Bounty Rep",
-      bountyScoreAbbr: "Rep pt",
-      metaPoints: "Sheriff Badges",
+      earnedMoney: "Bounty Earned",
+      bountyScore: "Wanted Points",
+      bountyScoreAbbr: "pt",
+      metaPoints: "Star Badges",
       metaPointsAbbr: "Badges",
     },
     progression: {
-      roundName: (round: number) => `Duel #${round}`,
-      roundSuffix: (round: number) => `After Duel #${round}`,
-      roundHeader: (round: number) => `Duel #${round} — Bounty Payout`,
-      invoiceTitle: (count: number) => `Sheriff's Tax (Tribute #${count})`,
-      invoiceTerm: "Sheriff's Cut",
-      invoiceShort: "Tribute",
+      roundName: (round: number) => `Round ${round}`,
+      roundHudLabel: (round: number) => `ROUND ${round}`,
+      roundSuffix: (round: number) => `After R${round}`,
+      roundHeader: (round: number) => `Round ${round} — Bounty Payout`,
+      nextInvoiceHeader: (dueRound: number, amount: string) => `Next Tax (R${dueRound}): ${amount}`,
+      shopUnlockAt: (round: number) => `Opens at Round ${round}`,
+      invoiceTitle: (count: number) => `Sheriff's Tax (#${count})`,
+      invoiceTerm: "Sheriff's Tax",
+      invoiceShort: "Tax",
       invoiceDueDesc:
-        "Territory tribute due every 5 duels.\nIf you cannot pay, you will be run out of town (Game Over).",
+        "Territory tax collected every 5 rounds.\nFail to pay, and you're run out of town (Game Over).",
+      invoiceAmountLabel: "— Amount Due —",
+      invoiceStatusAfford: (cash: string) =>
+        `Current Cash: ${cash}\n(Enough to pay — ready for the next round)`,
+      invoiceStatusShort: (cash: string) =>
+        `Current Cash: ${cash}\n(Not enough cash — end of the trail!)`,
+      invoiceQuote: "\"If you're drawin' iron in my town, pay your due to the badge.\"",
+      invoiceWarnAfford: (nextRound: number, cost: string) =>
+        `⚠️ Sheriff's Tax [${cost}] due after Round ${nextRound}! Keep enough cash on hand!`,
+      invoiceWarnShort: (nextRound: number, cost: string) =>
+        `🚨 Warning: Sheriff's Tax [${cost}] due after Round ${nextRound}! (Short on cash!)`,
     },
     combat: {
-      targetName: "Outlaws",
-      targetUnit: "heads",
+      targetName: "Targets",
+      targetUnit: "",
       draw: "DRAW!",
-      roundEnd: "SHOWDOWN OVER!",
+      roundEnd: "TIME UP!",
       timeRemaining: "Time Limit",
-      timeExtension: "High Noon Bonus",
+      timeExtensionPopup: (sec: string) => `TIME +${sec}s!`,
+      lockOnReady: "GET READY...",
       lockOnAiming: "AIMING...",
-      lockOnDeadeye: "DEADEYE",
-      lockOnStandoff: "STANDOFF...",
-      critHit: "DEADEYE!",
-      autoFireAim: "Quick-Draw Auto Aim",
-      cylinderIconSub: "6-Shot Cylinder",
-      cylinderSpinning: "Reloading",
-      cylinderReserveAmmo: (extra: number) => `Bandolier +${extra} rounds`,
+      lockOnTarget: (name: string) => `🎯 LOCKED: ${name}`,
+      critHit: "CRIT!",
+      autoFireAim: "Auto-Aim",
+      autoFireUnlockedMsg: "All 3 guns owned! 'Auto-Aim' is now unlocked!",
+      cylinderReloading: (pct: number) => `Reload ${pct}%`,
+      cylinderReloadSub: "Reloading...",
+      cylinderReserveAmmo: (extra: number) => `6 + ${extra} reserve`,
+      weaponSwitchSub: (dmg: number, interval: number, mag: number) =>
+        `DMG: ${dmg} | Rate: ${interval}s | Ammo: ${mag}`,
       dragAimHint: "🤠 Touch & drag up/down anywhere to aim! (Tap to center)",
-      autoFireHint: "🔫 Instant quick-draw fire the moment an outlaw enters your sights!",
-      keyboardAimHint: "(PC: Use A / D or Arrow Keys to aim)",
+      autoFireHint: "🔫 Fires automatically when your sights line up on a target!",
+      keyboardAimHint: "(PC: Aim with A / D or Arrow Keys)",
+      sliderRight: "▲ RIGHT",
+      sliderLeft: "▼ LEFT",
+      sliderCenter: "◄ CENTER",
+      loadingGun: "Oiling the revolver...",
     },
     facilities: {
-      skills: "Gunslinger Skills",
-      skillsTree: "Gunslinger Skill Tree",
+      skills: "Skills",
+      skillsTree: "Skill Tree",
       weaponsShop: "Gunsmith",
-      weaponsShopSub: "GUNSMITH",
-      saloon: "Saloon Training",
-      saloonSub: "Outlaw Creed",
-      passivesTitle: "Gunslinger Creed",
-      passivesSub: "Sheriff's Blind Eye — Gunslinger Creed",
+      weaponsShopMenu: "Gunsmith (Weapons)",
+      weaponsShopLocked: "Gunsmith (Locked)",
+      saloon: "Saloon",
+      saloonSub: "Perm Upgrades",
+      passivesTitle: "Bonus Perk",
+      passivesSub: "Sheriff's Blind Eye — Bonus Perk",
+      passivesDesc: "Choose 1 of 3 perks to keep for this run (stackable)",
+      passiveOwnedCount: (count: number) => `Owned: ×${count}`,
+      passiveUnowned: "Not Owned",
       settings: "Settings",
-      settingsSaloon: "Saloon Settings",
+      settingsSaloon: "Game Settings",
+      sidebarQuote: '"A good gun and a fast hand — out here, you need both."',
     },
     actions: {
-      startDuel: "Ride into Frontier (Start Duel)",
-      nextDuel: "Next Showdown",
-      toUpgrade: "Skills & Gunsmith",
-      trainSaloon: "Saloon Training (Honor Badges)",
-      trainSaloonWithPoints: (points: number) => `Saloon Training (Badges: ${points})`,
+      startDuel: "Ride Out (Start Game)",
+      nextDuel: "Next Round",
+      toUpgrade: "Skill Tree & Gunsmith",
+      trainSaloon: "Saloon (Perm Upgrades)",
+      trainSaloonWithPoints: (points: number) => `Saloon Upgrades (Badges: ${points})`,
       backToTitle: "Back to Title",
-      backToTitleFromSaloon: "Leave Saloon (Title)",
-      payInvoice: "Pay Sheriff's Cut",
-      bankruptSurrender: "Can't Pay (Exiled to Badlands)",
-      choosePassive: "Claim Creed",
-      equipWeapon: "Equip as Sidearm",
-      equipped: "Holstered & Ready",
-      buyWeapon: "Purchase",
-      mastered: "Mastered",
-      trainCost: (cost: number | string) => `Train (★ ${cost})`,
+      backToTitleFromSaloon: "Back to Title",
+      payInvoice: "Pay Sheriff's Tax",
+      bankruptSurrender: "Can't Pay (Game Over)",
+      choosePassive: "Select",
+      equipWeapon: "Equip",
+      equipped: "Equipped",
+      buyWeapon: "Buy",
+      mastered: "Maxed",
+      trainCost: (cost: number | string) => `Upgrade (★ ${cost})`,
+      upgradeSkill: (cost: string) => `Upgrade (${cost})`,
+    },
+    titleScreen: {
+      mainTitleTop: "QUICK-DRAW",
+      mainTitleBottom: "BOUNTY HUNTER",
+      tagline: "7-Second Duels × Gunsmithing × Sheriff's Tax",
+      posterQuote: '"This town ain\'t big enough for the both of us."',
+      heldBadges: (points: number) => `★ Star Badges: ${points}`,
+      careerRecord: (highestRound: number, totalRuns: number) =>
+        `Best: Round ${highestRound}   |   Total Runs: ${totalRuns}`,
+      introQuote: '"When the wind stops... draw."',
+    },
+    resultScreen: {
+      currentCash: "Current Cash",
+      targetsHit: (count: number) => `Targets Hit: ${count}`,
+      unlockSectionTitle: "📜 Next Wanted Target Unlock",
+      nextTargetProgress: (name: string, pct: number) => `Next Target: [${name}] (${pct}%)`,
+      totalWantedPoints: (cur: string, req: string) => `Wanted Points: ${cur} / ${req} pt`,
+      allTargetsUnlocked: "★ All 6 Wanted Targets Unlocked! ★",
+      unlockPopupBanner: "★ NEW WANTED TARGET! ★",
+      unlockPopupBody: (names: string) => `New target ${names} now appears!`,
+      unlockPopupClose: "(Tap to close)",
+    },
+    records: {
+      gameOverTitle: "💀 GAME OVER 💀",
+      gameOverQuote: '"No name needed on my headstone... Next time I\'ll draw faster."',
+      clearSubtitle:
+        'All 6 Wanted Targets unlocked — you conquered the Frontier!\n"This town ain\'t big enough for me... Onto the next horizon."',
+      roundReached: "Round Reached",
+      roundCleared: "Cleared at Round",
+      invoicesPaidCount: "Taxes Paid",
+      countValue: (n: number) => `${n}`,
+      totalBountyEarned: "Total Bounty Earned",
+      totalTaxesPaid: "Total Taxes Paid",
+      totalTargetsHit: "Total Targets Hit",
+      targetsHitValue: (n: number) => `${n}`,
+      targetsUnlocked: "Targets Unlocked",
+      targetsUnlockedValue: (cur: number, total: number) => `${cur} / ${total}`,
+      gunsAcquired: "Guns Acquired",
+      badgeConversionNote: "★ Earned 2% of Total Taxes Paid as Star Badges! ★",
+      badgeGainedSummary: (gained: number, total: number) =>
+        `★ +${gained} Earned! (Total Held: ${total})`,
+    },
+    skillTreeUi: {
+      locked: "Locked",
+      maxBadge: "★ MAX",
+      noEffectYet: "Current +0",
+      maxLevelReached: "★ Max Level Reached",
+      prerequisite: (name: string, level: number) => `Requires: ${name} Lv.${level}`,
+      prereqUnmet: "Requires: Locked",
+      moveLeft: "Move Left",
+      moveUp: "Move Up",
+      moveDown: "Move Down",
+      moveRight: "Move Right",
+    },
+    gunsmithUi: {
+      statLine1: (dmg: number, interval: string, rps: string) =>
+        `DMG: ${dmg}  |  Fire Interval: ${interval}s (${rps}/s)`,
+      statLine2: (ammo: number, reload: string) => `Ammo: ${ammo}  |  Reload: ${reload}s`,
+      offSuffix: (pct: string) => ` (${pct} OFF)`,
+    },
+    saloonUi: {
+      formatEffect: (id: PermanentUpgradeId, eff: number) => {
+        switch (id) {
+          case "start_sp":
+            return `+$${eff}`;
+          case "base_dmg":
+            return `DMG +${eff}`;
+          case "round_time":
+            return `+${eff}s`;
+          case "tp_gain":
+            return `+${eff}%`;
+          case "invoice_reduction":
+            return `-${eff}%`;
+        }
+      },
     },
     stats: {
-      damage: { label: "Base Firepower", subLabel: "Damage", unit: "dmg" },
-      critRate: { label: "Deadeye Crit Rate", subLabel: "Crit %", unit: "%" },
-      fireRateReduction: { label: "Quick-Draw Speed", subLabel: "Fire Rate", unit: "%" },
-      magazineCapacity: { label: "Cylinder Ammo", subLabel: "Mag Size", unit: "rds" },
-      magazineMultiplier: { label: "Ammo Expansion %", subLabel: "Mag %", unit: "%" },
-      reloadTimeReduction: { label: "Fast Reload Speed", subLabel: "Reload %", unit: "%" },
-      roundTime: { label: "High Noon Time", subLabel: "Time Limit", unit: "s" },
-      maxTargets: { label: "Simultaneous Outlaws", subLabel: "Max Outlaws", unit: "" },
-      spMultiplier: { label: "Bounty Reward Multiplier", subLabel: "Bounty %", unit: "%" },
-      targetPointMultiplier: { label: "Bounty Rep Efficiency", subLabel: "Rep %", unit: "%" },
+      damage: { label: "Base Gun Damage", subLabel: "Damage", unit: "" },
+      critRate: { label: "Critical Hit Chance", subLabel: "Crit %", unit: "%" },
+      fireRateReduction: { label: "Fire Interval Reduction", subLabel: "Fire Rate", unit: "%" },
+      magazineCapacity: { label: "Ammo Capacity", subLabel: "Ammo", unit: "rds" },
+      magazineMultiplier: { label: "Ammo Capacity Bonus", subLabel: "Ammo %", unit: "%" },
+      reloadTimeReduction: { label: "Reload Time Reduction", subLabel: "Reload", unit: "%" },
+      roundTime: { label: "Round Time Limit", subLabel: "Time Limit", unit: "s" },
+      maxTargets: { label: "Max Targets at Once", subLabel: "Max Targets", unit: "" },
+      spMultiplier: { label: "Bounty Cash Bonus", subLabel: "Cash %", unit: "%" },
+      targetPointMultiplier: { label: "Wanted Points Bonus", subLabel: "WP %", unit: "%" },
       shopDiscount: { label: "Gunsmith Discount", subLabel: "Discount", unit: "%" },
-      timeTargetBonus: { label: "Pocket Watch Extension", subLabel: "Time +s", unit: "s" },
-      chainDamage: { label: "Dynamite Chain Damage", subLabel: "Explosion %", unit: "%" },
+      timeTargetBonus: { label: "Pocket Watch Bonus", subLabel: "Watch +s", unit: "s" },
+      chainDamage: { label: "Dynamite Blast Damage", subLabel: "Blast %", unit: "%" },
     },
+    weapons: {
+      handgun: {
+        name: "Peacemaker",
+        description: "Balanced 6-shot revolver with fast firing and quick reloads.",
+      },
+      rifle: {
+        name: "Winchester Rifle",
+        description: "Lever-action repeater with solid damage and a large magazine.",
+      },
+      sniper: {
+        name: "Sharps Buffalo Rifle",
+        description: "Slow to reload, but packs massive damage to one-shot tough targets.",
+      },
+    },
+    targets: {
+      standard: {
+        name: "Outlaw",
+        description: "Standard target with low HP. Warm up your trigger finger.",
+      },
+      hard: {
+        name: "Ironclad Bandit",
+        description: "Armored target with high HP and a hefty bounty.",
+      },
+      gold: {
+        name: "Golden Desperado",
+        description: "Huge bounty, but vanishes quickly. Shoot on sight!",
+      },
+      electric: {
+        name: "Dynamite Barrel",
+        description: "Explodes when shot, dealing blast damage to other targets.",
+      },
+      small: {
+        name: "Quick-Draw Kid",
+        description: "Small and tricky to hit, but pays well.",
+      },
+      time: {
+        name: "Pocket Watch",
+        description: "Adds extra seconds to the round timer when destroyed.",
+      },
+    },
+    skills: {
+      damage_base: {
+        name: "Lead Power",
+        description: "Increases base damage of all guns.",
+      },
+      fire_rate: {
+        name: "Rapid Draw",
+        description: "Reduces firing interval for faster shots.",
+      },
+      max_targets: {
+        name: "More Targets",
+        description: "Increases the maximum number of simultaneous targets.",
+      },
+      crit_rate: {
+        name: "Deadeye Crit",
+        description: "Increases critical hit chance (2x damage).",
+      },
+      chain_damage: {
+        name: "Dynamite Blast",
+        description: "Boosts chain explosion damage from Dynamite Barrels.",
+      },
+      round_time: {
+        name: "Extra Time",
+        description: "Extends the time limit of each round.",
+      },
+      time_target_bonus: {
+        name: "Watch Bonus",
+        description: "Increases bonus time gained from Pocket Watches.",
+      },
+      magazine_size: {
+        name: "Extra Ammo",
+        description: "Increases ammo capacity for all guns.",
+      },
+      reload_speed: {
+        name: "Quick Reload",
+        description: "Reduces reload time when out of ammo.",
+      },
+      sp_multiplier: {
+        name: "Bounty Boost",
+        description: "Increases cash ($) earned from destroying targets.",
+      },
+      target_point_mult: {
+        name: "Wanted Points+",
+        description: "Increases Wanted Points gained to unlock new targets.",
+      },
+      shop_discount: {
+        name: "Gunsmith Deal",
+        description: "Discounts weapon prices at the Gunsmith.",
+      },
+    },
+    passives: {
+      sp_bonus: { name: "Bounty Hunter's Nose", description: "Cash ($) Earned +10%" },
+      dmg_bonus: { name: "Heavy Lead Rounds", description: "Base Gun Damage +15%" },
+      time_bonus: { name: "Quick-Draw Focus", description: "Round Time Limit +1.0s" },
+      target_bonus: { name: "Mass Wanted Posters", description: "Simultaneous Targets +1" },
+      shop_discount: { name: "Gunsmith Regular", description: "Gunsmith Weapon Prices -10%" },
+      tp_bonus: { name: "Wide Wanted Network", description: "Wanted Points (Target Unlock) +10%" },
+    },
+    permanentUpgrades: {
+      start_sp: {
+        name: "Grubstake Pouch",
+        description: "Increases starting Cash ($) on each new run.",
+      },
+      base_dmg: {
+        name: "Gunslinger's Grit",
+        description: "Increases base gun damage from the start of a run.",
+      },
+      round_time: {
+        name: "Deadeye Focus",
+        description: "Extends the round time limit.",
+      },
+      tp_gain: {
+        name: "Poster Collector",
+        description: "Increases Wanted Points gained to unlock new targets.",
+      },
+      invoice_reduction: {
+        name: "Sheriff's Bribe",
+        description: "Reduces the Sheriff's Tax collected every 5 rounds.",
+      },
+    },
+    quotes: [
+      '"This town ain\'t big enough for the both of us."',
+      '"Lead don\'t lie."',
+      '"Get two coffins ready."',
+      '"There\'s no second place in a quick draw."',
+      '"We settle this before sundown."',
+      '"When the wind stops... draw."',
+      '"No outlaw rides away from my sights."',
+      '"Dead men tell no tales — and pay good bounty."',
+    ],
+    stageSubtitles: [
+      "RED DUST GULCH",
+      "OLD SALOON FRONT",
+      "GHOST TRAIN DEPOT",
+      "CACTUS CANYON",
+      "HIGH NOON SQUARE",
+    ],
+    sheriffStageSubtitle: "SHERIFF'S RECKONING",
     ui: {
       language: "Language / 言語",
       languageJa: "日本語",
       languageEn: "English",
       fullscreen: "Display Mode",
       fullscreenOn: "Fullscreen Active",
-      fullscreenOff: "Standard Window",
-      fullscreenToggle: "Go Fullscreen",
+      fullscreenOff: "Windowed",
+      fullscreenToggle: "Fullscreen",
       fullscreenExit: "Exit Fullscreen",
       cursorFollow: "Follow Mouse Cursor",
-      cursorFollowDescOn: "Direct mouse aiming",
-      cursorFollowDescOff: "Use slider lever control",
+      cursorFollowDescOn: "Aim directly at the mouse cursor",
+      cursorFollowDescOff: "Aim with vertical drag lever",
       mobileDisabled: "Mobile (Disabled)",
-      pcCursorFollowActive: "Disabled (Following Cursor)",
-      joystickPosition: "Lever Position",
-      joystickDynamic: "Dynamic (Under Finger)",
+      pcCursorFollowActive: "Disabled (Cursor Follow ON)",
+      joystickPosition: "Aim Lever Position",
+      joystickDynamic: "Dynamic (Touch Point)",
       joystickFixed: "Fixed (Bottom)",
       bgmVolume: "Music Volume (Whistle & Guitar)",
-      seVolume: "Sound Effects (Gunshot & Spurs)",
+      seVolume: "SFX Volume (Gunshots, Spurs & Reload)",
     },
   },
 };

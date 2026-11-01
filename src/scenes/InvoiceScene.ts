@@ -73,17 +73,11 @@ export class InvoiceScene extends Phaser.Scene {
     ).setOrigin(0.5);
     this.mainContainer.add(title);
 
-    const quote = addCrispText(
-      this,
-      width / 2,
-      275,
-      "「この町で銃を抜くなら、保安官事務所への挨拶代を置いていきな」",
-      {
-        fontSize: "19px",
-        fontStyle: "bold",
-        color: "#d6b384",
-      },
-    ).setOrigin(0.5);
+    const quote = addCrispText(this, width / 2, 275, VOCAB.progression.invoiceQuote, {
+      fontSize: "19px",
+      fontStyle: "bold",
+      color: "#d6b384",
+    }).setOrigin(0.5);
     this.mainContainer.add(quote);
 
     const cardW = 760;
@@ -109,7 +103,7 @@ export class InvoiceScene extends Phaser.Scene {
       this,
       width / 2,
       cardY + 165,
-      `— ${VOCAB.progression.invoiceShort} 徴収額 —`,
+      VOCAB.progression.invoiceAmountLabel,
       {
         fontSize: "24px",
         fontStyle: "bold",
@@ -125,18 +119,16 @@ export class InvoiceScene extends Phaser.Scene {
     }).setOrigin(0.5);
     this.mainContainer.add(costValue);
 
-    const spStatus = addCrispText(
-      this,
-      width / 2,
-      cardY + 355,
-      `現在の${VOCAB.currency.moneyName}: ${formatMoney(this.gameState.sp)}\n(${canAfford ? "支払い可能 — 保安官も納得の額だ" : "所持金不足 — 袋の底が空っぽだ！"})`,
-      {
-        fontSize: "22px",
-        fontStyle: "bold",
-        color: canAfford ? "#5c2d10" : "#b91c1c",
-        align: "center",
-      },
-    ).setOrigin(0.5);
+    const statusText = canAfford
+      ? VOCAB.progression.invoiceStatusAfford(formatMoney(this.gameState.sp))
+      : VOCAB.progression.invoiceStatusShort(formatMoney(this.gameState.sp));
+
+    const spStatus = addCrispText(this, width / 2, cardY + 355, statusText, {
+      fontSize: "22px",
+      fontStyle: "bold",
+      color: canAfford ? "#5c2d10" : "#b91c1c",
+      align: "center",
+    }).setOrigin(0.5);
     this.mainContainer.add(spStatus);
 
     if (canAfford) {
@@ -192,16 +184,10 @@ export class InvoiceScene extends Phaser.Scene {
     }).setOrigin(0.5);
     this.mainContainer.add(title);
 
-    const subtitle = addCrispText(
-      this,
-      width / 2,
-      192,
-      `3つの${VOCAB.facilities.passivesTitle}から1つを選んで身につけろ（重複習得可能）`,
-      {
-        fontSize: "20px",
-        color: "#d6b384",
-      },
-    ).setOrigin(0.5);
+    const subtitle = addCrispText(this, width / 2, 192, VOCAB.facilities.passivesDesc, {
+      fontSize: "20px",
+      color: "#d6b384",
+    }).setOrigin(0.5);
     this.mainContainer.add(subtitle);
 
     const cardW = 780;
@@ -211,6 +197,7 @@ export class InvoiceScene extends Phaser.Scene {
 
     choices.forEach((passiveId, index) => {
       const def = PASSIVES[passiveId];
+      const localizedPassive = VOCAB.passives[passiveId];
       const count = this.gameState.passives[passiveId] || 0;
       const y = startY + index * (cardH + gap);
 
@@ -231,22 +218,28 @@ export class InvoiceScene extends Phaser.Scene {
         fontSize: "64px",
       }).setOrigin(0.5);
 
-      const name = addCrispText(this, -180, -48, def.name, {
+      const name = addCrispText(this, -180, -48, localizedPassive.name, {
         fontSize: "28px",
         fontStyle: "bold",
         color: "#fef3c7",
       });
 
-      const desc = addCrispText(this, -180, 4, def.description, {
+      const desc = addCrispText(this, -180, 4, localizedPassive.description, {
         fontSize: "22px",
         fontStyle: "bold",
         color: "#fbbf24",
       });
 
-      const owned = addCrispText(this, -180, 50, count > 0 ? `現在習得数: ×${count}` : "未習得", {
-        fontSize: "17px",
-        color: count > 0 ? "#fde68a" : "#a88b67",
-      });
+      const owned = addCrispText(
+        this,
+        -180,
+        50,
+        count > 0 ? VOCAB.facilities.passiveOwnedCount(count) : VOCAB.facilities.passiveUnowned,
+        {
+          fontSize: "17px",
+          color: count > 0 ? "#fde68a" : "#a88b67",
+        },
+      );
 
       const btn = this.add.graphics();
       btn.fillStyle(0x9a3412, 1);

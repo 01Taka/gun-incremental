@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { TARGETS } from "../config/gameData";
+import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { addCrispText } from "../utils/text";
 
@@ -25,16 +26,10 @@ export class PreloadScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5);
 
-    const percentText = addCrispText(
-      this,
-      width / 2,
-      height / 2 + 72,
-      "銃身に油を差しています...",
-      {
-        fontSize: "22px",
-        color: "#d6b384",
-      },
-    ).setOrigin(0.5);
+    const percentText = addCrispText(this, width / 2, height / 2 + 72, VOCAB.combat.loadingGun, {
+      fontSize: "22px",
+      color: "#d6b384",
+    }).setOrigin(0.5);
 
     const progressBox = this.add.graphics();
     progressBox.fillStyle(0x2a1509, 0.95);

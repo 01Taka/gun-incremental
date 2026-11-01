@@ -57,12 +57,12 @@ export class RoundHUD {
       radius: 12,
     });
 
-    // 左上: 決闘ラウンド表記
+    // 左上: ラウンド表記
     this.roundInfoText = addCrispText(
       this.scene,
       44,
       hudTop + 16,
-      VOCAB.progression.roundName(this.gameState.round),
+      VOCAB.progression.roundHudLabel(this.gameState.round),
       {
         fontSize: "28px",
         fontFamily: "display",
@@ -85,17 +85,23 @@ export class RoundHUD {
       color: "#fef3c7",
     });
 
-    this.ammoSubText = addCrispText(this.scene, 126, hudTop + 122, VOCAB.combat.cylinderIconSub, {
-      fontSize: "13px",
-      color: "#d6b384",
-    });
+    this.ammoSubText = addCrispText(
+      this.scene,
+      126,
+      hudTop + 122,
+      VOCAB.weapons[this.gameState.equippedWeapon].name,
+      {
+        fontSize: "13px",
+        color: "#d6b384",
+      },
+    );
 
-    // 中央: 照準状態 ＆ 決闘残り時間
+    // 中央: 照準状態 ＆ 残り時間
     this.lockOnStatusText = addCrispText(
       this.scene,
       width / 2,
       hudTop + 20,
-      VOCAB.combat.lockOnStandoff,
+      VOCAB.combat.lockOnReady,
       {
         fontSize: "17px",
         fontStyle: "bold",
@@ -228,25 +234,19 @@ export class RoundHUD {
     this.autoFireToggleContainer = this.scene.add.container(width - 150, 1148);
     this.refreshAutoFireToggle();
 
-    addCrispText(
-      this.scene,
-      width / 2,
-      1212,
-      "🤠 画面のどこでもタッチ＆上下ドラッグで照準！（タップで正面へ）",
-      {
-        fontSize: "19px",
-        fontStyle: "bold",
-        color: "#fde68a",
-      },
-    ).setOrigin(0.5);
+    addCrispText(this.scene, width / 2, 1212, VOCAB.combat.dragAimHint, {
+      fontSize: "19px",
+      fontStyle: "bold",
+      color: "#fde68a",
+    }).setOrigin(0.5);
 
-    addCrispText(this.scene, width / 2, 1246, "🔫 賞金首を射線に捉えた瞬間、自動で早撃ち発砲！", {
+    addCrispText(this.scene, width / 2, 1246, VOCAB.combat.autoFireHint, {
       fontSize: "17px",
       fontStyle: "bold",
       color: "#f59e0b",
     }).setOrigin(0.5);
 
-    addCrispText(this.scene, width / 2, 1532, "（PC: A / D または 矢印キー でも照準調整可能）", {
+    addCrispText(this.scene, width / 2, 1532, VOCAB.combat.keyboardAimHint, {
       fontSize: "15px",
       color: "#a88b67",
     }).setOrigin(0.5);
@@ -262,16 +262,16 @@ export class RoundHUD {
   }
 
   public setReadyStatus(): void {
-    this.lockOnStatusText.setText("HIGH NOON — 静寂...");
+    this.lockOnStatusText.setText(VOCAB.combat.lockOnReady);
     this.lockOnStatusText.setColor("#fde68a");
   }
 
   public updateLockOn(targetName: string | null): void {
     if (targetName) {
-      this.lockOnStatusText.setText(`DEADEYE: ${targetName}`);
+      this.lockOnStatusText.setText(VOCAB.combat.lockOnTarget(targetName));
       this.lockOnStatusText.setColor("#fbbf24");
     } else {
-      this.lockOnStatusText.setText("AIMING...");
+      this.lockOnStatusText.setText(VOCAB.combat.lockOnAiming);
       this.lockOnStatusText.setColor("#a88b67");
     }
   }
@@ -309,11 +309,9 @@ export class RoundHUD {
     if (isReloading) {
       // リロード中はシリンダーをくるくる回転させる
       this.cylinderContainer.setRotation(reloadProgress * Math.PI * 4);
-      this.ammoText.setText(
-        `${VOCAB.combat.cylinderSpinning} ${Math.floor(reloadProgress * 100)}%`,
-      );
+      this.ammoText.setText(VOCAB.combat.cylinderReloading(Math.floor(reloadProgress * 100)));
       this.ammoText.setColor("#f59e0b");
-      this.ammoSubText.setText("CYLINDER SPIN");
+      this.ammoSubText.setText(VOCAB.combat.cylinderReloadSub);
 
       this.reloadBarGraphics.fillStyle(0x3b1d0c, 0.9);
       this.reloadBarGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 3);
@@ -339,7 +337,7 @@ export class RoundHUD {
       this.ammoSubText.setText(
         extraRounds > 0
           ? VOCAB.combat.cylinderReserveAmmo(extraRounds)
-          : VOCAB.combat.cylinderIconSub,
+          : VOCAB.weapons[this.gameState.equippedWeapon].name,
       );
 
       const ratio = maxAmmo > 0 ? currentAmmo / maxAmmo : 0;
@@ -358,8 +356,10 @@ export class RoundHUD {
   }
 
   public updateSp(): void {
-    this.spText.setText(`所持金 ${formatMoney(this.gameState.sp)}`);
-    this.roundSpText.setText(`獲得賞金 +${formatMoney(this.gameState.lastRoundSpEarned)}`);
+    this.spText.setText(`${VOCAB.currency.moneyName} ${formatMoney(this.gameState.sp)}`);
+    this.roundSpText.setText(
+      `${VOCAB.currency.earnedMoney} +${formatMoney(this.gameState.lastRoundSpEarned)}`,
+    );
   }
 
   public refreshWeaponButtons(onEquip?: () => void): void {
@@ -372,6 +372,7 @@ export class RoundHUD {
 
     owned.forEach((weaponId, index) => {
       const def = WEAPONS[weaponId];
+      const localizedWeapon = VOCAB.weapons[weaponId];
       const isEquipped = this.gameState.equippedWeapon === weaponId;
       const x = index * (buttonWidth + gap);
 
@@ -382,7 +383,7 @@ export class RoundHUD {
       bg.fillRoundedRect(0, 0, buttonWidth, buttonHeight, 8);
       bg.strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 8);
 
-      const label = addCrispText(this.scene, buttonWidth / 2, 20, def.name, {
+      const label = addCrispText(this.scene, buttonWidth / 2, 20, localizedWeapon.name, {
         fontSize: "18px",
         fontStyle: "bold",
         color: isEquipped ? "#fef3c7" : "#d6b384",
@@ -393,7 +394,7 @@ export class RoundHUD {
         this.scene,
         buttonWidth / 2,
         46,
-        `威力:${def.damage} | 間隔:${def.fireInterval}s | 装弾:${maxMag}`,
+        VOCAB.combat.weaponSwitchSub(def.damage, def.fireInterval, maxMag),
         {
           fontSize: "12px",
           color: isEquipped ? "#fde68a" : "#a88b67",
@@ -593,13 +594,19 @@ export class RoundHUD {
   }
 
   public showTimeBonusPopup(x: number, y: number, seconds: number): void {
-    const popup = addCrispText(this.scene, x, y - 30, `刻限 +${seconds.toFixed(1)}s!`, {
-      fontSize: "28px",
-      fontStyle: "bold",
-      color: "#fde68a",
-      stroke: "#92400e",
-      strokeThickness: 4,
-    })
+    const popup = addCrispText(
+      this.scene,
+      x,
+      y - 30,
+      VOCAB.combat.timeExtensionPopup(seconds.toFixed(1)),
+      {
+        fontSize: "28px",
+        fontStyle: "bold",
+        color: "#fde68a",
+        stroke: "#92400e",
+        strokeThickness: 4,
+      },
+    )
       .setOrigin(0.5)
       .setDepth(70);
 

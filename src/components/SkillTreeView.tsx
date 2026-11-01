@@ -436,6 +436,10 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
 
   // --- 選択中ノードの詳細データ ---
   const selectedDef = SKILLS[selectedSkillId];
+  const selectedText = VOCAB.skills[selectedSkillId] ?? {
+    name: selectedDef.name,
+    description: selectedDef.description,
+  };
   const selectedCurLevel = gameState.getSkillLevel(selectedSkillId);
   const selectedIsMax = selectedCurLevel >= selectedDef.maxLevel;
   const selectedCost = gameState.getSkillCost(selectedSkillId);
@@ -445,18 +449,28 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
   const perLevel = selectedDef.effect.perLevel;
   const curVal = selectedCurLevel * perLevel;
   const nextVal = (selectedCurLevel + 1) * perLevel;
-  const unit = SKILL_STATS[selectedDef.effect.stat].unit;
+  const statInfo = SKILL_STATS[selectedDef.effect.stat];
+  const unit = statInfo.unit;
   const roundVal = (v: number) => Math.round(v * 1000) / 1000;
+  const formatStatVal = (v: number) =>
+    unit === "%"
+      ? formatPercent(v, true)
+      : unit === ""
+        ? `+${roundVal(v)}`
+        : `+${roundVal(v)} ${unit}`;
 
-  const curDisplay = unit === "%" ? formatPercent(curVal, true) : `+${roundVal(curVal)} ${unit}`;
-  const nextDisplay = unit === "%" ? formatPercent(nextVal, true) : `+${roundVal(nextVal)} ${unit}`;
+  const curDisplay = formatStatVal(curVal);
+  const nextDisplay = formatStatVal(nextVal);
 
   const parentDef = selectedDef.requirement ? SKILLS[selectedDef.requirement.nodeId] : null;
+  const parentText = parentDef
+    ? (VOCAB.skills[parentDef.id] ?? { name: parentDef.name, description: parentDef.description })
+    : null;
   const isParentRevealed = parentDef ? gameState.isSkillRequirementMet(parentDef.id) : false;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      {/* 1. 上部: 早撃ち技能説明パネル（サドルレザー＆真鍮枠） */}
+      {/* 1. 上部: スキル説明パネル（サドルレザー＆真鍮枠） */}
       <div
         className={`western-leather flex-shrink-0 rounded-xl border-2 px-3.5 py-2.5 shadow-xl transition-colors ${
           !selectedReqMet
@@ -487,7 +501,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
                 !selectedReqMet ? "text-amber-700" : "text-amber-50"
               }`}
             >
-              {!selectedReqMet ? "???" : selectedDef.name}
+              {!selectedReqMet ? "???" : selectedText.name}
             </h3>
           </div>
           <span
@@ -500,9 +514,9 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
             }`}
           >
             {!selectedReqMet
-              ? "未習得"
+              ? VOCAB.skillTreeUi.locked
               : selectedIsMax
-                ? "★ 極意"
+                ? VOCAB.skillTreeUi.maxBadge
                 : `Lv.${selectedCurLevel} / ${selectedDef.maxLevel}`}
           </span>
         </div>
@@ -526,7 +540,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
               !selectedReqMet ? "text-amber-800" : "text-amber-200/80"
             }`}
           >
-            {!selectedReqMet ? "???" : SKILL_STATS[selectedDef.effect.stat].label}
+            {!selectedReqMet ? "???" : statInfo.label}
           </span>
           {!selectedReqMet ? (
             <span className="text-sm font-extrabold tracking-widest text-amber-800 sm:text-base">
@@ -537,13 +551,20 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
           ) : (
             <span className="text-sm font-extrabold text-amber-300 sm:text-base">
               <span className="text-amber-100/80">
-                {selectedCurLevel > 0 ? curDisplay : "効果なし"}
+                {selectedCurLevel > 0 ? curDisplay : VOCAB.skillTreeUi.noEffectYet}
               </span>
               <span className="mx-1.5 text-amber-600">➔</span>
               <span>{nextDisplay}</span>
             </span>
           )}
         </div>
+
+        {/* 3段目: スキルの詳細説明（分かりやすさ補足） */}
+        {selectedReqMet && (
+          <p className="mt-1.5 border-t border-amber-900/50 pt-1.5 text-xs text-amber-200/75 sm:text-[13px]">
+            {selectedText.description}
+          </p>
+        )}
       </div>
 
       {/* 説明パネル直下: 次の決闘へボタン */}
@@ -648,6 +669,10 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
           {/* ノード群 */}
           {SKILL_IDS.map((skillId) => {
             const def = SKILLS[skillId];
+            const nodeText = VOCAB.skills[skillId] ?? {
+              name: def.name,
+              description: def.description,
+            };
             const style = NODE_STYLE[def.size];
             const pos = canvasMetrics.coords[skillId];
             const curLevel = gameState.getSkillLevel(skillId);
@@ -692,7 +717,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
                     !isReqMet ? "text-[#6b462b]" : isMax ? "text-amber-200" : "text-amber-50"
                   }`}
                 >
-                  {!isReqMet ? "???" : def.name}
+                  {!isReqMet ? "???" : nodeText.name}
                 </div>
 
                 {/* ノード円ボタン本体 */}
@@ -766,7 +791,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
                 {/* コスト表示 (ノード下部: $表記) */}
                 <div className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 text-[11px] font-bold whitespace-nowrap">
                   {!isReqMet ? null : isMax ? (
-                    <span className="text-amber-300">★ 極意</span>
+                    <span className="text-amber-300">{VOCAB.skillTreeUi.maxBadge}</span>
                   ) : cost !== null ? (
                     <span className={canUnlock ? "text-amber-300" : "text-red-400"}>
                       {formatMoney(cost)}
@@ -784,25 +809,25 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
         {/* 上下左右の移動ボタン群 */}
         <div className="grid grid-cols-4 gap-2">
           <DpadButton
-            label="左へ移動"
+            label={VOCAB.skillTreeUi.moveLeft}
             icon={<ArrowLeft className="h-4 w-4" />}
             onPressStart={() => startDpadPan(-1, 0)}
             onPressEnd={stopDpadPan}
           />
           <DpadButton
-            label="上へ移動"
+            label={VOCAB.skillTreeUi.moveUp}
             icon={<ArrowUp className="h-4 w-4" />}
             onPressStart={() => startDpadPan(0, -1)}
             onPressEnd={stopDpadPan}
           />
           <DpadButton
-            label="下へ移動"
+            label={VOCAB.skillTreeUi.moveDown}
             icon={<ArrowDown className="h-4 w-4" />}
             onPressStart={() => startDpadPan(0, 1)}
             onPressEnd={stopDpadPan}
           />
           <DpadButton
-            label="右へ移動"
+            label={VOCAB.skillTreeUi.moveRight}
             icon={<ArrowRight className="h-4 w-4" />}
             onPressStart={() => startDpadPan(1, 0)}
             onPressEnd={stopDpadPan}
@@ -812,16 +837,18 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
         {/* 購入アクションボタン / ロック状態 */}
         {selectedIsMax ? (
           <div className="flex h-10 items-center justify-center rounded-lg border-2 border-amber-400/80 bg-amber-950/60 text-sm font-extrabold text-amber-300 sm:h-11 sm:text-base">
-            ★ 極意レベル習得済み
+            {VOCAB.skillTreeUi.maxLevelReached}
           </div>
         ) : !selectedReqMet ? (
           <div className="flex h-10 items-center justify-center gap-2 rounded-lg border border-red-800/80 bg-[#2d0e0b]/80 px-3 text-xs font-bold text-red-300 sm:h-11 sm:text-sm">
             <Lock className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">
-              前提条件:{" "}
-              {parentDef
-                ? `${isParentRevealed ? parentDef.name : "???"} Lv.${selectedDef.requirement!.level}`
-                : "未達成"}
+              {parentDef && parentText
+                ? VOCAB.skillTreeUi.prerequisite(
+                    isParentRevealed ? parentText.name : "???",
+                    selectedDef.requirement!.level,
+                  )
+                : VOCAB.skillTreeUi.prereqUnmet}
             </span>
           </div>
         ) : (
@@ -836,7 +863,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
             }`}
           >
             <Zap className="h-4 w-4" />
-            <span>技を磨く ({formatMoney(selectedCost!)})</span>
+            <span>{VOCAB.actions.upgradeSkill(formatMoney(selectedCost!))}</span>
           </button>
         )}
       </div>

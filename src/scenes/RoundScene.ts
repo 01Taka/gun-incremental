@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
+import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
@@ -159,7 +160,7 @@ export class RoundScene extends Phaser.Scene {
 
     showCinemaTitleCard(this, {
       actLabel: getStageSubtitle(this.gameState.round),
-      title: `DUEL #${this.gameState.round}`,
+      title: VOCAB.progression.roundHudLabel(this.gameState.round),
       quote: getWesternQuote(this.gameState.round + 1),
       y: 235,
       holdMs: 680,
@@ -299,7 +300,7 @@ export class RoundScene extends Phaser.Scene {
 
       this.startRound();
       const initialTarget = this.gunTurret.checkRayIntersection(this.targetManager.getTargets());
-      this.hud.updateLockOn(initialTarget ? initialTarget.def.name : null);
+      this.hud.updateLockOn(initialTarget ? VOCAB.targets[initialTarget.def.id].name : null);
       if (initialTarget) {
         this.attemptAutoFire();
       }
@@ -335,7 +336,7 @@ export class RoundScene extends Phaser.Scene {
     if (this.isReloading) {
       this.hud.updateLockOn(null);
     } else if (lockedTarget) {
-      this.hud.updateLockOn(lockedTarget.def.name);
+      this.hud.updateLockOn(VOCAB.targets[lockedTarget.def.id].name);
     } else {
       this.hud.updateLockOn(null);
     }
