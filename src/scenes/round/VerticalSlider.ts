@@ -256,7 +256,7 @@ export class VerticalSlider {
     }
 
     if (keyInput !== 0 && !this.isDragging) {
-      const speed = 0.9;
+      const speed = 0.72; // 感度20%減少 (0.9 -> 0.72)
       this.ratio = Phaser.Math.Clamp(this.ratio + keyInput * speed * deltaSeconds, 0, 1);
       this.updateKnobPosition();
     }

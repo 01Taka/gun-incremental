@@ -75,11 +75,11 @@ export class RoundScene extends Phaser.Scene {
     // 3. HUD（上部情報・下部コントロール）の作成
     this.hud = new RoundHUD(this, this.arenaBounds);
 
-    // 4. 縦型直線スライダー（VerticalSlider）を配置（タッチ位置が中央基準になる動的スライダー）
+    // 4. 縦型直線スライダー（VerticalSlider）を配置（感度20%減少: halfLength 150 -> 188px）
     this.verticalSlider = new VerticalSlider(this, {
       defaultCenterX: width / 2,
-      defaultCenterY: 1370,
-      halfLength: 150,
+      defaultCenterY: 1385,
+      halfLength: 188,
       trackWidth: 20,
     });
 
