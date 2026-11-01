@@ -10,12 +10,13 @@ import { layoutFishbone } from "../../logic/fishboneLayout";
 import { GameState } from "../../logic/GameState";
 import {
   calculateCanvasMetrics,
-  DPAD_REPEAT_DELAY,
-  DPAD_REPEAT_INTERVAL,
   DRAG_THRESHOLD,
   findNextNodeInDirection,
   formatSkillStatValue,
   LONG_PRESS_DURATION,
+  STICK_MOVE_COOLDOWN,
+  STICK_REPEAT_DELAY,
+  STICK_REPEAT_INTERVAL,
 } from "./skillTreeMetrics";
 
 interface UseSkillTreeOptions {
@@ -64,6 +65,9 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
     timeoutId: number | null;
     intervalId: number | null;
   }>({ timeoutId: null, intervalId: null });
+
+  // 連続移動のインターバル制御用（前回ステップ実行時刻）
+  const lastStepTimeRef = useRef<number>(0);
 
   // 魚の骨レイアウト計算
   const treeLayout = useMemo(() => layoutFishbone(SKILL_TREE), []);
@@ -194,41 +198,66 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
     [audio, scrollNodeIntoView, treeLayout.positions],
   );
 
-  // --- 下部の上下左右ボタンによる選択ノードハイライト移動 & 追従スクロール ---
+  // --- スティック・方向入力による選択ノード移動 & インターバル付き連続移動 ---
   const startDpadPan = useCallback(
     (dx: number, dy: number) => {
       stopDpadPan();
-      stepSelection(dx, dy);
 
-      dpadRepeatRef.current.timeoutId = window.setTimeout(() => {
-        dpadRepeatRef.current.intervalId = window.setInterval(() => {
-          stepSelection(dx, dy);
-        }, DPAD_REPEAT_INTERVAL);
-      }, DPAD_REPEAT_DELAY);
+      const executeStepAndStartRepeat = () => {
+        lastStepTimeRef.current = performance.now();
+        stepSelection(dx, dy);
+
+        dpadRepeatRef.current.timeoutId = window.setTimeout(() => {
+          dpadRepeatRef.current.intervalId = window.setInterval(() => {
+            lastStepTimeRef.current = performance.now();
+            stepSelection(dx, dy);
+          }, STICK_REPEAT_INTERVAL);
+        }, STICK_REPEAT_DELAY);
+      };
+
+      const now = performance.now();
+      const elapsed = now - lastStepTimeRef.current;
+      const cooldownRemaining = Math.max(0, STICK_MOVE_COOLDOWN - elapsed);
+
+      if (cooldownRemaining > 0) {
+        // 前回の移動からのインターバルがまだ満たない場合、残りのインターバルを待ってから実行
+        dpadRepeatRef.current.timeoutId = window.setTimeout(() => {
+          executeStepAndStartRepeat();
+        }, cooldownRemaining);
+      } else {
+        executeStepAndStartRepeat();
+      }
     },
     [stepSelection, stopDpadPan],
   );
 
-  // PCキーボードの矢印キーでもハイライト移動可能にする
+  // PCキーボードの矢印キーでもハイライト移動可能にする（インターバルを考慮）
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      let dx = 0;
+      let dy = 0;
       switch (e.key) {
         case "ArrowLeft":
-          e.preventDefault();
-          stepSelection(-1, 0);
+          dx = -1;
           break;
         case "ArrowRight":
-          e.preventDefault();
-          stepSelection(1, 0);
+          dx = 1;
           break;
         case "ArrowUp":
-          e.preventDefault();
-          stepSelection(0, -1);
+          dy = -1;
           break;
         case "ArrowDown":
-          e.preventDefault();
-          stepSelection(0, 1);
+          dy = 1;
           break;
+        default:
+          return;
+      }
+
+      e.preventDefault();
+      const now = performance.now();
+      if (now - lastStepTimeRef.current >= STICK_MOVE_COOLDOWN) {
+        lastStepTimeRef.current = now;
+        stepSelection(dx, dy);
       }
     };
 

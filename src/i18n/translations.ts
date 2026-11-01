@@ -171,6 +171,7 @@ export interface Translations {
     maxLevelReached: string;
     prerequisite: (name: string, level: number) => string;
     prereqUnmet: string;
+    virtualStick: string;
     moveLeft: string;
     moveUp: string;
     moveDown: string;
@@ -367,6 +368,7 @@ export const translations: Record<Locale, Translations> = {
       maxLevelReached: "★ 最大レベル習得済み",
       prerequisite: (name: string, level: number) => `解放条件: ${name} Lv.${level}`,
       prereqUnmet: "解放条件: 未達成",
+      virtualStick: "移動スティック",
       moveLeft: "左へ移動",
       moveUp: "上へ移動",
       moveDown: "下へ移動",
@@ -728,6 +730,7 @@ export const translations: Record<Locale, Translations> = {
       maxLevelReached: "★ Max Level Reached",
       prerequisite: (name: string, level: number) => `Requires: ${name} Lv.${level}`,
       prereqUnmet: "Requires: Locked",
+      virtualStick: "Navigation Stick",
       moveLeft: "Move Left",
       moveUp: "Move Up",
       moveDown: "Move Down",

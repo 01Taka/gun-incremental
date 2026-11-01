@@ -17,9 +17,13 @@ export const DRAG_THRESHOLD = 8;
 /** 長押し購入の所要時間 (ms) */
 export const LONG_PRESS_DURATION = 500;
 
-/** 方向ボタン押しっぱなし時のリピート開始待機 (ms) と間隔 (ms) */
-export const DPAD_REPEAT_DELAY = 320;
-export const DPAD_REPEAT_INTERVAL = 160;
+/** スティック連続移動時のインターバル設定 (ms) */
+export const STICK_MOVE_COOLDOWN = 280; // 連続移動時の最小インターバル（方向転換時の暴発防止クールダウン）
+export const STICK_REPEAT_DELAY = 360; // スティックを倒し続けたときに次の移動が始まるまでのディレイ
+export const STICK_REPEAT_INTERVAL = 280; // スティックを倒し続けたときの連続移動インターバル
+
+export const DPAD_REPEAT_DELAY = STICK_REPEAT_DELAY;
+export const DPAD_REPEAT_INTERVAL = STICK_REPEAT_INTERVAL;
 
 export const NODE_STYLE: Record<
   SkillNodeSize,

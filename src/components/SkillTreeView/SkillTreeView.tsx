@@ -1,5 +1,6 @@
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronRight, Lock, Zap } from "lucide-react";
+import { ChevronRight, Lock, Zap } from "lucide-react";
 import type React from "react";
+import { useCallback } from "react";
 
 import { SKILL_IDS, SKILLS } from "../../config/skillTree";
 import { VOCAB } from "../../config/vocab";
@@ -7,6 +8,7 @@ import { formatMoney } from "../../logic/format";
 import { SkillIcon } from "../SkillIcon";
 import { NODE_STYLE } from "./skillTreeMetrics";
 import { useSkillTree } from "./useSkillTree";
+import { VirtualStick } from "./VirtualStick";
 
 interface SkillTreeViewProps {
   /** SPや購入状態が更新されたときに親（ヘッダー表示など）へ通知するコールバック */
@@ -44,6 +46,17 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
     parentText,
     isParentRevealed,
   } = useSkillTree({ onStateChange });
+
+  const handleStickDirectionChange = useCallback(
+    (dx: number, dy: number) => {
+      if (dx === 0 && dy === 0) {
+        stopDpadPan();
+      } else {
+        startDpadPan(dx, dy);
+      }
+    },
+    [startDpadPan, stopDpadPan],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -382,95 +395,50 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
         </div>
       </div>
 
-      {/* 3. 下部: 移動用上下左右ボタン + 購入ボタン（木札パネル） */}
-      <div className="western-wood flex flex-shrink-0 flex-col gap-2 rounded-xl border border-amber-800/80 p-2.5 shadow-xl">
-        {/* 上下左右の移動ボタン群 */}
-        <div className="grid grid-cols-4 gap-2">
-          <DpadButton
-            label={VOCAB.skillTreeUi.moveLeft}
-            icon={<ArrowLeft className="h-4 w-4" />}
-            onPressStart={() => startDpadPan(-1, 0)}
-            onPressEnd={stopDpadPan}
-          />
-          <DpadButton
-            label={VOCAB.skillTreeUi.moveUp}
-            icon={<ArrowUp className="h-4 w-4" />}
-            onPressStart={() => startDpadPan(0, -1)}
-            onPressEnd={stopDpadPan}
-          />
-          <DpadButton
-            label={VOCAB.skillTreeUi.moveDown}
-            icon={<ArrowDown className="h-4 w-4" />}
-            onPressStart={() => startDpadPan(0, 1)}
-            onPressEnd={stopDpadPan}
-          />
-          <DpadButton
-            label={VOCAB.skillTreeUi.moveRight}
-            icon={<ArrowRight className="h-4 w-4" />}
-            onPressStart={() => startDpadPan(1, 0)}
-            onPressEnd={stopDpadPan}
-          />
+      {/* 3. 下部: 購入ボタン（左） + バーチャルスティック（右）（木札パネル） */}
+      <div className="western-wood flex flex-shrink-0 items-center gap-3 rounded-xl border border-amber-800/80 p-2 shadow-xl sm:p-2.5">
+        {/* 左側: 購入アクションボタン / ロック状態 */}
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
+          {selectedIsMax ? (
+            <div className="flex h-14 w-full items-center justify-center rounded-lg border-2 border-amber-400/80 bg-amber-950/60 px-2 text-center text-xs font-extrabold text-amber-300 sm:h-16 sm:text-sm md:text-base">
+              {VOCAB.skillTreeUi.maxLevelReached}
+            </div>
+          ) : !selectedReqMet ? (
+            <div className="flex h-14 w-full items-center justify-center gap-2 rounded-lg border border-red-800/80 bg-[#2d0e0b]/80 px-2.5 text-center text-xs font-bold text-red-300 sm:h-16 sm:text-sm">
+              <Lock className="h-4 w-4 flex-shrink-0 text-red-400" />
+              <span className="line-clamp-2 text-left">
+                {parentDef && parentText
+                  ? VOCAB.skillTreeUi.prerequisite(
+                      isParentRevealed ? parentText.name : "???",
+                      selectedDef.requirement!.level,
+                    )
+                  : VOCAB.skillTreeUi.prereqUnmet}
+              </span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={!selectedCanUnlock}
+              onClick={() => executePurchase(selectedSkillId)}
+              className={`flex h-14 w-full items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-extrabold transition-all sm:h-16 sm:text-base ${
+                selectedCanUnlock
+                  ? "western-btn-brass cursor-pointer text-amber-50 shadow-lg active:scale-[0.99]"
+                  : "cursor-not-allowed border border-[#4d2913] bg-[#1c0e06] text-amber-800"
+              }`}
+            >
+              <Zap className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">
+                {VOCAB.actions.upgradeSkill(formatMoney(selectedCost!))}
+              </span>
+            </button>
+          )}
         </div>
 
-        {/* 購入アクションボタン / ロック状態 */}
-        {selectedIsMax ? (
-          <div className="flex h-10 items-center justify-center rounded-lg border-2 border-amber-400/80 bg-amber-950/60 text-sm font-extrabold text-amber-300 sm:h-11 sm:text-base">
-            {VOCAB.skillTreeUi.maxLevelReached}
-          </div>
-        ) : !selectedReqMet ? (
-          <div className="flex h-10 items-center justify-center gap-2 rounded-lg border border-red-800/80 bg-[#2d0e0b]/80 px-3 text-xs font-bold text-red-300 sm:h-11 sm:text-sm">
-            <Lock className="h-4 w-4 flex-shrink-0" />
-            <span className="truncate">
-              {parentDef && parentText
-                ? VOCAB.skillTreeUi.prerequisite(
-                    isParentRevealed ? parentText.name : "???",
-                    selectedDef.requirement!.level,
-                  )
-                : VOCAB.skillTreeUi.prereqUnmet}
-            </span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            disabled={!selectedCanUnlock}
-            onClick={() => executePurchase(selectedSkillId)}
-            className={`flex h-10 w-full items-center justify-center gap-1.5 rounded-lg text-sm font-extrabold transition-all sm:h-11 sm:text-base ${
-              selectedCanUnlock
-                ? "western-btn-brass cursor-pointer text-amber-50 active:scale-[0.99]"
-                : "cursor-not-allowed border border-[#4d2913] bg-[#1c0e06] text-amber-800"
-            }`}
-          >
-            <Zap className="h-4 w-4" />
-            <span>{VOCAB.actions.upgradeSkill(formatMoney(selectedCost!))}</span>
-          </button>
-        )}
+        {/* 右側: バーチャルスティック */}
+        <div className="flex flex-shrink-0 flex-col items-center justify-center">
+          <VirtualStick onDirectionChange={handleStickDirectionChange} />
+        </div>
       </div>
     </div>
-  );
-}
-
-interface DpadButtonProps {
-  label: string;
-  icon: React.ReactNode;
-  onPressStart: () => void;
-  onPressEnd: () => void;
-}
-
-function DpadButton({ label, icon, onPressStart, onPressEnd }: DpadButtonProps) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onPointerDown={(e) => {
-        e.preventDefault();
-        onPressStart();
-      }}
-      onPointerUp={onPressEnd}
-      onPointerCancel={onPressEnd}
-      onPointerLeave={onPressEnd}
-      className="flex h-9 cursor-pointer items-center justify-center rounded-lg border border-amber-800/80 bg-[#241208] text-amber-200 shadow transition-all hover:border-amber-500 hover:bg-[#361b0b] hover:text-amber-50 active:scale-95 active:border-amber-400 active:bg-amber-800 sm:h-9.5"
-    >
-      {icon}
-    </button>
   );
 }
