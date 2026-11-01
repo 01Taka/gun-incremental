@@ -4,10 +4,11 @@ import { AudioManager } from "../audio/AudioManager";
 import { EventBus } from "../EventBus";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
-import { ReticleManager } from "./round/ReticleManager";
+import { BulletManager } from "./round/BulletManager";
+import { GunTurret } from "./round/GunTurret";
 import { RoundHUD } from "./round/RoundHUD";
 import { TargetManager } from "./round/TargetManager";
-import type { ActiveTarget, ArenaBounds } from "./round/types";
+import type { ArenaBounds } from "./round/types";
 import { VirtualJoystick } from "./round/VirtualJoystick";
 
 export class RoundScene extends Phaser.Scene {
@@ -25,7 +26,8 @@ export class RoundScene extends Phaser.Scene {
 
   // サブシステム
   private joystick!: VirtualJoystick;
-  private reticle!: ReticleManager;
+  private gunTurret!: GunTurret;
+  private bulletManager!: BulletManager;
   private targetManager!: TargetManager;
   private hud!: RoundHUD;
 
@@ -33,7 +35,6 @@ export class RoundScene extends Phaser.Scene {
   private timeRemaining: number = 7.0;
   private isRoundActive: boolean = false;
   private lastFireTime: number = 0;
-  private currentAimTarget: ActiveTarget | null = null;
 
   // エフェクト用パーティクル
   private sparkEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -56,7 +57,6 @@ export class RoundScene extends Phaser.Scene {
     this.timeRemaining = this.gameState.getRoundDuration();
     this.isRoundActive = true;
     this.lastFireTime = 0;
-    this.currentAimTarget = null;
 
     // 1. 全体背景と正方形アリーナの描画
     this.createBackground(width, height);
@@ -75,7 +75,7 @@ export class RoundScene extends Phaser.Scene {
     // 3. HUD（上部情報・下部コントロール）の作成
     this.hud = new RoundHUD(this, this.arenaBounds);
 
-    // 4. バーチャルスティックの作成
+    // 4. バーチャルスティックの作成（下部コントロールエリア内）
     this.joystick = new VirtualJoystick(this, {
       originX: width / 2,
       originY: 1350,
@@ -89,10 +89,8 @@ export class RoundScene extends Phaser.Scene {
       label: "AIM",
     });
 
-    // 5. 照準（レティクル）の作成
-    const reticleInitX = this.arenaBounds.left + this.arenaBounds.size / 2;
-    const reticleInitY = this.arenaBounds.top + this.arenaBounds.size / 2;
-    this.reticle = new ReticleManager(this, this.arenaBounds, reticleInitX, reticleInitY);
+    // 5. 銃（中央下部に配置されるタレット）の作成
+    this.gunTurret = new GunTurret(this, this.arenaBounds);
 
     // 6. 的（ターゲット）マネージャーの作成
     this.targetManager = new TargetManager(this, this.arenaBounds, this.sparkEmitter, {
@@ -110,10 +108,17 @@ export class RoundScene extends Phaser.Scene {
     });
     this.targetManager.spawnInitialTargets();
 
-    // 7. 入力イベント設定
+    // 7. 弾丸（プロジェクタイル）マネージャーの作成
+    this.bulletManager = new BulletManager(this, this.arenaBounds, this.targetManager, {
+      onHitTarget: () => {
+        // ヒット時の追加処理（必要に応じて）
+      },
+    });
+
+    // 8. 入力イベント設定
     this.setupInputHandlers();
 
-    // 8. ラウンド開始バナー
+    // 9. ラウンド開始バナー
     this.hud.showStartBanner();
   }
 
@@ -223,32 +228,27 @@ export class RoundScene extends Phaser.Scene {
     // タイマーHUDの更新
     this.hud.updateTimer(this.timeRemaining);
 
-    // オートエイム対象の探索
+    // オートエイム用: 照準方向または最も近い的の探索
     const isAutoAimOn =
       this.gameState.canToggleAutoFire() && this.gameState.persistentData.settings.autoFire;
     const closestTarget = isAutoAimOn
-      ? this.targetManager.getClosestTarget(this.reticle.x, this.reticle.y)
+      ? this.targetManager.getClosestTarget(this.gunTurret.x, this.gunTurret.y)
       : null;
 
-    // レティクル位置更新
-    this.reticle.update(deltaSeconds, this.joystick.state, closestTarget);
+    // 銃（タレット）の更新: スティックの左右入力（x成分）で回転
+    this.gunTurret.update(deltaSeconds, this.joystick.state, closestTarget);
 
-    // 的とレティクルの衝突判定
-    const lockedTarget = this.targetManager.findLockedTarget(
-      this.reticle.x,
-      this.reticle.y,
-      this.reticle.radius,
-    );
-    this.currentAimTarget = lockedTarget;
-
-    if (lockedTarget) {
-      this.reticle.updateVisual(true);
-      this.hud.updateLockOn(lockedTarget.def.name);
-      this.attemptAutoFire(lockedTarget);
+    if (closestTarget) {
+      this.hud.updateLockOn(closestTarget.def.name);
     } else {
-      this.reticle.updateVisual(false);
       this.hud.updateLockOn(null);
     }
+
+    // 武器の間隔に応じて自動発射
+    this.attemptAutoFire();
+
+    // 弾丸の更新（移動・衝突判定）
+    this.bulletManager.update(deltaSeconds);
 
     // 的マネージャーのフレーム更新（金の的などの寿命管理）
     this.targetManager.update(deltaSeconds);
@@ -258,32 +258,23 @@ export class RoundScene extends Phaser.Scene {
     }
   }
 
-  private attemptAutoFire(target: ActiveTarget): void {
+  private attemptAutoFire(): void {
     const now = this.time.now;
     const intervalMs = this.gameState.getFireInterval() * 1000;
 
     if (now - this.lastFireTime >= intervalMs) {
       this.lastFireTime = now;
-      this.performAutoShot(target);
+      this.fireBullet();
     }
   }
 
-  private performAutoShot(target: ActiveTarget): void {
-    this.audio.playSynthSE("laser", 0.6);
-    this.cameras.main.shake(50, 0.0025);
+  private fireBullet(): void {
+    this.audio.playSynthSE("laser", 0.55);
+    this.cameras.main.shake(40, 0.0018);
 
-    const hole = this.add.image(this.reticle.x, this.reticle.y, "bullet_hole").setDepth(5);
-    this.tweens.add({
-      targets: hole,
-      alpha: 0,
-      duration: 1200,
-      onComplete: () => hole.destroy(),
-    });
-
-    const result = this.targetManager.hitTarget(target, this.reticle.x, this.reticle.y);
-    if (result.destroyed && this.currentAimTarget === target) {
-      this.currentAimTarget = null;
-    }
+    const muzzle = this.gunTurret.getMuzzlePosition();
+    this.bulletManager.spawnBullet(muzzle.x, muzzle.y, this.gunTurret.angle);
+    this.gunTurret.playRecoilAnimation();
   }
 
   private onRoundTimeUp(): void {
@@ -291,6 +282,7 @@ export class RoundScene extends Phaser.Scene {
     this.timeRemaining = 0;
     this.targetManager.setRoundActive(false);
     this.hud.updateTimer(0);
+    this.bulletManager.clear();
 
     this.gameState.endRound();
 

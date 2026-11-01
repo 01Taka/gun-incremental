@@ -124,6 +124,20 @@ export class PreloadScene extends Phaser.Scene {
     hg.fillCircle(12, 12, 5);
     hg.generateTexture("bullet_hole", 24, 24);
     hg.destroy();
+
+    // 5. 弾丸 (Bullet / Projectile)
+    const bg = this.make.graphics({ x: 0, y: 0 });
+    // 外側の光彩
+    bg.fillStyle(0x38bdf8, 0.4);
+    bg.fillRoundedRect(0, 0, 26, 10, 5);
+    // メインのエネルギー体
+    bg.fillStyle(0x0284c7, 0.9);
+    bg.fillRoundedRect(2, 2, 22, 6, 3);
+    // 白い高温コア
+    bg.fillStyle(0xffffff, 1.0);
+    bg.fillRoundedRect(6, 3, 14, 4, 2);
+    bg.generateTexture("bullet", 26, 10);
+    bg.destroy();
   }
 
   create() {

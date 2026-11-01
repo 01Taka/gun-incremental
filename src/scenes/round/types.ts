@@ -38,3 +38,14 @@ export interface HitResult {
   spEarned: number;
   bonusTime: number;
 }
+
+export interface Bullet {
+  id: string;
+  sprite: Phaser.GameObjects.Image;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  angle: number;
+  speed: number;
+}

@@ -111,7 +111,7 @@ export class RoundHUD {
       this.scene,
       width / 2,
       1210,
-      "🕹️ スティックで照準を移動 ➔ 的に合わせると自動発射！",
+      "🕹️ スティック左右で銃の角度を変更 ➔ 弾丸が直線連射！",
       {
         fontSize: "20px",
         fontStyle: "bold",
@@ -119,10 +119,16 @@ export class RoundHUD {
       },
     ).setOrigin(0.5);
 
-    addCrispText(this.scene, width / 2, 1510, "（PCの場合は WASD / 矢印キー でも照準を操作可能）", {
-      fontSize: "15px",
-      color: "#64748b",
-    }).setOrigin(0.5);
+    addCrispText(
+      this.scene,
+      width / 2,
+      1510,
+      "（PCの場合は A / D または 左右矢印キー でも旋回可能）",
+      {
+        fontSize: "15px",
+        color: "#64748b",
+      },
+    ).setOrigin(0.5);
   }
 
   public updateTimer(timeRemaining: number): void {
@@ -136,11 +142,11 @@ export class RoundHUD {
 
   public updateLockOn(targetName: string | null): void {
     if (targetName) {
-      this.lockOnStatusText.setText(`🎯 LOCK ON: ${targetName}`);
-      this.lockOnStatusText.setColor("#ef4444");
+      this.lockOnStatusText.setText(`🎯 TARGET: ${targetName}`);
+      this.lockOnStatusText.setColor("#38bdf8");
     } else {
-      this.lockOnStatusText.setText("AIMING...");
-      this.lockOnStatusText.setColor("#64748b");
+      this.lockOnStatusText.setText("FIRING...");
+      this.lockOnStatusText.setColor("#22c55e");
     }
   }
 
