@@ -1,17 +1,14 @@
 import {
-  COMBAT_CONFIG,
   INVOICE_CONFIG,
   PASSIVE_IDS,
-  PASSIVES,
   PERMANENT_UPGRADES,
   PROGRESSION_CONFIG,
-  ROUND_CONFIG,
   TARGET_IDS,
   TARGET_UNLOCK_SEQUENCE,
   TARGETS,
   WEAPONS,
 } from "../config/gameData";
-import { createEmptySkillLevels, SKILL_IDS, SKILLS } from "../config/skillTree";
+import { createEmptySkillLevels, SKILLS } from "../config/skillTree";
 import type {
   PassiveId,
   PermanentUpgradeId,
@@ -26,6 +23,7 @@ import type {
   WeaponId,
 } from "../config/types";
 import { globalRng, type SeededRandom } from "./SeededRandom";
+import { type EffectiveStats, type StatContext, StatPipeline } from "./StatPipeline";
 import { StorageService } from "./storage";
 
 function createInitialTargetsDestroyed(): Record<TargetId, number> {
@@ -150,33 +148,52 @@ export class GameState {
     StorageService.save(this.persistentData);
   }
 
+  /**
+   * 現在の効果計算用コンテキスト（入力生データ）を取得
+   */
+  public getStatContext(): StatContext {
+    return {
+      equippedWeapon: this.equippedWeapon,
+      skillLevels: this.skillLevels,
+      passives: this.passives,
+      permanentUpgrades: this.persistentData.permanentUpgrades,
+    };
+  }
+
+  /**
+   * パイプラインを実行して全実効ステータスを取得
+   */
+  public getEffectiveStats(weaponId: WeaponId = this.equippedWeapon): EffectiveStats {
+    return StatPipeline.execute(this.getStatContext(), weaponId);
+  }
+
   // --- 永続強化の計算 ---
   public getPermanentStartSp(): number {
-    const level = this.persistentData.permanentUpgrades.start_sp;
+    const level = this.persistentData.permanentUpgrades.start_sp ?? 0;
     if (level <= 0) return 0;
     return PERMANENT_UPGRADES.start_sp.effects[level - 1] ?? 0;
   }
 
   public getPermanentBaseDamage(): number {
-    const level = this.persistentData.permanentUpgrades.base_dmg;
+    const level = this.persistentData.permanentUpgrades.base_dmg ?? 0;
     if (level <= 0) return 0;
     return PERMANENT_UPGRADES.base_dmg.effects[level - 1] ?? 0;
   }
 
   public getPermanentRoundTime(): number {
-    const level = this.persistentData.permanentUpgrades.round_time;
+    const level = this.persistentData.permanentUpgrades.round_time ?? 0;
     if (level <= 0) return 0;
     return PERMANENT_UPGRADES.round_time.effects[level - 1] ?? 0;
   }
 
   public getPermanentTargetPointBonus(): number {
-    const level = this.persistentData.permanentUpgrades.tp_gain;
+    const level = this.persistentData.permanentUpgrades.tp_gain ?? 0;
     if (level <= 0) return 0;
     return (PERMANENT_UPGRADES.tp_gain.effects[level - 1] ?? 0) / 100;
   }
 
   public getPermanentInvoiceReduction(): number {
-    const level = this.persistentData.permanentUpgrades.invoice_reduction;
+    const level = this.persistentData.permanentUpgrades.invoice_reduction ?? 0;
     if (level <= 0) return 0;
     return (PERMANENT_UPGRADES.invoice_reduction.effects[level - 1] ?? 0) / 100;
   }
@@ -202,20 +219,9 @@ export class GameState {
     return true;
   }
 
-  // --- 実効パラメータ計算 ---
-  /**
-   * 指定ステータスに対するスキル効果の合計値。
-   * skillTree.json で同じ stat を持つ全ノードの (レベル × perLevel) を合算する。
-   */
+  // --- 実効パラメータ計算 (StatPipeline へ委譲) ---
   public getSkillStat(stat: SkillStatId): number {
-    let total = 0;
-    for (const id of SKILL_IDS) {
-      const def = SKILLS[id];
-      if (def.effect.stat === stat) {
-        total += (this.skillLevels[id] ?? 0) * def.effect.perLevel;
-      }
-    }
-    return total;
+    return StatPipeline.getSkillStat(this.skillLevels, stat);
   }
 
   public getWeapon(id: WeaponId = this.equippedWeapon): WeaponDefinition {
@@ -223,30 +229,16 @@ export class GameState {
   }
 
   public getBulletConfig(id: WeaponId = this.equippedWeapon): WeaponBulletConfig {
-    return this.getWeapon(id).bullet;
+    return WEAPONS[id].bullet;
   }
 
-  /**
-   * 攻撃ダメージの計算
-   * 基礎: (武器威力 + スキル基礎ダメージ + 永続基礎ダメージ) * (1 + パッシブ基礎ダメージ% + 会心倍率)
-   */
   public calculateDamage(isCrit: boolean): number {
-    const weapon = this.getWeapon();
-    const skillBonus = this.getSkillStat("damage");
-    const permBonus = this.getPermanentBaseDamage();
-    const passiveMult = 1 + this.passives.dmg_bonus * PASSIVES.dmg_bonus.effectPerStack;
-
-    let base = (weapon.damage + skillBonus + permBonus) * passiveMult;
-    if (isCrit) {
-      base *= COMBAT_CONFIG.critMultiplier;
-    }
-    return Math.max(1, Math.round(base));
+    const stats = this.getEffectiveStats();
+    return isCrit ? stats.critDamage : stats.damage;
   }
 
   public getCritRate(): number {
-    const skillCrit = this.getSkillStat("critRate");
-    const passiveCrit = this.passives.crit_bonus * PASSIVES.crit_bonus.effectPerStack;
-    return Math.min(COMBAT_CONFIG.maxCritRate, skillCrit + passiveCrit);
+    return this.getEffectiveStats().critRate;
   }
 
   public rollCrit(): boolean {
@@ -254,78 +246,47 @@ export class GameState {
   }
 
   public getFireInterval(id: WeaponId = this.equippedWeapon): number {
-    const weapon = this.getWeapon(id);
-    const reduction = Math.min(
-      COMBAT_CONFIG.maxFireRateReduction,
-      this.getSkillStat("fireRateReduction"),
-    );
-    return Math.max(COMBAT_CONFIG.minFireInterval, weapon.fireInterval * (1 - reduction));
+    return this.getEffectiveStats(id).fireInterval;
   }
 
   public getMagazineSize(id: WeaponId = this.equippedWeapon): number {
-    const weapon = this.getWeapon(id);
-    const flatBonus = this.getSkillStat("magazineCapacity");
-    const multBonus = this.getSkillStat("magazineMultiplier");
-    return Math.max(1, Math.round((weapon.magazineSize + flatBonus) * (1 + multBonus)));
+    return this.getEffectiveStats(id).magazineSize;
   }
 
   public getReloadTime(id: WeaponId = this.equippedWeapon): number {
-    const weapon = this.getWeapon(id);
-    const reduction = Math.min(
-      COMBAT_CONFIG.maxReloadTimeReduction,
-      this.getSkillStat("reloadTimeReduction"),
-    );
-    return Math.max(COMBAT_CONFIG.minReloadTime, weapon.reloadTime * (1 - reduction));
+    return this.getEffectiveStats(id).reloadTime;
   }
 
   public getRoundDuration(): number {
-    const base = ROUND_CONFIG.baseDuration;
-    const skillBonus = this.getSkillStat("roundTime");
-    const permBonus = this.getPermanentRoundTime();
-    const passiveBonus = this.passives.time_bonus * PASSIVES.time_bonus.effectPerStack;
-    return base + skillBonus + permBonus + passiveBonus;
+    return this.getEffectiveStats().roundDuration;
   }
 
   public getMaxTargets(): number {
-    const base = ROUND_CONFIG.baseTargetCount;
-    const skillBonus = this.getSkillStat("maxTargets");
-    const passiveBonus = this.passives.target_bonus * PASSIVES.target_bonus.effectPerStack;
-    return Math.min(ROUND_CONFIG.maxTargetCountCap, base + skillBonus + passiveBonus);
+    return this.getEffectiveStats().maxTargets;
   }
 
   public getSpMultiplier(): number {
-    const skillMult = 1 + this.getSkillStat("spMultiplier");
-    const passiveMult = 1 + this.passives.sp_bonus * PASSIVES.sp_bonus.effectPerStack;
-    return skillMult * passiveMult;
+    return this.getEffectiveStats().spMultiplier;
   }
 
   public getTargetPointMultiplier(): number {
-    const skillMult = 1 + this.getSkillStat("targetPointMultiplier");
-    const passiveMult = 1 + this.passives.tp_bonus * PASSIVES.tp_bonus.effectPerStack;
-    const permMult = 1 + this.getPermanentTargetPointBonus();
-    return skillMult * passiveMult * permMult;
+    return this.getEffectiveStats().targetPointMultiplier;
   }
 
   public getShopDiscount(): number {
-    const skillDisc = this.getSkillStat("shopDiscount");
-    return Math.min(COMBAT_CONFIG.maxShopDiscount, skillDisc);
+    return this.getEffectiveStats().shopDiscount;
   }
 
   public getWeaponPrice(id: WeaponId): number {
-    const raw = WEAPONS[id].price;
-    const discount = this.getShopDiscount();
-    return Math.max(0, Math.floor(raw * (1 - discount)));
+    return this.getEffectiveStats(id).weaponPrice;
   }
 
   public getTimeTargetBonus(): number {
-    const base = ROUND_CONFIG.timeTargetBaseExtension;
-    const bonus = this.getSkillStat("timeTargetBonus");
-    return base + bonus;
+    return this.getEffectiveStats().timeTargetBonus;
   }
 
   public getChainDamage(sourceDamage: number): number {
-    const mult = 1 + this.getSkillStat("chainDamage");
-    return Math.max(1, Math.round(sourceDamage * mult));
+    return this.getEffectiveStats().getChainDamage(sourceDamage);
   }
 
   // --- スキル購入 ---
