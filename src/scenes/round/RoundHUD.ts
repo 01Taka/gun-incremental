@@ -107,19 +107,19 @@ export class RoundHUD {
     this.autoFireToggleContainer = this.scene.add.container(width - 150, 1145);
     this.refreshAutoFireToggle();
 
-    addCrispText(this.scene, 400, 1210, "🎯 右下の円弧メーターをスライドしてエイム！", {
+    addCrispText(this.scene, width / 2, 1210, "🎯 中央の円弧メーターをスライドしてエイム！", {
       fontSize: "20px",
       fontStyle: "bold",
       color: "#38bdf8",
     }).setOrigin(0.5);
 
-    addCrispText(this.scene, 400, 1245, "⚡ 的に直線が合っている時だけ自動発射！", {
+    addCrispText(this.scene, width / 2, 1245, "⚡ 的に直線が合っている時だけ自動発射！", {
       fontSize: "17px",
       fontStyle: "bold",
       color: "#facc15",
     }).setOrigin(0.5);
 
-    addCrispText(this.scene, 400, 1510, "（PC: A / D または 左右矢印キー でも調整可能）", {
+    addCrispText(this.scene, width / 2, 1510, "（PC: A / D または 左右矢印キー でも調整可能）", {
       fontSize: "15px",
       color: "#64748b",
     }).setOrigin(0.5);

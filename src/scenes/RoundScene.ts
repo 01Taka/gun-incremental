@@ -75,10 +75,10 @@ export class RoundScene extends Phaser.Scene {
     // 3. HUD（上部情報・下部コントロール）の作成
     this.hud = new RoundHUD(this, this.arenaBounds);
 
-    // 4. 画面右下に1/4円弧メーター（ArcSlider）を配置（右手親指で操作しやすい扇形スライダー）
+    // 4. 中央付近に1/4円弧メーター（ArcSlider）を配置（同じ形状のまま水平中心を画面中央へ配置）
     this.arcSlider = new ArcSlider(this, {
-      centerX: width,
-      centerY: height,
+      centerX: width / 2 + 190, // 640 (スライダーの水平中心が画面中央 x:450 に一致)
+      centerY: height, // 1600
       radius: 350,
       trackWidth: 26,
       startAngleDeg: 185, // 左下側（左を狙う）
