@@ -1,11 +1,8 @@
 import { RotateCcw, Skull, Star } from "lucide-react";
 
-import { AudioManager } from "../audio/AudioManager";
-import { TARGET_UNLOCK_SEQUENCE } from "../config/gameData";
-import { VOCAB } from "../config/vocab";
-import { useI18n } from "../i18n";
-import { formatMoney, formatNumber } from "../logic/format";
-import { GameState } from "../logic/GameState";
+import { VOCAB } from "../../config/vocab";
+import { useRunSummary } from "../../hooks";
+import { formatNumber } from "../../logic/format";
 
 interface GameOverOverlayProps {
   onBackToTitle: () => void;
@@ -13,49 +10,10 @@ interface GameOverOverlayProps {
 }
 
 export function GameOverOverlay({ onBackToTitle, onOpenSaloon }: GameOverOverlayProps) {
-  const gameState = GameState.getInstance();
-  const audio = AudioManager.getInstance();
-  useI18n();
-
-  const stats = gameState.runStats;
-  const gainedPoints = gameState.lastGainedPermanentPoints;
-
-  const handleTitle = () => {
-    audio.playSynthSE("spur", 0.65);
-    onBackToTitle();
-  };
-
-  const handleSaloon = () => {
-    audio.playSynthSE("spur", 0.65);
-    onOpenSaloon();
-  };
-
-  const statItems = [
-    { label: VOCAB.records.roundReached, val: VOCAB.progression.roundName(stats.round) },
-    {
-      label: VOCAB.records.invoicesPaidCount,
-      val: VOCAB.records.countValue(stats.invoicesPassed),
-    },
-    {
-      label: VOCAB.records.totalBountyEarned,
-      val: `${formatMoney(stats.totalSpEarned)}`,
-    },
-    {
-      label: VOCAB.records.totalTaxesPaid,
-      val: `${formatMoney(stats.totalInvoicesPaidAmount)}`,
-    },
-    {
-      label: VOCAB.records.totalTargetsHit,
-      val: VOCAB.records.targetsHitValue(stats.targetsDestroyedTotal),
-    },
-    {
-      label: VOCAB.records.targetsUnlocked,
-      val: VOCAB.records.targetsUnlockedValue(
-        gameState.unlockedTargets.length,
-        TARGET_UNLOCK_SEQUENCE.length,
-      ),
-    },
-  ];
+  const { gameState, gainedPoints, statItems, handleTitle, handleSaloon } = useRunSummary({
+    onBackToTitle,
+    onOpenSaloon,
+  });
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
@@ -98,7 +56,7 @@ export function GameOverOverlay({ onBackToTitle, onOpenSaloon }: GameOverOverlay
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 fill-amber-400 text-amber-400 sm:h-5 sm:w-5" />
-                <span className="text-xs font-extrabold text-amber-200 sm:text-sm">
+                <span className="text-xs font-bold text-amber-200 sm:text-sm">
                   {VOCAB.currency.metaPoints}獲得:
                 </span>
               </div>
@@ -119,7 +77,7 @@ export function GameOverOverlay({ onBackToTitle, onOpenSaloon }: GameOverOverlay
               onClick={handleSaloon}
               className="western-btn-brass flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl text-sm font-black text-amber-100 shadow-xl transition-all hover:scale-[1.02] active:scale-95 sm:h-13 sm:text-base"
             >
-              <Star className="h-4 w-4 fill-amber-300 text-amber-300" />
+              <Star className="h-4 w-4 fill-amber-400 text-amber-300" />
               <span>{VOCAB.actions.trainSaloon}</span>
             </button>
 

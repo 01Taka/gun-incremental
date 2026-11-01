@@ -1,15 +1,9 @@
 import { Check, DollarSign, Skull, Sparkles } from "lucide-react";
-import { useState } from "react";
 
-import { AudioManager } from "../audio/AudioManager";
-import { PASSIVES } from "../config/gameData";
-import type { PassiveId } from "../config/types";
-import { VOCAB } from "../config/vocab";
-import { useI18n } from "../i18n";
-import { formatMoney } from "../logic/format";
-import { GameState } from "../logic/GameState";
-
-type InvoiceStep = "intro" | "invoice" | "passive";
+import { PASSIVES } from "../../config/gameData";
+import { VOCAB } from "../../config/vocab";
+import { formatMoney } from "../../logic/format";
+import { useInvoiceOverlay } from "./useInvoiceOverlay";
 
 interface InvoiceOverlayProps {
   onIntroConfirm: () => void;
@@ -22,52 +16,18 @@ export function InvoiceOverlay({
   onPassiveChosen,
   onGameOver,
 }: InvoiceOverlayProps) {
-  const gameState = GameState.getInstance();
-  const audio = AudioManager.getInstance();
-  useI18n();
-
-  const [step, setStep] = useState<InvoiceStep>(() => {
-    return gameState.shouldShowInvoiceIntro() ? "intro" : "invoice";
-  });
-
-  const [choices, setChoices] = useState<PassiveId[]>(() => {
-    return [];
-  });
-
-  const invoiceNumber = gameState.invoiceCount + 1;
-  const invoiceCost = gameState.getInvoiceAmount();
-  const canAfford = gameState.canPayInvoice();
-
-  // 初回導入の確認
-  const handleIntroConfirm = () => {
-    audio.playSynthSE("spur", 0.7);
-    GameState.getInstance().completeInvoiceIntro();
-    onIntroConfirm();
-  };
-
-  // 上納金支払い
-  const handlePayInvoice = () => {
-    if (gameState.payInvoice()) {
-      audio.playSynthSE("laser", 0.85);
-      const rolled = gameState.rollPassives();
-      setChoices(rolled);
-      setStep("passive");
-    }
-  };
-
-  // 破産・降伏
-  const handleBankrupt = () => {
-    audio.playSynthSE("gameover");
-    gameState.triggerGameOver();
-    onGameOver();
-  };
-
-  // パッシブ選択
-  const handleSelectPassive = (passiveId: PassiveId) => {
-    audio.playSynthSE("spur", 0.75);
-    gameState.choosePassive(passiveId);
-    onPassiveChosen();
-  };
+  const {
+    gameState,
+    step,
+    choices,
+    invoiceNumber,
+    invoiceCost,
+    canAfford,
+    handleIntroConfirm,
+    handlePayInvoice,
+    handleBankrupt,
+    handleSelectPassive,
+  } = useInvoiceOverlay({ onIntroConfirm, onPassiveChosen, onGameOver });
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">

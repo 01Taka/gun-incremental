@@ -9,15 +9,12 @@ import {
   Star,
   Timer,
 } from "lucide-react";
-import { useCallback, useState } from "react";
 
-import { AudioManager } from "../audio/AudioManager";
-import { PERMANENT_UPGRADE_IDS, PERMANENT_UPGRADES } from "../config/gameData";
-import type { PermanentUpgradeId } from "../config/types";
-import { VOCAB } from "../config/vocab";
-import { useI18n } from "../i18n";
-import { formatNumber } from "../logic/format";
-import { GameState } from "../logic/GameState";
+import { PERMANENT_UPGRADE_IDS, PERMANENT_UPGRADES } from "../../config/gameData";
+import type { PermanentUpgradeId } from "../../config/types";
+import { VOCAB } from "../../config/vocab";
+import { formatNumber } from "../../logic/format";
+import { usePermanentUpgrade } from "./usePermanentUpgrade";
 
 interface PermanentUpgradeOverlayProps {
   onStartRun: () => void;
@@ -38,34 +35,8 @@ export function PermanentUpgradeOverlay({
   onStartRun,
   onBackToTitle,
 }: PermanentUpgradeOverlayProps) {
-  const gameState = GameState.getInstance();
-  const audio = AudioManager.getInstance();
-  useI18n(); // 言語切り替え時に再レンダリング
-
-  const [, setRevision] = useState(0);
-
-  const refresh = useCallback(() => {
-    setRevision((r) => r + 1);
-  }, []);
-
-  const points = gameState.persistentData.permanentPoints;
-
-  const handlePurchase = (id: PermanentUpgradeId) => {
-    if (gameState.purchasePermanentUpgrade(id)) {
-      audio.playSynthSE("laser", 0.8);
-      refresh();
-    }
-  };
-
-  const handleStartRun = () => {
-    audio.playSynthSE("spur", 0.75);
-    onStartRun();
-  };
-
-  const handleBackToTitle = () => {
-    audio.playSynthSE("spur", 0.65);
-    onBackToTitle();
-  };
+  const { gameState, points, handlePurchase, handleStartRun, handleBackToTitle } =
+    usePermanentUpgrade({ onStartRun, onBackToTitle });
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">

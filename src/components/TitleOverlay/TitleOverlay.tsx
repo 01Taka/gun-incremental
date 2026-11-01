@@ -1,10 +1,8 @@
 import { Crosshair, Settings, ShieldAlert, Star } from "lucide-react";
 
-import { AudioManager } from "../audio/AudioManager";
-import { VOCAB } from "../config/vocab";
-import { useI18n } from "../i18n";
-import { formatNumber } from "../logic/format";
-import { GameState } from "../logic/GameState";
+import { VOCAB } from "../../config/vocab";
+import { formatNumber } from "../../logic/format";
+import { useTitleOverlay } from "./useTitleOverlay";
 
 interface TitleOverlayProps {
   onStartDuel: () => void;
@@ -13,28 +11,8 @@ interface TitleOverlayProps {
 }
 
 export function TitleOverlay({ onStartDuel, onOpenSaloon, onOpenSettings }: TitleOverlayProps) {
-  const gameState = GameState.getInstance();
-  const audio = AudioManager.getInstance();
-  useI18n();
-
-  const permPoints = gameState.persistentData.permanentPoints;
-  const highestRound = gameState.persistentData.stats.highestRound;
-  const totalRuns = gameState.persistentData.stats.totalRuns;
-
-  const handleStart = () => {
-    audio.playSynthSE("spur", 0.75);
-    onStartDuel();
-  };
-
-  const handleSaloon = () => {
-    audio.playSynthSE("spur", 0.65);
-    onOpenSaloon();
-  };
-
-  const handleSettings = () => {
-    audio.playSynthSE("spur", 0.65);
-    onOpenSettings();
-  };
+  const { permPoints, highestRound, totalRuns, handleStart, handleSaloon, handleSettings } =
+    useTitleOverlay({ onStartDuel, onOpenSaloon, onOpenSettings });
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">

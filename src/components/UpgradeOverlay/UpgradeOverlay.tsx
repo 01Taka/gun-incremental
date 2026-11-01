@@ -9,18 +9,12 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useCallback, useState } from "react";
 
-import { AudioManager } from "../audio/AudioManager";
-import { INVOICE_CONFIG, PROGRESSION_CONFIG, WEAPON_IDS, WEAPONS } from "../config/gameData";
-import type { WeaponId } from "../config/types";
-import { VOCAB } from "../config/vocab";
-import { useI18n } from "../i18n";
-import { formatMoney, formatPercent } from "../logic/format";
-import { GameState } from "../logic/GameState";
-import { SkillTreeView } from "./SkillTreeView";
-
-type TabType = "skills" | "weapons";
+import { PROGRESSION_CONFIG, WEAPON_IDS, WEAPONS } from "../../config/gameData";
+import { VOCAB } from "../../config/vocab";
+import { formatMoney, formatPercent } from "../../logic/format";
+import { SkillTreeView } from "../SkillTreeView";
+import { useUpgradeOverlay } from "./useUpgradeOverlay";
 
 interface UpgradeOverlayProps {
   onProceed: () => void;
@@ -30,54 +24,22 @@ interface UpgradeOverlayProps {
  * 早撃ち技能 & 銃砲店（UPGRADES）画面の西部劇風 React オーバーレイ
  */
 export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
-  const gameState = GameState.getInstance();
-  const audio = AudioManager.getInstance();
-  useI18n(); // 言語切り替え時に再レンダリング
-
-  const [currentTab, setCurrentTab] = useState<TabType>("skills");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [, setRevision] = useState(0);
-
-  const refresh = useCallback(() => {
-    setRevision((r) => r + 1);
-  }, []);
-
-  const isShopUnlocked = gameState.isShopAvailable();
-  const nextInvoice = gameState.getInvoiceAmount();
-  const nextInvoiceRound = (gameState.invoiceCount + 1) * INVOICE_CONFIG.intervalRounds;
-  const canAffordInvoice = gameState.sp >= nextInvoice;
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-    audio.playSynthSE("spur", 0.65);
-  };
-
-  const handleSelectTab = (tab: TabType) => {
-    if (tab === "weapons" && !isShopUnlocked) return;
-    if (currentTab !== tab) {
-      setCurrentTab(tab);
-    }
-    setIsSidebarOpen(false);
-    audio.playSynthSE("spur", 0.65);
-  };
-
-  const handleEquipWeapon = (weaponId: WeaponId) => {
-    gameState.equipWeapon(weaponId);
-    audio.playSynthSE("reload_complete", 0.7);
-    refresh();
-  };
-
-  const handleBuyWeapon = (weaponId: WeaponId) => {
-    if (gameState.buyWeapon(weaponId)) {
-      audio.playSynthSE("laser", 0.85);
-      refresh();
-    }
-  };
-
-  const handleProceed = () => {
-    audio.playSynthSE("spur", 0.75);
-    onProceed();
-  };
+  const {
+    gameState,
+    currentTab,
+    isSidebarOpen,
+    isShopUnlocked,
+    nextInvoice,
+    nextInvoiceRound,
+    canAffordInvoice,
+    refresh,
+    toggleSidebar,
+    handleSelectTab,
+    handleEquipWeapon,
+    handleBuyWeapon,
+    handleProceed,
+    setIsSidebarOpen,
+  } = useUpgradeOverlay({ onProceed });
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">

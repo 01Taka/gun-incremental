@@ -1,13 +1,8 @@
-import confetti from "canvas-confetti";
 import { RotateCcw, Star, Trophy } from "lucide-react";
-import { useEffect } from "react";
 
-import { AudioManager } from "../audio/AudioManager";
-import { TARGET_UNLOCK_SEQUENCE } from "../config/gameData";
-import { VOCAB } from "../config/vocab";
-import { useI18n } from "../i18n";
-import { formatMoney, formatNumber } from "../logic/format";
-import { GameState } from "../logic/GameState";
+import { VOCAB } from "../../config/vocab";
+import { useRunSummary } from "../../hooks";
+import { formatNumber } from "../../logic/format";
 
 interface ClearOverlayProps {
   onBackToTitle: () => void;
@@ -15,83 +10,11 @@ interface ClearOverlayProps {
 }
 
 export function ClearOverlay({ onBackToTitle, onOpenSaloon }: ClearOverlayProps) {
-  const gameState = GameState.getInstance();
-  const audio = AudioManager.getInstance();
-  useI18n();
-
-  useEffect(() => {
-    audio.playSynthSE("laser", 0.9);
-
-    const westernGoldColors = ["#fbbf24", "#d97706", "#fef3c7", "#b45309", "#dc2626"];
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 90,
-        colors: westernGoldColors,
-        origin: { y: 0.5 },
-      });
-      const timer = setTimeout(() => {
-        confetti({
-          particleCount: 60,
-          angle: 60,
-          spread: 70,
-          colors: westernGoldColors,
-          origin: { x: 0 },
-        });
-        confetti({
-          particleCount: 60,
-          angle: 120,
-          spread: 70,
-          colors: westernGoldColors,
-          origin: { x: 1 },
-        });
-      }, 400);
-
-      return () => clearTimeout(timer);
-    } catch {
-      // confetti fallback
-    }
-  }, [audio]);
-
-  const stats = gameState.runStats;
-  const gainedPoints = gameState.lastGainedPermanentPoints;
-
-  const handleTitle = () => {
-    audio.playSynthSE("spur", 0.65);
-    onBackToTitle();
-  };
-
-  const handleSaloon = () => {
-    audio.playSynthSE("spur", 0.65);
-    onOpenSaloon();
-  };
-
-  const statItems = [
-    { label: VOCAB.records.roundReached, val: VOCAB.progression.roundName(stats.round) },
-    {
-      label: VOCAB.records.invoicesPaidCount,
-      val: VOCAB.records.countValue(stats.invoicesPassed),
-    },
-    {
-      label: VOCAB.records.totalBountyEarned,
-      val: `${formatMoney(stats.totalSpEarned)}`,
-    },
-    {
-      label: VOCAB.records.totalTaxesPaid,
-      val: `${formatMoney(stats.totalInvoicesPaidAmount)}`,
-    },
-    {
-      label: VOCAB.records.totalTargetsHit,
-      val: VOCAB.records.targetsHitValue(stats.targetsDestroyedTotal),
-    },
-    {
-      label: VOCAB.records.targetsUnlocked,
-      val: VOCAB.records.targetsUnlockedValue(
-        gameState.unlockedTargets.length,
-        TARGET_UNLOCK_SEQUENCE.length,
-      ),
-    },
-  ];
+  const { gameState, gainedPoints, statItems, handleTitle, handleSaloon } = useRunSummary({
+    onBackToTitle,
+    onOpenSaloon,
+    triggerConfetti: true,
+  });
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">

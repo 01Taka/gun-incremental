@@ -1,10 +1,10 @@
 import { Globe, Maximize2, Minimize2, Settings, Volume2, VolumeX, X } from "lucide-react";
-import { useEffect, useState } from "react";
 
-import { VOCAB } from "../config/vocab";
-import { useI18n } from "../i18n";
-import { useGameSettings } from "../stores/useGameSettings";
-import { useInputMode } from "../stores/useInputMode";
+import { VOCAB } from "../../config/vocab";
+import { useFullscreen } from "../../hooks";
+import { useI18n } from "../../i18n";
+import { useGameSettings } from "../../stores/useGameSettings";
+import { useInputMode } from "../../stores/useInputMode";
 
 interface SettingsModalProps {
   onClose?: () => void;
@@ -14,7 +14,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   const settings = useGameSettings();
   const inputMode = useInputMode((s) => s.mode);
   const { locale, setLocale } = useI18n();
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   // スマホ版では「カーソルを追従」はDisabled（元の設定値は維持）
   const isMobile = inputMode === "mobile";
@@ -24,55 +24,15 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   // PC版かつカーソル追従が有効な場合、スティック操作はdisabled
   const joystickDisabled = inputMode === "pc" && settings.followCursor;
 
-  const getModalHeader = () => ({
+  const header = {
     title: VOCAB.facilities.settingsSaloon,
     icon: <Settings className="h-5 w-5 text-amber-400" />,
-  });
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
-
-  const toggleFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement) {
-        const docEl = document.documentElement as HTMLElement & {
-          webkitRequestFullscreen?: () => Promise<void>;
-        };
-
-        if (docEl.requestFullscreen) {
-          await docEl.requestFullscreen();
-        } else if (docEl.webkitRequestFullscreen) {
-          await docEl.webkitRequestFullscreen();
-        }
-      } else {
-        const doc = document as Document & {
-          webkitExitFullscreen?: () => Promise<void>;
-        };
-
-        if (doc.exitFullscreen) {
-          await doc.exitFullscreen();
-        } else if (doc.webkitExitFullscreen) {
-          await doc.webkitExitFullscreen();
-        }
-      }
-    } catch (err) {
-      console.warn("Fullscreen toggle failed:", err);
-    }
   };
 
   const handleClose = () => {
     settings.closeSettings();
     if (onClose) onClose();
   };
-
-  const header = getModalHeader();
 
   return (
     <div

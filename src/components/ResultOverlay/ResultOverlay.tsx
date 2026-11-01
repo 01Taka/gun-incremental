@@ -1,13 +1,9 @@
 import { AlertCircle, AlertTriangle, Crosshair, Target, Wrench } from "lucide-react";
-import { useState } from "react";
 
-import { AudioManager } from "../audio/AudioManager";
-import { INVOICE_CONFIG, TARGET_UNLOCK_SEQUENCE } from "../config/gameData";
-import { VOCAB } from "../config/vocab";
-import { useI18n } from "../i18n";
-import { formatMoney, formatNumber } from "../logic/format";
-import { GameState } from "../logic/GameState";
-import { getWesternQuote } from "../scenes/WesternDecor";
+import { VOCAB } from "../../config/vocab";
+import { formatMoney, formatNumber } from "../../logic/format";
+import { getWesternQuote } from "../../scenes/WesternDecor";
+import { useResultOverlay } from "./useResultOverlay";
 
 interface ResultOverlayProps {
   onToUpgrade: () => void;
@@ -15,49 +11,19 @@ interface ResultOverlayProps {
 }
 
 export function ResultOverlay({ onToUpgrade, onNextDuel }: ResultOverlayProps) {
-  const gameState = GameState.getInstance();
-  const audio = AudioManager.getInstance();
-  useI18n();
-
-  const [showUnlockModal, setShowUnlockModal] = useState(
-    gameState.lastRoundNewlyUnlockedTargets.length > 0,
-  );
-
-  const progress = gameState.getTargetUnlockProgress();
-  const nextTargetName = progress.nextTarget ? VOCAB.targets[progress.nextTarget.id].name : null;
-  const nextStep = progress.nextTarget
-    ? TARGET_UNLOCK_SEQUENCE.find((s) => s.targetId === progress.nextTarget!.id)
-    : null;
-
-  // 上納金があらわれた後は、次のラウンドへ進むボタンの下にあと何ラウンド後に何ドル支払うかを記述
-  const hasInvoiceAppeared =
-    gameState.invoiceIntroduced ||
-    gameState.invoiceCount > 0 ||
-    gameState.round >= INVOICE_CONFIG.intervalRounds;
-
-  const roundsRemaining = gameState.getRoundsUntilNextInvoice();
-  const invoiceCost = gameState.getInvoiceAmount();
-  const formattedCost = formatMoney(invoiceCost);
-  const isUrgent = roundsRemaining === 1;
-
-  const noticeText = isUrgent
-    ? VOCAB.progression.invoiceDueNextRound(formattedCost)
-    : VOCAB.progression.invoiceDueInRounds(roundsRemaining, formattedCost);
-
-  const handleUpgrade = () => {
-    audio.playSynthSE("spur", 0.75);
-    onToUpgrade();
-  };
-
-  const handleProceed = () => {
-    audio.playSynthSE("spur", 0.75);
-    onNextDuel();
-  };
-
-  const handleCloseUnlockModal = () => {
-    audio.playSynthSE("spur", 0.6);
-    setShowUnlockModal(false);
-  };
+  const {
+    gameState,
+    showUnlockModal,
+    progress,
+    nextTargetName,
+    nextStep,
+    hasInvoiceAppeared,
+    isUrgent,
+    noticeText,
+    handleUpgrade,
+    handleProceed,
+    handleCloseUnlockModal,
+  } = useResultOverlay({ onToUpgrade, onNextDuel });
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
