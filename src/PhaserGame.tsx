@@ -57,7 +57,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
       parent: containerRef.current,
       width: 900,
       height: 1600,
-      backgroundColor: "#0f172a", // Tailwind slate-900
+      backgroundColor: "#1c0f08", // Scorched Western Umber
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,

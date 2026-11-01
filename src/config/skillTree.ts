@@ -36,19 +36,19 @@ export interface SkillStatDefinition {
 }
 
 export const SKILL_STATS: Record<SkillStatId, SkillStatDefinition> = {
-  damage: { label: "基礎ダメージ", unit: "ダメージ" },
-  critRate: { label: "会心率", unit: "%" },
-  fireRateReduction: { label: "発射間隔短縮", unit: "%" },
-  magazineCapacity: { label: "マガジン数", unit: "発" },
-  magazineMultiplier: { label: "マガジン増加率", unit: "%" },
-  reloadTimeReduction: { label: "リロード時間短縮", unit: "%" },
-  roundTime: { label: "ラウンド時間", unit: "秒" },
-  maxTargets: { label: "同時出現数", unit: "個" },
-  spMultiplier: { label: "SP獲得倍率", unit: "%" },
-  targetPointMultiplier: { label: "的ポイント獲得倍率", unit: "%" },
-  shopDiscount: { label: "ショップ割引", unit: "%" },
-  timeTargetBonus: { label: "時間の的延長量", unit: "秒" },
-  chainDamage: { label: "連鎖ダメージ倍率", unit: "%" },
+  damage: { label: "基礎威力", unit: "威力" },
+  critRate: { label: "急所撃ち率", unit: "%" },
+  fireRateReduction: { label: "早撃ち間隔短縮", unit: "%" },
+  magazineCapacity: { label: "装填弾数", unit: "発" },
+  magazineMultiplier: { label: "装填増加率", unit: "%" },
+  reloadTimeReduction: { label: "再装填時間短縮", unit: "%" },
+  roundTime: { label: "決闘時間", unit: "秒" },
+  maxTargets: { label: "同時出現賞金首", unit: "人" },
+  spMultiplier: { label: "獲得賞金倍率", unit: "%" },
+  targetPointMultiplier: { label: "懸賞金評価倍率", unit: "%" },
+  shopDiscount: { label: "銃砲店割引", unit: "%" },
+  timeTargetBonus: { label: "懐中時計延長量", unit: "秒" },
+  chainDamage: { label: "誘爆ダメージ倍率", unit: "%" },
 };
 
 // ------------------------------------------

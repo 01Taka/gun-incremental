@@ -30,6 +30,16 @@ export function formatNumber(val: number, maxDecimals: number = 2): string {
 }
 
 /**
+ * 金額を "$120", "$1.5K" などのドル表記にフォーマットする
+ */
+export function formatMoney(val: number, maxDecimals: number = 2): string {
+  if (val < 0) {
+    return `-$${formatNumber(Math.abs(val), maxDecimals)}`;
+  }
+  return `$${formatNumber(val, maxDecimals)}`;
+}
+
+/**
  * 時間(秒)を "0.0s" や "12.3s" の形式にフォーマット
  */
 export function formatSeconds(seconds: number): string {

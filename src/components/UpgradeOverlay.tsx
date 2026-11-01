@@ -14,7 +14,7 @@ import { useCallback, useState } from "react";
 import { AudioManager } from "../audio/AudioManager";
 import { WEAPONS } from "../config/gameData";
 import type { WeaponId } from "../config/types";
-import { formatNumber, formatPercent } from "../logic/format";
+import { formatMoney, formatPercent } from "../logic/format";
 import { GameState } from "../logic/GameState";
 import { SkillTreeView } from "./SkillTreeView";
 
@@ -27,11 +27,7 @@ interface UpgradeOverlayProps {
 const WEAPON_IDS: WeaponId[] = ["handgun", "rifle", "sniper"];
 
 /**
- * UPGRADES 画面の React オーバーレイ。
- * - 画面上部左端: トグルサイドバー開閉ボタン
- * - 画面上部中央: 所持SP・次回請求額
- * - スキル説明パネルの下（ショップタブでは上部右端）: 「次のラウンドへ」ボタン
- * - サイドバー: スキルツリー / 武器ショップの切り替えメニュー
+ * 早撃ち技能 & 銃砲店（UPGRADES）画面の西部劇風 React オーバーレイ
  */
 export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
   const gameState = GameState.getInstance();
@@ -51,7 +47,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
-    audio.playSynthSE("click");
+    audio.playSynthSE("spur", 0.65);
   };
 
   const handleSelectTab = (tab: TabType) => {
@@ -60,85 +56,91 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
       setCurrentTab(tab);
     }
     setIsSidebarOpen(false);
-    audio.playSynthSE("click");
+    audio.playSynthSE("spur", 0.65);
   };
 
   const handleEquipWeapon = (weaponId: WeaponId) => {
     gameState.equipWeapon(weaponId);
-    audio.playSynthSE("click");
+    audio.playSynthSE("reload_complete", 0.7);
     refresh();
   };
 
   const handleBuyWeapon = (weaponId: WeaponId) => {
     if (gameState.buyWeapon(weaponId)) {
-      audio.playSynthSE("laser", 0.8);
+      audio.playSynthSE("laser", 0.85);
       refresh();
     }
   };
 
   const handleProceed = () => {
-    audio.playSynthSE("click");
+    audio.playSynthSE("spur", 0.75);
     onProceed();
   };
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
-      {/* 9:16 のゲーム画面領域にぴったり重なるレスポンシブコンテナ */}
-      <div className="pointer-events-auto relative flex h-full max-h-full w-full max-w-[calc(100dvh*9/16)] flex-col overflow-hidden bg-slate-950/90 text-white backdrop-blur-[2px]">
-        {/* 上部ヘッダー (左: トグルサイドバー / 中央: SP & 請求) */}
-        <header className="z-20 grid flex-shrink-0 grid-cols-3 items-center gap-2 border-b-2 border-slate-800 bg-slate-900/95 px-3 py-2 sm:px-4">
+      {/* 9:16 のゲーム画面領域にぴったり重なる西部劇コンテナ */}
+      <div className="font-western-slab pointer-events-auto relative flex h-full max-h-full w-full max-w-[calc(100dvh*9/16)] flex-col overflow-hidden bg-[#1a0d06]/92 text-amber-50 backdrop-blur-[2px]">
+        {/* 上部ヘッダー（木札＆真鍮鋲デザイン） */}
+        <header className="western-wood z-20 grid flex-shrink-0 grid-cols-3 items-center gap-2 border-b-2 border-amber-700/80 px-3 py-2 sm:px-4">
           {/* 左端: サイドバートグルボタン */}
           <div className="flex justify-start">
             <button
               type="button"
               onClick={toggleSidebar}
               aria-label="メニューを開閉"
-              className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-2.5 text-xs font-bold text-slate-200 transition-colors hover:border-sky-400 hover:bg-slate-700 hover:text-white active:scale-95 sm:px-3 sm:text-sm"
+              className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-amber-600/80 bg-[#2b1509] px-2.5 text-xs font-bold text-amber-100 shadow transition-colors hover:border-amber-400 hover:bg-[#3d1f0e] active:scale-95 sm:px-3 sm:text-sm"
             >
               {isSidebarOpen ? (
-                <X className="h-4 w-4 text-sky-400" />
+                <X className="h-4 w-4 text-amber-400" />
               ) : (
-                <Menu className="h-4 w-4 text-sky-400" />
+                <Menu className="h-4 w-4 text-amber-400" />
               )}
-              <span>{currentTab === "skills" ? "スキル" : "ショップ"}</span>
+              <span>{currentTab === "skills" ? "早撃ち技能" : "銃砲店"}</span>
             </button>
           </div>
 
-          {/* 中央: 所持SP & 次回請求予定 */}
+          {/* 中央: 所持金（$） & 次回上納金 */}
           <div className="flex min-w-0 flex-col items-center leading-tight">
-            <div className="truncate text-sm font-extrabold text-yellow-400 sm:text-lg">
-              {formatNumber(gameState.sp)} SP
+            <div className="truncate text-sm font-extrabold text-amber-300 drop-shadow sm:text-lg">
+              所持金 {formatMoney(gameState.sp)}
             </div>
             <div
               className={`truncate text-[11px] font-bold sm:text-xs ${
-                canAffordInvoice ? "text-emerald-400" : "text-rose-400"
+                canAffordInvoice ? "text-amber-200/85" : "text-red-400"
               }`}
             >
-              請求: {formatNumber(nextInvoice)} SP
+              上納金: {formatMoney(nextInvoice)}
             </div>
           </div>
 
-          {/* 右端スペーサー (中央揃え維持用) */}
-          <div aria-hidden="true" />
+          {/* 右端: 決闘数表示 */}
+          <div className="flex justify-end">
+            <span className="font-western-display rounded border border-amber-800/70 bg-[#1a0c05]/80 px-2 py-0.5 text-[11px] font-bold text-amber-300/90 sm:text-xs">
+              第{gameState.round}決闘後
+            </span>
+          </div>
         </header>
 
-        {/* トグルサイドバー (オーバーレイドロワー) */}
+        {/* トグルサイドバー (木製扉ドロワー) */}
         {isSidebarOpen && (
           <div
-            className="absolute inset-0 z-30 flex bg-slate-950/65 backdrop-blur-[2px]"
+            className="absolute inset-0 z-30 flex bg-black/70 backdrop-blur-[2px]"
             onClick={() => setIsSidebarOpen(false)}
           >
             <aside
               onClick={(e) => e.stopPropagation()}
-              className="flex h-full w-64 max-w-[78%] flex-col border-r border-slate-700 bg-slate-900 p-4 shadow-2xl"
+              className="western-wood flex h-full w-64 max-w-[78%] flex-col border-r-2 border-amber-700 p-4 shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="text-sm font-extrabold tracking-wider text-sky-400">MENU</span>
+              <div className="flex items-center justify-between border-b border-amber-800/70 pb-3">
+                <span className="font-western-display text-sm font-extrabold tracking-wider text-amber-300">
+                  ★ FRONTIER MENU
+                </span>
                 <button
                   type="button"
                   onClick={() => setIsSidebarOpen(false)}
                   aria-label="サイドバーを閉じる"
-                  className="cursor-pointer rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                  className="cursor-pointer rounded-lg p-1 text-amber-300/70 hover:bg-amber-950 hover:text-amber-100"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -148,46 +150,50 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                 <button
                   type="button"
                   onClick={() => handleSelectTab("skills")}
-                  className={`flex items-center gap-3 rounded-xl border-2 px-3.5 py-3 text-left text-sm font-bold transition-all ${
+                  className={`flex items-center gap-3 rounded-lg border-2 px-3.5 py-3 text-left text-sm font-bold transition-all ${
                     currentTab === "skills"
-                      ? "cursor-pointer border-sky-400 bg-sky-600 text-white shadow"
-                      : "cursor-pointer border-slate-700 bg-slate-800/80 text-slate-300 hover:border-slate-500 hover:text-white"
+                      ? "western-btn-brass cursor-pointer text-amber-50 shadow"
+                      : "cursor-pointer border-amber-900 bg-[#221107]/90 text-amber-200/80 hover:border-amber-600 hover:text-amber-50"
                   }`}
                 >
-                  <Zap className="h-5 w-5 flex-shrink-0" />
-                  <span>スキルツリー</span>
+                  <Zap className="h-5 w-5 flex-shrink-0 text-amber-300" />
+                  <span>早撃ち技能ツリー</span>
                 </button>
 
                 <button
                   type="button"
                   disabled={!isShopUnlocked}
                   onClick={() => handleSelectTab("weapons")}
-                  className={`flex items-center gap-3 rounded-xl border-2 px-3.5 py-3 text-left text-sm font-bold transition-all ${
+                  className={`flex items-center gap-3 rounded-lg border-2 px-3.5 py-3 text-left text-sm font-bold transition-all ${
                     !isShopUnlocked
-                      ? "cursor-not-allowed border-slate-800 bg-slate-900 text-slate-600"
+                      ? "cursor-not-allowed border-amber-950 bg-[#170b05] text-amber-900"
                       : currentTab === "weapons"
-                        ? "cursor-pointer border-sky-400 bg-sky-600 text-white shadow"
-                        : "cursor-pointer border-slate-700 bg-slate-800/80 text-slate-300 hover:border-slate-500 hover:text-white"
+                        ? "western-btn-brass cursor-pointer text-amber-50 shadow"
+                        : "cursor-pointer border-amber-900 bg-[#221107]/90 text-amber-200/80 hover:border-amber-600 hover:text-amber-50"
                   }`}
                 >
                   {isShopUnlocked ? (
                     <>
-                      <Crosshair className="h-5 w-5 flex-shrink-0" />
-                      <span>武器ショップ</span>
+                      <Crosshair className="h-5 w-5 flex-shrink-0 text-amber-300" />
+                      <span>銃砲店（GUNSMITH）</span>
                     </>
                   ) : (
                     <>
                       <Lock className="h-5 w-5 flex-shrink-0" />
                       <div className="flex flex-col leading-tight">
-                        <span>武器ショップ</span>
-                        <span className="mt-0.5 text-[11px] font-normal text-slate-500">
-                          Round 3 で解放
+                        <span>銃砲店（準備中）</span>
+                        <span className="mt-0.5 text-[11px] font-normal text-amber-700">
+                          第 3 決闘で開店
                         </span>
                       </div>
                     </>
                   )}
                 </button>
               </nav>
+
+              <p className="mt-auto border-t border-amber-900/60 pt-3 text-center text-xs text-amber-300/65 italic">
+                「いい銃と速い腕、生き残るには両方要るぜ」
+              </p>
             </aside>
           </div>
         )}
@@ -197,17 +203,21 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
           {currentTab === "skills" ? (
             <SkillTreeView onStateChange={refresh} onProceed={handleProceed} />
           ) : (
-            <div className="flex min-h-0 flex-1 flex-col gap-2">
-              <div className="flex flex-shrink-0 justify-end">
+            <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+              <div className="flex flex-shrink-0 items-center justify-between">
+                <span className="font-western-display text-xs font-bold tracking-wider text-amber-300/90 sm:text-sm">
+                  ★ GUNSMITH CATALOGUE ★
+                </span>
                 <button
                   type="button"
                   onClick={handleProceed}
-                  className="flex h-9 cursor-pointer items-center gap-1 rounded-xl border border-sky-300/60 bg-sky-600 px-3.5 text-xs font-extrabold text-white shadow transition-all hover:bg-sky-500 active:scale-95 sm:px-4 sm:text-sm"
+                  className="western-btn-wood flex h-9 cursor-pointer items-center gap-1 rounded-lg px-3.5 text-xs font-extrabold text-amber-50 transition-all active:scale-95 sm:px-4 sm:text-sm"
                 >
-                  <span>次のラウンドへ</span>
+                  <span>次の決闘へ</span>
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
+
               <div className="flex-1 touch-pan-y space-y-3 overflow-y-auto pr-1">
                 {WEAPON_IDS.map((weaponId) => {
                   const def = WEAPONS[weaponId];
@@ -221,55 +231,65 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                   return (
                     <div
                       key={weaponId}
-                      className={`flex flex-col items-center rounded-2xl border-2 p-4 text-center transition-colors sm:p-5 ${
+                      className={`western-parchment relative flex flex-col items-center rounded-lg border-2 p-4 text-center transition-all sm:p-5 ${
                         isEquipped
-                          ? "border-sky-400 bg-sky-950/70"
+                          ? "border-amber-700 ring-2 ring-amber-400"
                           : isOwned
-                            ? "border-emerald-500 bg-slate-800/90"
-                            : "border-slate-600 bg-slate-900/95"
+                            ? "border-[#6b3410]"
+                            : "border-[#5c2d10] opacity-95"
                       }`}
                     >
-                      <h3 className="text-xl font-extrabold text-white sm:text-2xl">{def.name}</h3>
+                      {/* 四隅の鋲ドット */}
+                      <span className="absolute top-2 left-2 h-2 w-2 rounded-full bg-amber-900/70" />
+                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-900/70" />
+                      <span className="absolute bottom-2 left-2 h-2 w-2 rounded-full bg-amber-900/70" />
+                      <span className="absolute right-2 bottom-2 h-2 w-2 rounded-full bg-amber-900/70" />
 
-                      <p className="mt-1.5 text-xs font-semibold text-sky-400 sm:text-sm">
-                        ダメージ: {def.damage} &nbsp;|&nbsp; 発射間隔: {def.fireInterval.toFixed(2)}
-                        s ({(1 / def.fireInterval).toFixed(1)}発/秒)
+                      <h3 className="text-xl font-extrabold text-[#2b1206] sm:text-2xl">
+                        {def.name}
+                      </h3>
+
+                      <p className="mt-1.5 text-xs font-bold text-[#7f1d1d] sm:text-sm">
+                        威力: {def.damage} &nbsp;|&nbsp; 早撃ち間隔: {def.fireInterval.toFixed(2)}s
+                        ({(1 / def.fireInterval).toFixed(1)}発/秒)
                       </p>
-                      <p className="mt-1 text-xs font-semibold text-slate-300 sm:text-sm">
-                        装弾数: {gameState.getMagazineSize(weaponId)}発 &nbsp;|&nbsp; リロード:{" "}
+                      <p className="mt-1 text-xs font-bold text-[#4a2109] sm:text-sm">
+                        装填弾数: {gameState.getMagazineSize(weaponId)}発 &nbsp;|&nbsp; 再装填:{" "}
                         {gameState.getReloadTime(weaponId).toFixed(2)}s
                       </p>
 
-                      <p className="mt-2.5 text-xs text-slate-400 sm:text-sm">{def.description}</p>
+                      <p className="mt-2.5 text-xs font-medium text-[#5c2d10] sm:text-sm">
+                        {def.description}
+                      </p>
 
                       <div className="mt-4">
                         {isEquipped ? (
-                          <div className="flex items-center gap-1.5 text-base font-extrabold text-sky-400 sm:text-lg">
+                          <div className="flex items-center gap-1.5 rounded-md border border-amber-800/50 bg-amber-950/15 px-4 py-1.5 text-sm font-extrabold text-[#7c2d12] sm:text-base">
                             <Check className="h-5 w-5" />
-                            <span>現在装備中</span>
+                            <span>★ ホルスターに装備中</span>
                           </div>
                         ) : isOwned ? (
                           <button
                             type="button"
                             onClick={() => handleEquipWeapon(weaponId)}
-                            className="cursor-pointer rounded-xl bg-sky-600 px-8 py-2.5 text-sm font-bold text-white shadow transition-all hover:bg-sky-500 active:scale-95 sm:text-base"
+                            className="western-btn-wood cursor-pointer rounded-lg px-8 py-2 text-sm font-bold text-amber-50 transition-all active:scale-95 sm:text-base"
                           >
-                            装備する
+                            愛銃に持ち替える
                           </button>
                         ) : (
                           <button
                             type="button"
                             disabled={!canAfford}
                             onClick={() => handleBuyWeapon(weaponId)}
-                            className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all sm:text-base ${
+                            className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all sm:text-base ${
                               canAfford
-                                ? "cursor-pointer bg-emerald-600 text-white shadow hover:bg-emerald-500 active:scale-95"
-                                : "cursor-not-allowed bg-slate-700 text-slate-400"
+                                ? "western-btn-brass cursor-pointer text-amber-50 active:scale-95"
+                                : "cursor-not-allowed border border-[#8c6d46] bg-[#9c825e] text-[#4a3926]"
                             }`}
                           >
                             <ShoppingBag className="h-4 w-4" />
                             <span>
-                              購入: {formatNumber(price)} SP
+                              買い取る: {formatMoney(price)}
                               {isDiscounted ? ` (${formatPercent(discount)} OFF)` : ""}
                             </span>
                           </button>
@@ -280,9 +300,9 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                 })}
 
                 {gameState.canToggleAutoFire() && (
-                  <div className="flex items-center justify-center gap-2 py-2 text-center text-xs font-bold text-yellow-400 sm:text-sm">
+                  <div className="western-wood flex items-center justify-center gap-2 rounded-lg border border-amber-500/70 px-3 py-2.5 text-center text-xs font-bold text-amber-300 sm:text-sm">
                     <Sparkles className="h-4 w-4 flex-shrink-0" />
-                    <span>全3種の武器を入手しました！「オート射撃」が利用可能です！</span>
+                    <span>全3挺の名銃が揃った！「自動早撃ち照準」が使えるぜ！</span>
                   </div>
                 )}
               </div>

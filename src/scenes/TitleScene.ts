@@ -4,6 +4,13 @@ import { AudioManager } from "../audio/AudioManager";
 import { EventBus } from "../EventBus";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
+import {
+  createWesternButton,
+  drawParchmentCard,
+  drawWesternBackdrop,
+  drawWoodPanel,
+  showCinemaTitleCard,
+} from "./WesternDecor";
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -16,238 +23,224 @@ export class TitleScene extends Phaser.Scene {
     const gameState = GameState.getInstance();
     const audio = AudioManager.getInstance();
 
-    // 背景装飾 (グリッド線)
-    const bgGraphics = this.add.graphics();
-    bgGraphics.lineStyle(1, 0x1e293b, 0.5);
-    for (let x = 0; x < width; x += 60) {
-      bgGraphics.moveTo(x, 0);
-      bgGraphics.lineTo(x, height);
-    }
-    for (let y = 0; y < height; y += 60) {
-      bgGraphics.moveTo(0, y);
-      bgGraphics.lineTo(width, y);
-    }
-    bgGraphics.strokePath();
+    // エンニオ・モリコーネ風の口笛・ギター・ハーモニカBGMを開始
+    audio.playBGM("western_town");
 
-    // 背景に漂う的の装飾
-    for (let i = 0; i < 4; i++) {
-      const targetKeys = ["target_standard", "target_hard", "target_gold", "target_electric"];
-      const t = this.add.image(
-        Phaser.Math.Between(100, width - 100),
-        Phaser.Math.Between(150, height - 150),
-        targetKeys[i],
-      );
-      t.setAlpha(0.18);
-      t.setScale(Phaser.Math.FloatBetween(0.8, 1.3));
-      this.tweens.add({
-        targets: t,
-        y: t.y + Phaser.Math.Between(-30, 30),
-        x: t.x + Phaser.Math.Between(-30, 30),
-        angle: 360,
-        duration: Phaser.Math.Between(12000, 20000),
-        repeat: -1,
-        yoyo: true,
-        ease: "Sine.easeInOut",
-      });
-    }
+    // 1. 夕焼けの荒野・岩山・サボテン・酒場・駅舎・タンブルウィード背景
+    drawWesternBackdrop(this, width, height, {
+      horizonY: 960,
+      variant: "sunset",
+      withBuildings: true,
+      withAtmosphere: true,
+    });
 
-    // 設定ボタン (右上の歯車風ボタン)
-    this.createSmallButton(width - 100, 70, "⚙ 設定", () => {
-      audio.playSynthSE("click");
+    // 2. 右上の木札「設定」ボタン
+    this.createSmallWoodButton(width - 96, 68, "⚙ 設定", () => {
+      audio.playSynthSE("spur", 0.65);
       EventBus.emit("open-settings");
     });
 
-    // ゲームタイトル (縦画面レイアウト: y = 340)
-    addCrispText(this, width / 2, 340, "銃的当て", {
-      fontSize: "64px",
-      fontStyle: "bold",
-      color: "#38bdf8",
-      stroke: "#0369a1",
-      strokeThickness: 5,
-    }).setOrigin(0.5);
+    // 3. WANTED指名手配書風のメインタイトルボード
+    const posterW = 730;
+    const posterH = 440;
+    const posterX = width / 2 - posterW / 2;
+    const posterY = 155;
 
-    addCrispText(this, width / 2, 420, "インクリメンタル", {
-      fontSize: "52px",
-      fontStyle: "bold",
-      color: "#f8fafc",
-      stroke: "#0f172a",
-      strokeThickness: 4,
-    }).setOrigin(0.5);
+    const posterG = this.add.graphics().setDepth(10);
+    drawParchmentCard(posterG, posterX, posterY, posterW, posterH, {
+      borderColor: 0x4a2109,
+      pinned: true,
+    });
 
-    addCrispText(this, width / 2, 500, "7秒射撃 × スキルツリー × 請求の生存ゲーム", {
+    // 手配書の弾痕アクセント
+    if (this.textures.exists("bullet_hole")) {
+      this.add
+        .image(posterX + 58, posterY + 62, "bullet_hole")
+        .setDepth(12)
+        .setAlpha(0.85);
+      this.add
+        .image(posterX + posterW - 52, posterY + posterH - 54, "bullet_hole")
+        .setDepth(12)
+        .setScale(0.9)
+        .setAlpha(0.8);
+    }
+
+    addCrispText(this, width / 2, posterY + 58, "★  W A N T E D  ★", {
+      fontSize: "48px",
+      fontFamily: "display",
+      fontStyle: "bold",
+      color: "#5c1f0b",
+    })
+      .setOrigin(0.5)
+      .setDepth(12);
+
+    addCrispText(this, width / 2, posterY + 108, "— DEAD OR ALIVE —", {
+      fontSize: "19px",
+      fontFamily: "display",
+      fontStyle: "bold",
+      color: "#7c2d12",
+    })
+      .setOrigin(0.5)
+      .setDepth(12);
+
+    addCrispText(this, width / 2, posterY + 190, "荒野の早撃ち", {
+      fontSize: "66px",
+      fontStyle: "bold",
+      color: "#2b1206",
+      stroke: "#ecd9b5",
+      strokeThickness: 2,
+    })
+      .setOrigin(0.5)
+      .setDepth(12);
+
+    addCrispText(this, width / 2, posterY + 272, "賞 金 稼 ぎ", {
+      fontSize: "54px",
+      fontStyle: "bold",
+      color: "#7f1d1d",
+    })
+      .setOrigin(0.5)
+      .setDepth(12);
+
+    addCrispText(this, width / 2, posterY + 344, "7秒の早撃ち決闘 × 銃器改造 × 保安官の上納金", {
+      fontSize: "20px",
+      fontStyle: "bold",
+      color: "#4a250d",
+    })
+      .setOrigin(0.5)
+      .setDepth(12);
+
+    addCrispText(this, width / 2, posterY + 394, "「この町は俺には狭すぎる」", {
       fontSize: "22px",
-      color: "#94a3b8",
-    }).setOrigin(0.5);
+      fontStyle: "bold",
+      color: "#6b2710",
+    })
+      .setOrigin(0.5)
+      .setDepth(12);
 
-    // 統計・永続情報サマリーカード
+    // 4. 賞金稼ぎの戦歴・名声バッジ木札パネル
     const permPoints = gameState.persistentData.permanentPoints;
     const highestRound = gameState.persistentData.stats.highestRound;
     const totalRuns = gameState.persistentData.stats.totalRuns;
 
-    const statsW = 760;
-    const statsH = 120;
-    const statsY = 620;
+    const statsW = 730;
+    const statsH = 132;
+    const statsY = 635;
 
-    const statsBg = this.add.graphics();
-    statsBg.fillStyle(0x0f172a, 0.85);
-    statsBg.fillRoundedRect(width / 2 - statsW / 2, statsY, statsW, statsH, 16);
-    statsBg.lineStyle(1.5, 0x334155, 1);
-    statsBg.strokeRoundedRect(width / 2 - statsW / 2, statsY, statsW, statsH, 16);
+    const statsBg = this.add.graphics().setDepth(10);
+    drawWoodPanel(statsBg, width / 2 - statsW / 2, statsY, statsW, statsH, {
+      fill: 0x261308,
+      border: 0xb45309,
+      rivets: true,
+    });
 
-    addCrispText(this, width / 2, statsY + 36, `所持永続ポイント: ${permPoints} pt`, {
-      fontSize: "26px",
-      color: "#facc15",
+    addCrispText(this, width / 2, statsY + 42, `★ 所持名声バッジ: ${permPoints}`, {
+      fontSize: "27px",
+      color: "#fbbf24",
       fontStyle: "bold",
-    }).setOrigin(0.5);
+      stroke: "#1c0a04",
+      strokeThickness: 3,
+    })
+      .setOrigin(0.5)
+      .setDepth(12);
 
     addCrispText(
       this,
       width / 2,
-      statsY + 80,
-      `最高到達: Round ${highestRound}   |   挑戦回数: ${totalRuns} 回`,
+      statsY + 90,
+      `最高到達: 第 ${highestRound} 決闘   |   決闘歴: ${totalRuns} 回`,
       {
         fontSize: "19px",
-        color: "#94a3b8",
+        color: "#d6b384",
       },
-    ).setOrigin(0.5);
+    )
+      .setOrigin(0.5)
+      .setDepth(12);
 
-    // ボタン配置
-    const buttonY = 880;
-    const buttonSpacing = 110;
+    // 5. アクション木札ボタン群
+    const buttonY = 875;
+    const buttonSpacing = 112;
 
-    // 1. ラン開始ボタン
-    this.createButton(
+    createWesternButton(
+      this,
       width / 2,
       buttonY,
-      "▶  ランを開始する",
-      0x0284c7,
-      0x38bdf8,
+      "🔫  荒野へ繰り出す（決闘開始）",
+      "rust",
       () => {
-        audio.playSynthSE("click");
         gameState.startNewRun();
         this.scene.start("RoundScene");
       },
-      520,
-      76,
-    );
+      550,
+      80,
+    ).setDepth(15);
 
-    // 2. 永続強化ボタン
     const permBtnText =
-      permPoints > 0 ? `⭐  永続強化 (${permPoints} pt)` : "⭐  永続強化 (ポイント不足)";
-    this.createButton(
+      permPoints > 0
+        ? `★  酒場で鍛える（名声: ${permPoints}）`
+        : "★  酒場で鍛える（ガンマンの流儀）";
+    createWesternButton(
+      this,
       width / 2,
       buttonY + buttonSpacing,
       permBtnText,
-      permPoints > 0 ? 0x7c3aed : 0x334155,
-      permPoints > 0 ? 0xa855f7 : 0x64748b,
+      permPoints > 0 ? "brass" : "leather",
       () => {
-        audio.playSynthSE("click");
         this.scene.start("PermanentUpgradeScene");
       },
-      520,
-      76,
-    );
+      550,
+      80,
+    ).setDepth(15);
+
+    // 6. 映画タイトルカード風の開幕レターボックス演出（非ブロッキング・自動フェード）
+    showCinemaTitleCard(this, {
+      actLabel: "A FISTFUL OF BOUNTY",
+      title: "HIGH NOON",
+      quote: "「風が止んだら……抜け」",
+      y: 1210,
+      holdMs: 1100,
+      fadeMs: 550,
+      letterbox: true,
+    });
   }
 
-  private createButton(
-    x: number,
-    y: number,
-    text: string,
-    color: number,
-    hoverColor: number,
-    onClick: () => void,
-    width = 480,
-    height = 70,
-  ): Phaser.GameObjects.Container {
-    const container = this.add.container(x, y);
-
-    const bg = this.add.graphics();
-    bg.fillStyle(color, 1);
-    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
-    bg.lineStyle(2, 0xffffff, 0.4);
-    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
-
-    const label = addCrispText(this, 0, 0, text, {
-      fontSize: "26px",
-      fontStyle: "bold",
-      color: "#ffffff",
-    }).setOrigin(0.5);
-
-    container.add([bg, label]);
-    container.setSize(width, height);
-    container.setInteractive({ useHandCursor: true });
-
-    container.on("pointerover", () => {
-      bg.clear();
-      bg.fillStyle(hoverColor, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
-      bg.lineStyle(3, 0xffffff, 0.9);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
-      container.setScale(1.03);
-    });
-
-    container.on("pointerout", () => {
-      bg.clear();
-      bg.fillStyle(color, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
-      bg.lineStyle(2, 0xffffff, 0.4);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
-      container.setScale(1.0);
-    });
-
-    container.on("pointerdown", () => {
-      container.setScale(0.97);
-    });
-
-    container.on("pointerup", () => {
-      container.setScale(1.03);
-      onClick();
-    });
-
-    return container;
-  }
-
-  private createSmallButton(
+  private createSmallWoodButton(
     x: number,
     y: number,
     text: string,
     onClick: () => void,
   ): Phaser.GameObjects.Container {
-    const container = this.add.container(x, y);
+    const container = this.add.container(x, y).setDepth(20);
     const bg = this.add.graphics();
-    bg.fillStyle(0x1e293b, 0.85);
-    bg.lineStyle(1, 0x475569, 1);
-    bg.fillRoundedRect(-55, -22, 110, 44, 10);
-    bg.strokeRoundedRect(-55, -22, 110, 44, 10);
+
+    const draw = (hover: boolean) => {
+      bg.clear();
+      bg.fillStyle(hover ? 0x4a2511 : 0x2b1509, 0.95);
+      bg.lineStyle(hover ? 2 : 1.5, hover ? 0xfbbf24 : 0x92400e, 1);
+      bg.fillRoundedRect(-58, -23, 116, 46, 8);
+      bg.strokeRoundedRect(-58, -23, 116, 46, 8);
+    };
+    draw(false);
 
     const label = addCrispText(this, 0, 0, text, {
       fontSize: "18px",
-      color: "#cbd5e1",
+      fontStyle: "bold",
+      color: "#fde68a",
     }).setOrigin(0.5);
 
     container.add([bg, label]);
-    container.setSize(110, 44);
+    container.setSize(116, 46);
     container.setInteractive({ useHandCursor: true });
 
     container.on("pointerover", () => {
-      bg.clear();
-      bg.fillStyle(0x334155, 1);
-      bg.lineStyle(2, 0x38bdf8, 1);
-      bg.fillRoundedRect(-55, -22, 110, 44, 10);
-      bg.strokeRoundedRect(-55, -22, 110, 44, 10);
+      draw(true);
       container.setScale(1.05);
     });
-
     container.on("pointerout", () => {
-      bg.clear();
-      bg.fillStyle(0x1e293b, 0.85);
-      bg.lineStyle(1, 0x475569, 1);
-      bg.fillRoundedRect(-55, -22, 110, 44, 10);
-      bg.strokeRoundedRect(-55, -22, 110, 44, 10);
+      draw(false);
       container.setScale(1.0);
     });
-
     container.on("pointerup", onClick);
+
     return container;
   }
 }

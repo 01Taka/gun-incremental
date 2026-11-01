@@ -5,7 +5,7 @@ import { AudioManager } from "../audio/AudioManager";
 import { SKILL_IDS, SKILL_STATS, SKILL_TREE, SKILLS } from "../config/skillTree";
 import type { SkillNodeId, SkillNodeSize } from "../config/types";
 import { layoutFishbone } from "../logic/fishboneLayout";
-import { formatNumber, formatPercent } from "../logic/format";
+import { formatMoney, formatPercent } from "../logic/format";
 import { GameState } from "../logic/GameState";
 import { SkillIcon } from "./SkillIcon";
 
@@ -453,22 +453,24 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      {/* 1. 上部: スキル説明パネル (スキル名・レベル・効果を大きく表示、未解放は ??? で秘匿) */}
+      {/* 1. 上部: 早撃ち技能説明パネル（サドルレザー＆真鍮枠） */}
       <div
-        className={`flex-shrink-0 rounded-2xl border-2 bg-slate-900/95 px-3.5 py-2.5 shadow-xl transition-colors ${
+        className={`western-leather flex-shrink-0 rounded-xl border-2 px-3.5 py-2.5 shadow-xl transition-colors ${
           !selectedReqMet
-            ? "border-slate-700"
+            ? "border-[#4d2913]"
             : selectedIsMax
-              ? "border-yellow-400"
-              : "border-sky-600"
+              ? "border-amber-400"
+              : "border-amber-600"
         }`}
       >
         {/* 1段目: スキル名 & レベル */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <span
-              className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-slate-800 ${
-                !selectedReqMet ? "text-slate-500" : "text-sky-400"
+              className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border ${
+                !selectedReqMet
+                  ? "border-[#4d2913] bg-[#1a0c05] text-amber-800"
+                  : "border-amber-600/60 bg-[#361b0b] text-amber-300"
               }`}
             >
               {!selectedReqMet ? (
@@ -479,7 +481,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
             </span>
             <h3
               className={`truncate text-base font-extrabold sm:text-lg ${
-                !selectedReqMet ? "text-slate-400" : "text-slate-50"
+                !selectedReqMet ? "text-amber-700" : "text-amber-50"
               }`}
             >
               {!selectedReqMet ? "???" : selectedDef.name}
@@ -488,25 +490,25 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
           <span
             className={`flex-shrink-0 text-sm font-extrabold sm:text-base ${
               !selectedReqMet
-                ? "text-slate-500"
+                ? "text-amber-800"
                 : selectedIsMax
-                  ? "text-yellow-400"
-                  : "text-sky-400"
+                  ? "text-amber-300"
+                  : "text-amber-400"
             }`}
           >
             {!selectedReqMet
-              ? "未解放"
+              ? "未習得"
               : selectedIsMax
-                ? "★ MAX"
+                ? "★ 極意"
                 : `Lv.${selectedCurLevel} / ${selectedDef.maxLevel}`}
           </span>
         </div>
 
         {/* レベル進捗バー */}
-        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#160a04]">
           <div
             className={`h-full rounded-full transition-all duration-200 ${
-              selectedIsMax ? "bg-yellow-400" : "bg-sky-500"
+              selectedIsMax ? "bg-amber-300" : "bg-amber-600"
             }`}
             style={{
               width: `${!selectedReqMet ? 0 : (selectedCurLevel / selectedDef.maxLevel) * 100}%`,
@@ -518,44 +520,42 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
         <div className="mt-2 flex items-baseline justify-between gap-2">
           <span
             className={`text-xs font-semibold ${
-              !selectedReqMet ? "text-slate-500" : "text-slate-400"
+              !selectedReqMet ? "text-amber-800" : "text-amber-200/80"
             }`}
           >
             {!selectedReqMet ? "???" : SKILL_STATS[selectedDef.effect.stat].label}
           </span>
           {!selectedReqMet ? (
-            <span className="text-sm font-extrabold tracking-widest text-slate-500 sm:text-base">
+            <span className="text-sm font-extrabold tracking-widest text-amber-800 sm:text-base">
               ???
             </span>
           ) : selectedIsMax ? (
-            <span className="text-base font-extrabold text-yellow-400 sm:text-lg">
-              {curDisplay}
-            </span>
+            <span className="text-base font-extrabold text-amber-300 sm:text-lg">{curDisplay}</span>
           ) : (
-            <span className="text-sm font-extrabold text-emerald-400 sm:text-base">
-              <span className="text-slate-300">
+            <span className="text-sm font-extrabold text-amber-300 sm:text-base">
+              <span className="text-amber-100/80">
                 {selectedCurLevel > 0 ? curDisplay : "効果なし"}
               </span>
-              <span className="mx-1.5 text-slate-500">➔</span>
+              <span className="mx-1.5 text-amber-600">➔</span>
               <span>{nextDisplay}</span>
             </span>
           )}
         </div>
       </div>
 
-      {/* 説明パネル直下: 次のラウンドへボタン */}
+      {/* 説明パネル直下: 次の決闘へボタン */}
       <div className="flex flex-shrink-0 justify-end">
         <button
           type="button"
           onClick={onProceed}
-          className="flex h-9 cursor-pointer items-center gap-1 rounded-xl border border-sky-300/60 bg-sky-600 px-3.5 text-xs font-extrabold text-white shadow transition-all hover:bg-sky-500 active:scale-95 sm:px-4 sm:text-sm"
+          className="western-btn-wood flex h-9 cursor-pointer items-center gap-1 rounded-lg px-3.5 text-xs font-extrabold text-amber-50 transition-all active:scale-95 sm:px-4 sm:text-sm"
         >
-          <span>次のラウンドへ</span>
+          <span>次の決闘へ</span>
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
-      {/* 2. 中央: 魚の骨スキルツリー ビューポート */}
+      {/* 2. 中央: 魚の骨スキルツリー ビューポート（荒野の古地図風背景） */}
       <div
         ref={viewportRef}
         onPointerDown={handleViewportPointerDown}
@@ -563,7 +563,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
         onPointerUp={handleViewportPointerUpOrCancel}
         onPointerCancel={handleViewportPointerUpOrCancel}
         onPointerLeave={handleViewportPointerUpOrCancel}
-        className="relative min-h-0 flex-1 touch-none overflow-auto rounded-2xl border border-slate-800 bg-slate-950/75 shadow-inner"
+        className="western-map-bg relative min-h-0 flex-1 touch-none overflow-auto rounded-xl border-2 border-amber-800/75 shadow-inner"
       >
         <div
           className="relative mx-auto select-none"
@@ -591,21 +591,21 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
               const isChildMax = childLevel >= def.maxLevel;
               const style = NODE_STYLE[def.size];
 
-              let stroke = "#1e293b";
-              let opacity = 0.7;
+              let stroke = "#3b1f0e";
+              let opacity = 0.72;
               let strokeWidth = style.lineWidth;
 
               if (isChildMax) {
-                stroke = "#facc15";
-                opacity = 0.95;
+                stroke = "#fde047";
+                opacity = 0.96;
                 strokeWidth = style.lineWidth + 1.2;
               } else if (childLevel > 0) {
-                stroke = "#38bdf8";
+                stroke = "#f59e0b";
                 opacity = 0.95;
                 strokeWidth = style.lineWidth + 0.8;
               } else if (isConditionMet) {
-                stroke = "#0284c7";
-                opacity = 0.8;
+                stroke = "#b45309";
+                opacity = 0.85;
                 strokeWidth = style.lineWidth + 0.4;
               }
 
@@ -661,17 +661,17 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
 
             let bgClass: string;
             if (!isReqMet) {
-              bgClass = "bg-slate-950 border-slate-800 text-slate-600";
+              bgClass = "bg-[#160b05] border-[#3d2111] text-[#6b462b]";
             } else if (isMax) {
-              bgClass = "bg-amber-950/95 border-yellow-400 text-yellow-300";
+              bgClass = "bg-amber-950/95 border-amber-300 text-amber-200";
             } else if (canUnlock) {
               bgClass =
                 curLevel > 0
-                  ? "bg-sky-950/95 border-sky-400 text-sky-200"
-                  : "bg-slate-800 border-sky-400 text-white";
+                  ? "bg-[#43200c] border-amber-400 text-amber-100"
+                  : "bg-[#2e1608] border-amber-500 text-amber-50";
             } else {
-              // 解放条件は満たしているが SP 不足で解放・強化できないノード
-              bgClass = "bg-rose-950/80 border-rose-500 text-rose-300";
+              // 解放条件は満たしているが所持金不足で強化できないノード
+              bgClass = "bg-[#3b120e]/90 border-red-700 text-red-200";
             }
 
             return (
@@ -686,7 +686,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
                 {/* スキル名 (ノード上部) */}
                 <div
                   className={`pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 font-bold whitespace-nowrap drop-shadow ${style.nameTextClass} ${
-                    !isReqMet ? "text-slate-600" : isMax ? "text-yellow-200" : "text-slate-100"
+                    !isReqMet ? "text-[#6b462b]" : isMax ? "text-amber-200" : "text-amber-50"
                   }`}
                 >
                   {!isReqMet ? "???" : def.name}
@@ -704,9 +704,9 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
                   }}
                   className={`relative flex flex-col items-center justify-center rounded-full border-[2.5px] transition-transform duration-100 hover:scale-105 focus:outline-none ${bgClass} ${
                     isSelected
-                      ? "ring-[3px] ring-white/90 ring-offset-2 ring-offset-slate-950"
+                      ? "ring-[3px] ring-amber-200 ring-offset-2 ring-offset-[#1d1008]"
                       : canUnlock && !isMax
-                        ? "shadow-[0_0_14px_rgba(56,189,248,0.45)]"
+                        ? "shadow-[0_0_14px_rgba(245,158,11,0.45)]"
                         : ""
                   }`}
                 >
@@ -728,7 +728,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
                         cy={ringRadius + 4}
                         r={ringRadius}
                         fill="none"
-                        stroke="#38bdf8"
+                        stroke="#fbbf24"
                         strokeWidth={3.5}
                         strokeDasharray={ringCircumference}
                         strokeDashoffset={ringCircumference * (1 - lpProgress)}
@@ -739,7 +739,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
 
                   <div className="flex items-center justify-center">
                     {!isReqMet ? (
-                      <Lock size={Math.round(style.iconSize * 0.85)} className="text-slate-600" />
+                      <Lock size={Math.round(style.iconSize * 0.85)} className="text-[#6b462b]" />
                     ) : (
                       <SkillIcon name={def.icon} size={style.iconSize} strokeWidth={2.2} />
                     )}
@@ -748,7 +748,11 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
                   {isReqMet && (
                     <span
                       className={`mt-0.5 leading-none font-extrabold tracking-tight ${style.levelTextClass} ${
-                        isMax ? "text-yellow-400" : curLevel > 0 ? "text-sky-300" : "text-slate-400"
+                        isMax
+                          ? "text-amber-300"
+                          : curLevel > 0
+                            ? "text-amber-200"
+                            : "text-amber-400/80"
                       }`}
                     >
                       {isMax ? "MAX" : `${curLevel}/${def.maxLevel}`}
@@ -756,13 +760,13 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
                   )}
                 </button>
 
-                {/* コスト表示 (ノード下部) */}
+                {/* コスト表示 (ノード下部: $表記) */}
                 <div className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 text-[11px] font-bold whitespace-nowrap">
                   {!isReqMet ? null : isMax ? (
-                    <span className="text-yellow-400">★ MAX</span>
+                    <span className="text-amber-300">★ 極意</span>
                   ) : cost !== null ? (
-                    <span className={canUnlock ? "text-sky-400" : "text-rose-400"}>
-                      {formatNumber(cost)} SP
+                    <span className={canUnlock ? "text-amber-300" : "text-red-400"}>
+                      {formatMoney(cost)}
                     </span>
                   ) : null}
                 </div>
@@ -772,8 +776,8 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
         </div>
       </div>
 
-      {/* 3. 下部: 移動用上下左右ボタン + 購入ボタン */}
-      <div className="flex flex-shrink-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/95 p-2.5 shadow-xl">
+      {/* 3. 下部: 移動用上下左右ボタン + 購入ボタン（木札パネル） */}
+      <div className="western-wood flex flex-shrink-0 flex-col gap-2 rounded-xl border border-amber-800/80 p-2.5 shadow-xl">
         {/* 上下左右の移動ボタン群 */}
         <div className="grid grid-cols-4 gap-2">
           <DpadButton
@@ -804,11 +808,11 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
 
         {/* 購入アクションボタン / ロック状態 */}
         {selectedIsMax ? (
-          <div className="flex h-10 items-center justify-center rounded-xl border-2 border-yellow-400/80 bg-amber-950/60 text-sm font-extrabold text-yellow-400 sm:h-11 sm:text-base">
-            ★ 最大レベル習得済み
+          <div className="flex h-10 items-center justify-center rounded-lg border-2 border-amber-400/80 bg-amber-950/60 text-sm font-extrabold text-amber-300 sm:h-11 sm:text-base">
+            ★ 極意レベル習得済み
           </div>
         ) : !selectedReqMet ? (
-          <div className="flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-500/60 bg-rose-950/50 px-3 text-xs font-bold text-rose-400 sm:h-11 sm:text-sm">
+          <div className="flex h-10 items-center justify-center gap-2 rounded-lg border border-red-800/80 bg-[#2d0e0b]/80 px-3 text-xs font-bold text-red-300 sm:h-11 sm:text-sm">
             <Lock className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">
               前提条件:{" "}
@@ -822,14 +826,14 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
             type="button"
             disabled={!selectedCanUnlock}
             onClick={() => executePurchase(selectedSkillId)}
-            className={`flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border-2 text-sm font-extrabold transition-all sm:h-11 sm:text-base ${
+            className={`flex h-10 w-full items-center justify-center gap-1.5 rounded-lg text-sm font-extrabold transition-all sm:h-11 sm:text-base ${
               selectedCanUnlock
-                ? "cursor-pointer border-sky-400 bg-sky-600 text-white shadow-lg hover:bg-sky-500 active:scale-[0.99]"
-                : "cursor-not-allowed border-slate-700 bg-slate-800 text-slate-500"
+                ? "western-btn-brass cursor-pointer text-amber-50 active:scale-[0.99]"
+                : "cursor-not-allowed border border-[#4d2913] bg-[#1c0e06] text-amber-800"
             }`}
           >
             <Zap className="h-4 w-4" />
-            <span>レベルアップ購入 ({formatNumber(selectedCost!)} SP)</span>
+            <span>技を磨く ({formatMoney(selectedCost!)})</span>
           </button>
         )}
       </div>
@@ -856,7 +860,7 @@ function DpadButton({ label, icon, onPressStart, onPressEnd }: DpadButtonProps) 
       onPointerUp={onPressEnd}
       onPointerCancel={onPressEnd}
       onPointerLeave={onPressEnd}
-      className="flex h-9 cursor-pointer items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-200 shadow transition-all hover:border-sky-400 hover:bg-slate-700 hover:text-white active:scale-95 active:border-sky-400 active:bg-sky-600 sm:h-9.5"
+      className="flex h-9 cursor-pointer items-center justify-center rounded-lg border border-amber-800/80 bg-[#241208] text-amber-200 shadow transition-all hover:border-amber-500 hover:bg-[#361b0b] hover:text-amber-50 active:scale-95 active:border-amber-400 active:bg-amber-800 sm:h-9.5"
     >
       {icon}
     </button>

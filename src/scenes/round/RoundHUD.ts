@@ -2,9 +2,10 @@ import type Phaser from "phaser";
 
 import { AudioManager } from "../../audio/AudioManager";
 import { WEAPONS } from "../../config/gameData";
-import { formatNumber, formatSeconds } from "../../logic/format";
+import { formatMoney, formatSeconds } from "../../logic/format";
 import { GameState } from "../../logic/GameState";
 import { addCrispText } from "../../utils/text";
+import { drawWoodPanel } from "../WesternDecor";
 import type { ArenaBounds } from "./types";
 
 export class RoundHUD {
@@ -19,8 +20,15 @@ export class RoundHUD {
   private roundInfoText!: Phaser.GameObjects.Text;
   private lockOnStatusText!: Phaser.GameObjects.Text;
   private ammoText!: Phaser.GameObjects.Text;
+  private ammoSubText!: Phaser.GameObjects.Text;
   private reloadBarGraphics!: Phaser.GameObjects.Graphics;
   private countdownText?: Phaser.GameObjects.Text;
+
+  // リボルバー6発シリンダーアイコン描画用
+  private cylinderContainer!: Phaser.GameObjects.Container;
+  private cylinderGraphics!: Phaser.GameObjects.Graphics;
+  private lastKnownAmmo: number = -1;
+  private cylinderVisualAngle: number = 0;
 
   private weaponButtonsContainer!: Phaser.GameObjects.Container;
   private autoFireToggleContainer!: Phaser.GameObjects.Container;
@@ -37,90 +45,172 @@ export class RoundHUD {
   }
 
   private createTopHUD(width: number): void {
-    const hudTop = this.bounds.bottom + 15; // 855 (アリーナ直下)
-    const hudHeight = 165;
+    const hudTop = this.bounds.bottom + 14; // 854 (アリーナ直下)
+    const hudHeight = 172;
 
     const topBar = this.scene.add.graphics();
-    topBar.fillStyle(0x0f172a, 0.96);
-    topBar.fillRect(0, hudTop, width, hudHeight);
-    topBar.lineStyle(2, 0x1e293b, 1);
-    topBar.moveTo(0, hudTop);
-    topBar.lineTo(width, hudTop);
-    topBar.moveTo(0, hudTop + hudHeight);
-    topBar.lineTo(width, hudTop + hudHeight);
-    topBar.strokePath();
+    drawWoodPanel(topBar, 14, hudTop, width - 28, hudHeight, {
+      fill: 0x241208,
+      border: 0x92400e,
+      rivets: true,
+      radius: 12,
+    });
 
+    // 左上: 決闘ラウンド表記
     this.roundInfoText = addCrispText(
       this.scene,
-      50,
-      hudTop + 22,
-      `ROUND ${this.gameState.round}`,
+      44,
+      hudTop + 16,
+      `第 ${this.gameState.round} 決闘`,
       {
-        fontSize: "36px",
+        fontSize: "28px",
+        fontFamily: "display",
         fontStyle: "bold",
-        color: "#38bdf8",
+        color: "#fde68a",
+        stroke: "#1c0a04",
+        strokeThickness: 3,
       },
     );
+
+    // 左下: リボルバー6連シリンダーアイコン ＋ 残弾数
+    this.cylinderContainer = this.scene.add.container(80, hudTop + 114);
+    this.cylinderGraphics = this.scene.add.graphics();
+    this.cylinderContainer.add(this.cylinderGraphics);
+
+    this.ammoText = addCrispText(this.scene, 126, hudTop + 92, "-- / --", {
+      fontSize: "24px",
+      fontStyle: "bold",
+      fontFamily: "monospace",
+      color: "#fef3c7",
+    });
+
+    this.ammoSubText = addCrispText(this.scene, 126, hudTop + 122, "6連シリンダー", {
+      fontSize: "13px",
+      color: "#d6b384",
+    });
+
+    // 中央: 照準状態 ＆ 決闘残り時間
+    this.lockOnStatusText = addCrispText(this.scene, width / 2, hudTop + 20, "STANDOFF...", {
+      fontSize: "17px",
+      fontStyle: "bold",
+      color: "#d6b384",
+      fontFamily: "monospace",
+    }).setOrigin(0.5, 0);
 
     this.timerText = addCrispText(
       this.scene,
       width / 2,
-      hudTop + 75,
-      `TIME: ${formatSeconds(this.gameState.getRoundDuration())}`,
+      hudTop + 56,
+      `${formatSeconds(this.gameState.getRoundDuration())}`,
       {
-        fontSize: "44px",
+        fontSize: "48px",
         fontStyle: "bold",
         fontFamily: "monospace",
-        color: "#22c55e",
+        color: "#fbbf24",
+        stroke: "#2b1206",
+        strokeThickness: 4,
       },
     ).setOrigin(0.5, 0);
 
-    // 残弾数 & リロード表示
-    this.ammoText = addCrispText(this.scene, width / 2, hudTop + 125, "AMMO: -- / --", {
-      fontSize: "19px",
-      fontStyle: "bold",
-      fontFamily: "monospace",
-      color: "#f8fafc",
-    }).setOrigin(0.5, 0);
-
     this.reloadBarGraphics = this.scene.add.graphics();
 
-    this.lockOnStatusText = addCrispText(this.scene, width / 2, hudTop + 25, "AIMING...", {
-      fontSize: "18px",
-      fontStyle: "bold",
-      color: "#64748b",
-      fontFamily: "monospace",
-    }).setOrigin(0.5, 0);
-
+    // 右側: 所持金（$）＆ 今回の獲得賞金
     this.spText = addCrispText(
       this.scene,
-      width - 50,
-      hudTop + 18,
-      `所持: ${formatNumber(this.gameState.sp)} SP`,
+      width - 44,
+      hudTop + 22,
+      `所持金 ${formatMoney(this.gameState.sp)}`,
       {
-        fontSize: "24px",
+        fontSize: "26px",
         fontStyle: "bold",
-        color: "#facc15",
+        color: "#fbbf24",
+        stroke: "#1c0a04",
+        strokeThickness: 3,
       },
     ).setOrigin(1, 0);
 
     this.roundSpText = addCrispText(
       this.scene,
-      width - 50,
-      hudTop + 52,
-      `獲得: +${formatNumber(this.gameState.lastRoundSpEarned)} SP`,
+      width - 44,
+      hudTop + 62,
+      `獲得賞金 +${formatMoney(this.gameState.lastRoundSpEarned)}`,
       {
-        fontSize: "20px",
-        color: "#94a3b8",
+        fontSize: "19px",
+        fontStyle: "bold",
+        color: "#e7d0a7",
       },
     ).setOrigin(1, 0);
   }
 
+  /**
+   * リボルバーの6発シリンダーアイコンを描画する
+   */
+  private drawRevolverCylinder(currentAmmo: number, maxAmmo: number, isReloading: boolean): void {
+    const g = this.cylinderGraphics;
+    g.clear();
+
+    const outerR = 30;
+    const chamberDist = 17.5;
+    const chamberR = 6.8;
+
+    // シリンダー外周の影
+    g.fillStyle(0x0c0502, 0.75);
+    g.fillCircle(1.5, 2, outerR + 1);
+
+    // ガンメタル製シリンダー本体
+    g.fillStyle(isReloading ? 0x3b2416 : 0x443b35, 1);
+    g.fillCircle(0, 0, outerR);
+    g.lineStyle(2.2, isReloading ? 0xd97706 : 0xb45309, 1);
+    g.strokeCircle(0, 0, outerR);
+
+    // 外周のフルート溝（6箇所のくぼみノッチ）
+    for (let i = 0; i < 6; i++) {
+      const notchAngle = (Math.PI * 2 * i) / 6 + Math.PI / 6;
+      const nx = Math.cos(notchAngle) * (outerR - 1);
+      const ny = Math.sin(notchAngle) * (outerR - 1);
+      g.fillStyle(0x1f140d, 1);
+      g.fillCircle(nx, ny, 3.6);
+    }
+
+    // 6つの薬室（チャンバー）: 残弾に応じて真鍮カートリッジ雷管を表示
+    // 6発以上ある場合は全6室装填表示、5発以下は残弾数ぶん真鍮弾が入る
+    const loadedChambers = isReloading ? 0 : Math.min(6, Math.max(0, currentAmmo));
+
+    for (let i = 0; i < 6; i++) {
+      const a = -Math.PI / 2 + (Math.PI * 2 * i) / 6;
+      const cx = Math.cos(a) * chamberDist;
+      const cy = Math.sin(a) * chamberDist;
+
+      // 空の薬室穴
+      g.fillStyle(0x140a05, 1);
+      g.fillCircle(cx, cy, chamberR);
+      g.lineStyle(1, 0x29201b, 0.9);
+      g.strokeCircle(cx, cy, chamberR);
+
+      if (i < loadedChambers) {
+        // 真鍮リム（薬莢底面）
+        g.fillStyle(0xeab308, 1);
+        g.fillCircle(cx, cy, chamberR - 1.1);
+        // 銅色の雷管（プライマー）
+        g.fillStyle(0xb45309, 1);
+        g.fillCircle(cx, cy, 2.7);
+        g.fillStyle(0xfef3c7, 0.75);
+        g.fillCircle(cx - 0.8, cy - 0.8, 1.0);
+      }
+    }
+
+    // 中心のセンターピン（エジェクターロッド軸）
+    g.fillStyle(0x1f140d, 1);
+    g.fillCircle(0, 0, 5.2);
+    g.fillStyle(0xd6b384, 0.9);
+    g.fillCircle(0, 0, 2.8);
+  }
+
   private createBottomControlPanels(width: number, height: number): void {
     const bottomBar = this.scene.add.graphics();
-    bottomBar.fillStyle(0x0f172a, 0.96);
+    bottomBar.fillGradientStyle(0x241208, 0x241208, 0x140904, 0x140904, 0.96);
     bottomBar.fillRect(0, 1040, width, height - 1040);
-    bottomBar.lineStyle(2, 0x1e293b, 1);
+    bottomBar.lineStyle(2.5, 0x92400e, 1);
     bottomBar.moveTo(0, 1040);
     bottomBar.lineTo(width, 1040);
     bottomBar.strokePath();
@@ -128,54 +218,54 @@ export class RoundHUD {
     this.weaponButtonsContainer = this.scene.add.container(50, 1065);
     this.refreshWeaponButtons();
 
-    this.autoFireToggleContainer = this.scene.add.container(width - 150, 1145);
+    this.autoFireToggleContainer = this.scene.add.container(width - 150, 1148);
     this.refreshAutoFireToggle();
 
     addCrispText(
       this.scene,
       width / 2,
-      1210,
-      "🕹️ 画面のどこでもタッチ＆上下ドラッグでエイム！（タップで正面へ）",
+      1212,
+      "🤠 画面のどこでもタッチ＆上下ドラッグで照準！（タップで正面へ）",
       {
-        fontSize: "20px",
+        fontSize: "19px",
         fontStyle: "bold",
-        color: "#38bdf8",
+        color: "#fde68a",
       },
     ).setOrigin(0.5);
 
-    addCrispText(this.scene, width / 2, 1245, "⚡ 的に直線が合っている時だけ自動発射！", {
+    addCrispText(this.scene, width / 2, 1246, "🔫 賞金首を射線に捉えた瞬間、自動で早撃ち発砲！", {
       fontSize: "17px",
       fontStyle: "bold",
-      color: "#facc15",
+      color: "#f59e0b",
     }).setOrigin(0.5);
 
-    addCrispText(this.scene, width / 2, 1530, "（PC: A / D または 左右・上下キー でも調整可能）", {
+    addCrispText(this.scene, width / 2, 1532, "（PC: A / D または 矢印キー でも照準調整可能）", {
       fontSize: "15px",
-      color: "#64748b",
+      color: "#a88b67",
     }).setOrigin(0.5);
   }
 
   public updateTimer(timeRemaining: number): void {
-    this.timerText.setText(`TIME: ${formatSeconds(timeRemaining)}`);
+    this.timerText.setText(`${formatSeconds(timeRemaining)}`);
     if (timeRemaining <= 2.5) {
       this.timerText.setColor("#ef4444");
     } else {
-      this.timerText.setColor("#22c55e");
+      this.timerText.setColor("#fbbf24");
     }
   }
 
   public setReadyStatus(): void {
-    this.lockOnStatusText.setText("READY...");
-    this.lockOnStatusText.setColor("#facc15");
+    this.lockOnStatusText.setText("HIGH NOON — 静寂...");
+    this.lockOnStatusText.setColor("#fde68a");
   }
 
   public updateLockOn(targetName: string | null): void {
     if (targetName) {
-      this.lockOnStatusText.setText("SHOOTING");
-      this.lockOnStatusText.setColor("#38bdf8");
+      this.lockOnStatusText.setText(`DEADEYE: ${targetName}`);
+      this.lockOnStatusText.setColor("#fbbf24");
     } else {
-      this.lockOnStatusText.setText("AIMING");
-      this.lockOnStatusText.setColor("#64748b");
+      this.lockOnStatusText.setText("AIMING...");
+      this.lockOnStatusText.setColor("#a88b67");
     }
   }
 
@@ -185,21 +275,38 @@ export class RoundHUD {
     isReloading: boolean,
     reloadProgress: number,
   ): void {
-    const hudTop = this.bounds.bottom + 15;
+    // 発砲時（残弾が減った瞬間）に6連シリンダーを60度カチッと回転させる
+    if (!isReloading && this.lastKnownAmmo > currentAmmo && currentAmmo >= 0) {
+      this.cylinderVisualAngle += Math.PI / 3;
+      this.scene.tweens.killTweensOf(this.cylinderContainer);
+      this.scene.tweens.add({
+        targets: this.cylinderContainer,
+        rotation: this.cylinderVisualAngle,
+        duration: 90,
+        ease: "Back.easeOut",
+      });
+    }
+    this.lastKnownAmmo = isReloading ? 0 : currentAmmo;
+
+    this.drawRevolverCylinder(currentAmmo, maxAmmo, isReloading);
+
+    const hudTop = this.bounds.bottom + 14;
     const { width } = this.scene.scale;
-    const barWidth = 140;
-    const barHeight = 6;
+    const barWidth = 170;
+    const barHeight = 7;
     const barX = width / 2 - barWidth / 2;
-    const barY = hudTop + 150;
+    const barY = hudTop + 132;
 
     this.reloadBarGraphics.clear();
 
     if (isReloading) {
-      this.ammoText.setText(`RELOADING... ${Math.floor(reloadProgress * 100)}%`);
+      // リロード中はシリンダーをくるくる回転させる
+      this.cylinderContainer.setRotation(reloadProgress * Math.PI * 4);
+      this.ammoText.setText(`装填中 ${Math.floor(reloadProgress * 100)}%`);
       this.ammoText.setColor("#f59e0b");
+      this.ammoSubText.setText("CYLINDER SPIN");
 
-      // リロード進捗バー描画
-      this.reloadBarGraphics.fillStyle(0x334155, 0.8);
+      this.reloadBarGraphics.fillStyle(0x3b1d0c, 0.9);
       this.reloadBarGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 3);
       this.reloadBarGraphics.fillStyle(0xf59e0b, 1);
       this.reloadBarGraphics.fillRoundedRect(
@@ -210,20 +317,22 @@ export class RoundHUD {
         3,
       );
     } else {
-      this.ammoText.setText(`AMMO: ${currentAmmo} / ${maxAmmo}`);
-      if (currentAmmo <= 2) {
+      this.ammoText.setText(`${currentAmmo} / ${maxAmmo}`);
+      if (currentAmmo <= 1) {
         this.ammoText.setColor("#ef4444");
-      } else if (currentAmmo <= maxAmmo * 0.4) {
-        this.ammoText.setColor("#eab308");
+      } else if (currentAmmo <= Math.ceil(maxAmmo * 0.35)) {
+        this.ammoText.setColor("#f59e0b");
       } else {
-        this.ammoText.setColor("#38bdf8");
+        this.ammoText.setColor("#fef3c7");
       }
 
-      // 残弾比率バー描画
+      const extraRounds = Math.max(0, currentAmmo - 6);
+      this.ammoSubText.setText(extraRounds > 0 ? `予備弾帯 +${extraRounds}発` : "6連シリンダー");
+
       const ratio = maxAmmo > 0 ? currentAmmo / maxAmmo : 0;
-      this.reloadBarGraphics.fillStyle(0x1e293b, 0.8);
+      this.reloadBarGraphics.fillStyle(0x3b1d0c, 0.85);
       this.reloadBarGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 3);
-      const color = ratio <= 0.25 ? 0xef4444 : ratio <= 0.5 ? 0xeab308 : 0x0284c7;
+      const color = ratio <= 0.25 ? 0xdc2626 : ratio <= 0.5 ? 0xea580c : 0xd97706;
       this.reloadBarGraphics.fillStyle(color, 1);
       this.reloadBarGraphics.fillRoundedRect(
         barX,
@@ -236,8 +345,8 @@ export class RoundHUD {
   }
 
   public updateSp(): void {
-    this.spText.setText(`所持: ${formatNumber(this.gameState.sp)} SP`);
-    this.roundSpText.setText(`獲得: +${formatNumber(this.gameState.lastRoundSpEarned)} SP`);
+    this.spText.setText(`所持金 ${formatMoney(this.gameState.sp)}`);
+    this.roundSpText.setText(`獲得賞金 +${formatMoney(this.gameState.lastRoundSpEarned)}`);
   }
 
   public refreshWeaponButtons(onEquip?: () => void): void {
@@ -245,7 +354,7 @@ export class RoundHUD {
 
     const owned = this.gameState.ownedWeapons;
     const buttonWidth = 250;
-    const buttonHeight = 65;
+    const buttonHeight = 66;
     const gap = 25;
 
     owned.forEach((weaponId, index) => {
@@ -255,26 +364,26 @@ export class RoundHUD {
 
       const btn = this.scene.add.container(x, 0);
       const bg = this.scene.add.graphics();
-      bg.fillStyle(isEquipped ? 0x0284c7 : 0x1e293b, 1);
-      bg.lineStyle(isEquipped ? 3 : 1.5, isEquipped ? 0x38bdf8 : 0x475569, 1);
-      bg.fillRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
-      bg.strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
+      bg.fillStyle(isEquipped ? 0x7c2d12 : 0x2b160a, 1);
+      bg.lineStyle(isEquipped ? 2.5 : 1.5, isEquipped ? 0xfbbf24 : 0x78350f, 1);
+      bg.fillRoundedRect(0, 0, buttonWidth, buttonHeight, 8);
+      bg.strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 8);
 
       const label = addCrispText(this.scene, buttonWidth / 2, 20, def.name, {
-        fontSize: "19px",
-        fontStyle: isEquipped ? "bold" : "normal",
-        color: isEquipped ? "#ffffff" : "#cbd5e1",
+        fontSize: "18px",
+        fontStyle: "bold",
+        color: isEquipped ? "#fef3c7" : "#d6b384",
       }).setOrigin(0.5);
 
       const maxMag = this.gameState.getMagazineSize(weaponId);
       const subLabel = addCrispText(
         this.scene,
         buttonWidth / 2,
-        45,
+        46,
         `威力:${def.damage} | 間隔:${def.fireInterval}s | 装弾:${maxMag}`,
         {
           fontSize: "12px",
-          color: isEquipped ? "#bae6fd" : "#94a3b8",
+          color: isEquipped ? "#fde68a" : "#a88b67",
         },
       ).setOrigin(0.5);
 
@@ -285,7 +394,7 @@ export class RoundHUD {
       btn.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.gameState.equipWeapon(weaponId);
-        this.audio.playSynthSE("click");
+        this.audio.playSynthSE("spur", 0.7);
         this.refreshWeaponButtons(onEquip);
         if (onEquip) onEquip();
       });
@@ -299,19 +408,19 @@ export class RoundHUD {
     if (!this.gameState.canToggleAutoFire()) return;
 
     const isOn = this.gameState.persistentData.settings.autoFire;
-    const btnW = 220;
+    const btnW = 225;
     const btnH = 46;
 
     const bg = this.scene.add.graphics();
-    bg.fillStyle(isOn ? 0x16a34a : 0x334155, 1);
-    bg.lineStyle(2, isOn ? 0x4ade80 : 0x64748b, 1);
+    bg.fillStyle(isOn ? 0x92400e : 0x2b160a, 1);
+    bg.lineStyle(2, isOn ? 0xfbbf24 : 0x78350f, 1);
     bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 8);
     bg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 8);
 
-    const label = addCrispText(this.scene, 0, 0, `オートエイム: ${isOn ? "ON" : "OFF"}`, {
-      fontSize: "16px",
+    const label = addCrispText(this.scene, 0, 0, `自動早撃ち照準: ${isOn ? "ON" : "OFF"}`, {
+      fontSize: "15px",
       fontStyle: "bold",
-      color: "#ffffff",
+      color: isOn ? "#fef3c7" : "#c2a378",
     }).setOrigin(0.5);
 
     this.autoFireToggleContainer.add([bg, label]);
@@ -321,7 +430,7 @@ export class RoundHUD {
     this.autoFireToggleContainer.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
       this.gameState.toggleAutoFire();
-      this.audio.playSynthSE("click");
+      this.audio.playSynthSE("spur", 0.65);
       this.refreshAutoFireToggle(onToggle);
       if (onToggle) onToggle();
     });
@@ -331,18 +440,19 @@ export class RoundHUD {
     this.clearCountdownText();
 
     const centerX = this.bounds.left + this.bounds.size / 2;
-    const centerY = this.bounds.top + this.bounds.size / 2;
+    const centerY = this.bounds.top + this.bounds.size / 2 + 65;
 
     const textObj = addCrispText(this.scene, centerX, centerY, String(count), {
-      fontSize: "96px",
+      fontSize: "92px",
+      fontFamily: "display",
       fontStyle: "bold",
-      color: "#f8fafc",
-      stroke: "#0284c7",
-      strokeThickness: 6,
+      color: "#fef3c7",
+      stroke: "#451a03",
+      strokeThickness: 7,
     })
       .setOrigin(0.5)
       .setDepth(200)
-      .setScale(1.45)
+      .setScale(1.4)
       .setAlpha(0.95);
 
     this.countdownText = textObj;
@@ -350,7 +460,7 @@ export class RoundHUD {
     this.scene.tweens.add({
       targets: textObj,
       scale: 1.0,
-      duration: 260,
+      duration: 250,
       ease: "Cubic.easeOut",
     });
   }
@@ -369,12 +479,13 @@ export class RoundHUD {
     const centerX = this.bounds.left + this.bounds.size / 2;
     const centerY = this.bounds.top + this.bounds.size / 2;
 
-    const banner = addCrispText(this.scene, centerX, centerY, "START!", {
-      fontSize: "76px",
+    const banner = addCrispText(this.scene, centerX, centerY, "DRAW!", {
+      fontSize: "84px",
+      fontFamily: "display",
       fontStyle: "bold",
-      color: "#facc15",
-      stroke: "#ca8a04",
-      strokeThickness: 5,
+      color: "#fbbf24",
+      stroke: "#7c2d12",
+      strokeThickness: 7,
     })
       .setOrigin(0.5)
       .setDepth(200)
@@ -382,9 +493,9 @@ export class RoundHUD {
 
     this.scene.tweens.add({
       targets: banner,
-      scale: 1.4,
+      scale: 1.38,
       alpha: 0,
-      duration: 600,
+      duration: 620,
       ease: "Power2",
       onComplete: () => {
         banner.destroy();
@@ -396,43 +507,43 @@ export class RoundHUD {
     const centerX = this.bounds.left + this.bounds.size / 2;
     const centerY = this.bounds.top + this.bounds.size / 2;
 
-    const banner = addCrispText(this.scene, centerX, centerY, "TIME UP!", {
-      fontSize: "76px",
+    const banner = addCrispText(this.scene, centerX, centerY, "決着！", {
+      fontSize: "82px",
       fontStyle: "bold",
-      color: "#ef4444",
-      stroke: "#991b1b",
-      strokeThickness: 5,
+      color: "#fef3c7",
+      stroke: "#7f1d1d",
+      strokeThickness: 8,
     })
       .setOrigin(0.5)
       .setDepth(200);
 
     this.scene.tweens.add({
       targets: banner,
-      scale: 1.2,
-      duration: 700,
+      scale: 1.18,
+      duration: 720,
       ease: "Power2",
       onComplete,
     });
   }
 
   public showDamagePopup(x: number, y: number, dmg: number, isCrit: boolean, color?: string): void {
-    const text = isCrit ? `CRIT! -${dmg}` : `-${dmg}`;
-    const fontColor = color ? color : isCrit ? "#facc15" : "#ffffff";
+    const text = isCrit ? `DEADEYE! -${dmg}` : `-${dmg}`;
+    const fontColor = color ? color : isCrit ? "#fbbf24" : "#fef3c7";
     const fontSize = isCrit ? "28px" : "22px";
 
     const popup = addCrispText(this.scene, x, y - 20, text, {
       fontSize,
       fontStyle: "bold",
       color: fontColor,
-      stroke: "#000000",
-      strokeThickness: 3,
+      stroke: "#1c0a04",
+      strokeThickness: 4,
     })
       .setOrigin(0.5)
-      .setDepth(50);
+      .setDepth(55);
 
     this.scene.tweens.add({
       targets: popup,
-      y: y - 55,
+      y: y - 56,
       alpha: 0,
       duration: 600,
       ease: "Power1",
@@ -441,33 +552,33 @@ export class RoundHUD {
   }
 
   public showSpPopup(x: number, y: number, sp: number): void {
-    const popup = addCrispText(this.scene, x, y, `+${formatNumber(sp)} SP`, {
-      fontSize: "26px",
+    const popup = addCrispText(this.scene, x, y, `+${formatMoney(sp)}`, {
+      fontSize: "28px",
       fontStyle: "bold",
-      color: "#38bdf8",
-      stroke: "#0284c7",
-      strokeThickness: 3,
+      color: "#fde047",
+      stroke: "#78350f",
+      strokeThickness: 4,
     })
       .setOrigin(0.5)
       .setDepth(60);
 
     this.scene.tweens.add({
       targets: popup,
-      y: y - 70,
+      y: y - 72,
       scale: 1.15,
       alpha: 0,
-      duration: 750,
+      duration: 760,
       ease: "Power2",
       onComplete: () => popup.destroy(),
     });
   }
 
   public showTimeBonusPopup(x: number, y: number, seconds: number): void {
-    const popup = addCrispText(this.scene, x, y - 30, `+${seconds.toFixed(1)}s!`, {
-      fontSize: "30px",
+    const popup = addCrispText(this.scene, x, y - 30, `刻限 +${seconds.toFixed(1)}s!`, {
+      fontSize: "28px",
       fontStyle: "bold",
-      color: "#22c55e",
-      stroke: "#15803d",
+      color: "#fde68a",
+      stroke: "#92400e",
       strokeThickness: 4,
     })
       .setOrigin(0.5)
@@ -476,7 +587,7 @@ export class RoundHUD {
     this.scene.tweens.add({
       targets: popup,
       y: y - 80,
-      scale: 1.25,
+      scale: 1.22,
       alpha: 0,
       duration: 800,
       ease: "Back.easeOut",

@@ -7,7 +7,6 @@ import {
   type LucideIcon,
   Percent,
   Play,
-  Sparkles,
   Star,
   Timer,
 } from "lucide-react";
@@ -40,11 +39,15 @@ const UPGRADE_ICONS: Record<PermanentUpgradeId, LucideIcon> = {
   invoice_reduction: Percent,
 };
 
+function formatEffectLabel(eff: number, unit: string): string {
+  if (unit === "$") {
+    return `+$${eff}`;
+  }
+  return `+${eff}${unit}`;
+}
+
 /**
- * 永続強化 (METAGAME) 画面の React オーバーレイ。
- * - 上部ヘッダー: タイトル & 所持永続ポイント
- * - 中央スクロール領域: 永続強化カード一覧 (段階別効果・進捗バー・強化ボタン)
- * - 下部フッター: 「新しいランを開始」「タイトルへ戻る」アクションボタン
+ * 酒場の鍛錬（永続強化 / SALOON）画面の西部劇風 React オーバーレイ
  */
 export function PermanentUpgradeOverlay({
   onStartRun,
@@ -63,49 +66,50 @@ export function PermanentUpgradeOverlay({
 
   const handlePurchase = (id: PermanentUpgradeId) => {
     if (gameState.purchasePermanentUpgrade(id)) {
-      audio.playSynthSE("laser", 0.7);
+      audio.playSynthSE("laser", 0.8);
       refresh();
     }
   };
 
   const handleStartRun = () => {
-    audio.playSynthSE("click");
+    audio.playSynthSE("spur", 0.75);
     onStartRun();
   };
 
   const handleBackToTitle = () => {
-    audio.playSynthSE("click");
+    audio.playSynthSE("spur", 0.65);
     onBackToTitle();
   };
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
-      {/* 9:16 のゲーム画面領域にぴったり重なるレスポンシブコンテナ */}
-      <div className="pointer-events-auto relative flex h-full max-h-full w-full max-w-[calc(100dvh*9/16)] flex-col overflow-hidden bg-slate-950/90 text-white backdrop-blur-[2px]">
-        {/* 上部ヘッダー */}
-        <header className="z-20 flex flex-shrink-0 items-center justify-between gap-2 border-b-2 border-slate-800 bg-slate-900/95 px-3.5 py-2.5 sm:px-5 sm:py-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-purple-500/40 bg-purple-950/60 text-purple-300">
-              <Star className="h-4 w-4 fill-purple-400 text-purple-300" />
+      <div className="font-western-slab pointer-events-auto relative flex h-full max-h-full w-full max-w-[calc(100dvh*9/16)] flex-col overflow-hidden bg-[#1a0d06]/92 text-amber-50 backdrop-blur-[2px]">
+        {/* 上部木札ヘッダー */}
+        <header className="western-wood z-20 flex flex-shrink-0 items-center justify-between gap-2 border-b-2 border-amber-700/80 px-3.5 py-2.5 sm:px-5 sm:py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-amber-500/70 bg-amber-950/80 text-amber-300 shadow">
+              <Star className="h-5 w-5 fill-amber-400 text-amber-200" />
             </span>
             <div className="flex min-w-0 flex-col leading-tight">
-              <h1 className="truncate text-base font-extrabold text-purple-300 sm:text-lg">
-                永続強化
+              <h1 className="truncate text-base font-extrabold text-amber-200 sm:text-lg">
+                酒場の鍛錬（ガンマンの流儀）
               </h1>
-              <span className="text-[10px] font-bold tracking-wider text-slate-400">METAGAME</span>
+              <span className="font-western-display text-[10px] font-bold tracking-wider text-amber-400/80">
+                SALOON &amp; OUTLAW CREED
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-yellow-500/30 bg-slate-950/80 px-3 py-1.5">
-            <Sparkles className="h-4 w-4 text-yellow-400" />
-            <span className="text-xs font-semibold text-slate-300 sm:text-sm">所持:</span>
-            <span className="text-sm font-extrabold text-yellow-400 sm:text-base">
-              {formatNumber(points)} pt
+          <div className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-amber-500/60 bg-[#180b04]/90 px-3 py-1.5 shadow-inner">
+            <Star className="h-4 w-4 fill-amber-400 text-amber-300" />
+            <span className="text-xs font-semibold text-amber-200/80 sm:text-sm">名声:</span>
+            <span className="text-sm font-extrabold text-amber-300 sm:text-base">
+              {formatNumber(points)}
             </span>
           </div>
         </header>
 
-        {/* 中央: 永続強化カード一覧 */}
+        {/* 中央: ガンマンの流儀カード一覧 */}
         <div className="flex-1 touch-pan-y space-y-2.5 overflow-y-auto overscroll-contain px-3 py-3 sm:space-y-3 sm:px-4">
           {PERMANENT_UPGRADE_IDS.map((id) => {
             const def = PERMANENT_UPGRADES[id];
@@ -118,24 +122,19 @@ export function PermanentUpgradeOverlay({
             return (
               <div
                 key={id}
-                className={`rounded-2xl border-2 p-3.5 shadow-lg transition-colors sm:p-4 ${
-                  isMax
-                    ? "border-yellow-400/90 bg-slate-900/95"
-                    : canAfford
-                      ? "border-purple-500 bg-slate-800/90"
-                      : "border-slate-700 bg-slate-900/95"
+                className={`western-leather rounded-xl border-2 p-3.5 shadow-lg transition-colors sm:p-4 ${
+                  isMax ? "border-amber-400" : canAfford ? "border-amber-600" : "border-[#4d2913]"
                 }`}
               >
-                {/* 上段: アイコン・名称・レベル / 強化ボタン */}
                 <div className="flex items-start justify-between gap-2.5">
                   <div className="flex min-w-0 flex-1 items-start gap-2.5">
                     <span
-                      className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border ${
+                      className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border ${
                         isMax
-                          ? "border-yellow-400/50 bg-amber-950/60 text-yellow-300"
+                          ? "border-amber-400/70 bg-amber-950/80 text-amber-300"
                           : curLevel > 0 || canAfford
-                            ? "border-purple-500/40 bg-purple-950/60 text-purple-300"
-                            : "border-slate-700 bg-slate-800 text-slate-400"
+                            ? "border-amber-600/60 bg-[#3b1d0c] text-amber-300"
+                            : "border-[#4d2913] bg-[#211007] text-amber-700"
                       }`}
                     >
                       <Icon className="h-5 w-5" />
@@ -143,41 +142,43 @@ export function PermanentUpgradeOverlay({
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                        <h2 className="text-base font-extrabold text-slate-50 sm:text-lg">
+                        <h2 className="text-base font-extrabold text-amber-50 sm:text-lg">
                           {def.name}
                         </h2>
                         <span
                           className={`text-xs font-extrabold sm:text-sm ${
-                            isMax ? "text-yellow-400" : "text-purple-300"
+                            isMax ? "text-amber-300" : "text-amber-400/90"
                           }`}
                         >
-                          {isMax ? "★ MAX" : `Lv.${curLevel} / ${def.maxLevel}`}
+                          {isMax ? "★ 極意皆伝" : `Lv.${curLevel} / ${def.maxLevel}`}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-400 sm:text-sm">{def.description}</p>
+                      <p className="mt-0.5 text-xs text-amber-200/75 sm:text-sm">
+                        {def.description}
+                      </p>
                     </div>
                   </div>
 
-                  {/* 右側: 強化ボタン または 取得完了表示 */}
+                  {/* 右側: 鍛錬ボタン */}
                   <div className="flex-shrink-0">
                     {isMax ? (
-                      <div className="flex h-10 items-center gap-1 rounded-xl border border-yellow-400/50 bg-amber-950/60 px-3 text-xs font-extrabold text-yellow-300 sm:text-sm">
+                      <div className="flex h-10 items-center gap-1 rounded-lg border border-amber-400/60 bg-amber-950/70 px-3 text-xs font-extrabold text-amber-300 sm:text-sm">
                         <Check className="h-4 w-4" />
-                        <span>取得完了</span>
+                        <span>習得完了</span>
                       </div>
                     ) : (
                       <button
                         type="button"
                         disabled={!canAfford}
                         onClick={() => handlePurchase(id)}
-                        className={`flex h-10 flex-col items-center justify-center rounded-xl px-3.5 leading-tight font-extrabold transition-all sm:px-4 ${
+                        className={`flex h-10 flex-col items-center justify-center rounded-lg px-3.5 leading-tight font-extrabold transition-all sm:px-4 ${
                           canAfford
-                            ? "cursor-pointer border border-purple-300/60 bg-purple-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.35)] hover:bg-purple-500 active:scale-95"
-                            : "cursor-not-allowed border border-slate-700 bg-slate-800 text-slate-500"
+                            ? "western-btn-brass cursor-pointer text-amber-50 active:scale-95"
+                            : "cursor-not-allowed border border-[#4d2913] bg-[#1c0e06] text-amber-800"
                         }`}
                       >
                         <span className="text-xs sm:text-sm">
-                          強化 ({cost !== null ? formatNumber(cost) : 0} pt)
+                          鍛える (★ {cost !== null ? formatNumber(cost) : 0})
                         </span>
                       </button>
                     )}
@@ -185,10 +186,10 @@ export function PermanentUpgradeOverlay({
                 </div>
 
                 {/* レベル進捗バー */}
-                <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-[#160a04]">
                   <div
                     className={`h-full rounded-full transition-all duration-200 ${
-                      isMax ? "bg-yellow-400" : "bg-purple-500"
+                      isMax ? "bg-amber-300" : "bg-amber-600"
                     }`}
                     style={{
                       width: `${(curLevel / def.maxLevel) * 100}%`,
@@ -211,20 +212,17 @@ export function PermanentUpgradeOverlay({
                     return (
                       <div
                         key={lvl}
-                        className={`flex items-center justify-center gap-1 rounded-lg border px-1.5 py-1 text-center text-[11px] transition-colors sm:text-xs ${
+                        className={`flex items-center justify-center gap-1 rounded-md border px-1.5 py-1 text-center text-[11px] transition-colors sm:text-xs ${
                           isCurrent
-                            ? isMax
-                              ? "border-yellow-400/70 bg-amber-950/50 font-extrabold text-yellow-300"
-                              : "border-sky-400/80 bg-sky-950/60 font-extrabold text-sky-300"
+                            ? "border-amber-400/80 bg-amber-950/70 font-extrabold text-amber-200"
                             : isPast
-                              ? "border-slate-700 bg-slate-800/70 font-semibold text-slate-300"
-                              : "border-slate-800 bg-slate-950/60 font-medium text-slate-500"
+                              ? "border-[#5c3116] bg-[#2a1509]/80 font-semibold text-amber-200/80"
+                              : "border-[#381d0c] bg-[#160a04]/70 font-medium text-amber-700"
                         }`}
                       >
-                        {isPast && <Check className="h-3 w-3 flex-shrink-0 text-purple-400" />}
+                        {isPast && <Check className="h-3 w-3 flex-shrink-0 text-amber-400" />}
                         <span className="truncate">
-                          {isCurrent ? "▶ " : ""}Lv.{lvl}: +{eff}
-                          {def.effectUnit}
+                          {isCurrent ? "▶ " : ""}Lv.{lvl}: {formatEffectLabel(eff, def.effectUnit)}
                         </span>
                       </div>
                     );
@@ -235,24 +233,24 @@ export function PermanentUpgradeOverlay({
           })}
         </div>
 
-        {/* 下部アクションボタン */}
-        <footer className="z-20 flex flex-shrink-0 flex-col gap-2 border-t-2 border-slate-800 bg-slate-900/95 px-3.5 py-2.5 sm:px-4 sm:py-3">
+        {/* 下部木札フッターボタン */}
+        <footer className="western-wood z-20 flex flex-shrink-0 flex-col gap-2 border-t-2 border-amber-700/80 px-3.5 py-2.5 sm:px-4 sm:py-3">
           <button
             type="button"
             onClick={handleStartRun}
-            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-sky-300/60 bg-sky-600 text-sm font-extrabold text-white shadow transition-all hover:bg-sky-500 active:scale-[0.98] sm:h-12 sm:text-base"
+            className="western-btn-wood flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-extrabold text-amber-50 transition-all active:scale-[0.98] sm:h-12 sm:text-base"
           >
             <Play className="h-4 w-4 fill-current" />
-            <span>新しいランを開始</span>
+            <span>荒野へ繰り出す（決闘開始）</span>
           </button>
 
           <button
             type="button"
             onClick={handleBackToTitle}
-            className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-800 text-sm font-bold text-slate-200 transition-all hover:border-slate-500 hover:bg-slate-700 hover:text-white active:scale-[0.98] sm:h-11 sm:text-base"
+            className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-amber-800 bg-[#241208] text-sm font-bold text-amber-200 transition-all hover:border-amber-500 hover:bg-[#331a0c] hover:text-amber-50 active:scale-[0.98] sm:h-11 sm:text-base"
           >
             <Home className="h-4 w-4" />
-            <span>タイトルへ戻る</span>
+            <span>酒場の表へ出る（タイトル）</span>
           </button>
         </footer>
       </div>

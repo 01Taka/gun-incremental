@@ -73,7 +73,7 @@ export default function App() {
   }, [isOverlayBlockingInput]);
 
   return (
-    <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-slate-900 select-none">
+    <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-[#160c06] select-none">
       {/* 設定モーダル（Reactコンポーネント。全画面切り替えや音量設定を内包） */}
       {isSettingsOpen && <SettingsModal onClose={closeSettings} />}
 
@@ -90,6 +90,20 @@ export default function App() {
 
       {/* Phaserゲーム画面 */}
       <PhaserGame ref={phaserRef} />
+
+      {/* 西部劇映画風のセピア色調フィルター & 軽いフィルムグレイン（入力は完全に透過） */}
+      <div
+        aria-hidden="true"
+        className="western-warm-wash pointer-events-none fixed inset-0 z-40"
+      />
+      <div
+        aria-hidden="true"
+        className="western-sepia-vignette pointer-events-none fixed inset-0 z-40"
+      />
+      <div
+        aria-hidden="true"
+        className="western-film-grain pointer-events-none fixed -inset-4 z-40"
+      />
     </main>
   );
 }

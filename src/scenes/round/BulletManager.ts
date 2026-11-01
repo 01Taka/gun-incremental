@@ -17,7 +17,7 @@ export class BulletManager {
   private nextBulletId: number = 1;
 
   // 弾速 (px/s)
-  public readonly bulletSpeed: number = 1800;
+  public readonly bulletSpeed: number = 1850;
   public readonly bulletRadius: number = 6;
 
   constructor(
@@ -33,7 +33,7 @@ export class BulletManager {
   }
 
   /**
-   * 指定位置から指定角度へ弾丸を発射
+   * 指定位置から指定角度へ鉛弾を発射
    */
   public spawnBullet(startX: number, startY: number, angle: number): Bullet {
     const id = `bullet_${this.nextBulletId++}`;
@@ -85,7 +85,7 @@ export class BulletManager {
         const hitResult = this.targetManager.hitTarget(hitTarget, bullet.x, bullet.y);
         this.callbacks.onHitTarget(hitResult, bullet.x, bullet.y);
 
-        // 着弾エフェクト
+        // 着弾エフェクト（火花＋砂煙＋弾痕）
         this.createHitSparks(bullet.x, bullet.y);
         bulletsToRemove.push(bullet.id);
       }
@@ -112,16 +112,40 @@ export class BulletManager {
   }
 
   private createHitSparks(x: number, y: number): void {
+    // 瞬間的なオレンジ火花リング
     const spark = this.scene.add.graphics().setDepth(65);
-    spark.fillStyle(0x38bdf8, 0.9);
+    spark.fillStyle(0xfbbf24, 0.9);
     spark.fillCircle(x, y, 10);
+    spark.fillStyle(0xea580c, 0.65);
+    spark.fillCircle(x, y, 15);
     this.scene.tweens.add({
       targets: spark,
-      scale: 1.8,
+      scale: 1.7,
       alpha: 0,
-      duration: 100,
+      duration: 110,
       onComplete: () => spark.destroy(),
     });
+
+    // 着弾時の小さな土煙・白煙パフ
+    if (this.scene.textures.exists("dust_puff")) {
+      for (let i = 0; i < 3; i++) {
+        const dust = this.scene.add
+          .image(x, y, "dust_puff")
+          .setDepth(64)
+          .setScale(0.35)
+          .setAlpha(0.75);
+        this.scene.tweens.add({
+          targets: dust,
+          x: x + Phaser.Math.Between(-24, 24),
+          y: y + Phaser.Math.Between(-24, 16),
+          scale: 0.95,
+          alpha: 0,
+          duration: 280,
+          ease: "Quad.easeOut",
+          onComplete: () => dust.destroy(),
+        });
+      }
+    }
   }
 
   public clear(): void {

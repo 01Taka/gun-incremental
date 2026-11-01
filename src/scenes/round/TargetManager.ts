@@ -64,8 +64,8 @@ export class TargetManager {
     const margin = def.radius + 20;
     const minX = this.bounds.left + margin;
     const maxX = this.bounds.right - margin;
-    const minY = this.bounds.top + margin;
-    const maxY = this.bounds.bottom - margin;
+    const minY = this.bounds.top + margin + 16;
+    const maxY = this.bounds.bottom - margin - 24;
 
     let x = 0;
     let y = 0;
@@ -88,7 +88,7 @@ export class TargetManager {
     }
 
     const uid = `target_${this.nextTargetUid++}`;
-    const container = this.scene.add.container(x, y);
+    const container = this.scene.add.container(x, y).setDepth(30);
 
     const sprite = this.scene.add.image(0, 0, `target_${def.id}`);
     container.add(sprite);
@@ -104,7 +104,7 @@ export class TargetManager {
     this.scene.tweens.add({
       targets: container,
       scale: 1,
-      duration: 250,
+      duration: 240,
       ease: "Back.easeOut",
     });
 
@@ -132,15 +132,15 @@ export class TargetManager {
   ): void {
     bar.clear();
     const barWidth = radius * 1.5;
-    const barHeight = 6;
+    const barHeight = 7;
     const startX = -barWidth / 2;
     const startY = radius + 8;
 
-    bar.fillStyle(0x0f172a, 0.8);
-    bar.fillRect(startX, startY, barWidth, barHeight);
+    bar.fillStyle(0x1f0e06, 0.9);
+    bar.fillRect(startX - 1, startY - 1, barWidth + 2, barHeight + 2);
 
     const ratio = Math.max(0, current / max);
-    const color = ratio > 0.5 ? 0x22c55e : ratio > 0.25 ? 0xeab308 : 0xef4444;
+    const color = ratio > 0.5 ? 0xd97706 : ratio > 0.25 ? 0xea580c : 0xb91c1c;
     bar.fillStyle(color, 1);
     bar.fillRect(startX, startY, barWidth * ratio, barHeight);
   }
@@ -184,10 +184,11 @@ export class TargetManager {
       if (typeof t.remainingLife === "number") {
         t.remainingLife -= deltaSeconds;
         if (t.remainingLife <= 0.8) {
-          t.container.setAlpha(Math.floor(this.scene.time.now / 80) % 2 === 0 ? 0.3 : 1.0);
+          t.container.setAlpha(Math.floor(this.scene.time.now / 80) % 2 === 0 ? 0.35 : 1.0);
         }
         if (t.remainingLife <= 0) {
           this.activeTargets.delete(t.id);
+          this.spawnDustBurst(t.x, t.y, 4);
           this.scene.tweens.add({
             targets: t.container,
             scale: 0,
@@ -209,7 +210,13 @@ export class TargetManager {
     const isCrit = this.gameState.rollCrit();
     const damage = this.gameState.calculateDamage(isCrit);
 
-    this.audio.playSynthSE("hit", 0.7);
+    if (isCrit) {
+      // 急所ヒット時は西部劇の跳弾音（ピチューン！）を重ねる
+      this.audio.playSynthSE("ricochet", 0.72);
+    } else {
+      this.audio.playSynthSE("hit", 0.7);
+    }
+
     this.sparkEmitter.explode(8, hitX, hitY);
     this.callbacks.onDamage(hitX, hitY, damage, isCrit);
 
@@ -258,15 +265,18 @@ export class TargetManager {
     }
 
     if (target.def.id === "electric") {
-      this.triggerChainLightning(target.x, target.y, killingDamage);
+      this.triggerDynamiteBlast(target.x, target.y, killingDamage);
     }
 
-    this.sparkEmitter.explode(20, target.x, target.y);
+    // 派手な土煙・砂ぼこり＆火花バースト
+    this.sparkEmitter.explode(18, target.x, target.y);
+    this.spawnDustBurst(target.x, target.y, target.def.id === "electric" ? 11 : 7);
+
     this.scene.tweens.add({
       targets: target.container,
-      scale: 1.3,
+      scale: 1.32,
       alpha: 0,
-      duration: 150,
+      duration: 160,
       ease: "Power2",
       onComplete: () => {
         target.container.destroy();
@@ -282,13 +292,65 @@ export class TargetManager {
     return { spEarned, bonusTime };
   }
 
-  private triggerChainLightning(fromX: number, fromY: number, sourceDamage: number): void {
+  /**
+   * 的破壊時に荒野の土煙・白煙を派手に舞い上げる
+   */
+  private spawnDustBurst(x: number, y: number, count: number): void {
+    const hasDust = this.scene.textures.exists("dust_puff");
+    const hasSmoke = this.scene.textures.exists("smoke_puff");
+    if (!hasDust && !hasSmoke) return;
+
+    for (let i = 0; i < count; i++) {
+      const tex = i % 3 === 0 && hasSmoke ? "smoke_puff" : "dust_puff";
+      const angle = (Math.PI * 2 * i) / count + Phaser.Math.FloatBetween(-0.3, 0.3);
+      const dist = Phaser.Math.FloatBetween(22, 68);
+      const puff = this.scene.add
+        .image(x, y, tex)
+        .setDepth(42)
+        .setScale(Phaser.Math.FloatBetween(0.45, 0.75))
+        .setAlpha(0.82);
+
+      this.scene.tweens.add({
+        targets: puff,
+        x: x + Math.cos(angle) * dist,
+        y: y + Math.sin(angle) * dist - 14,
+        scale: Phaser.Math.FloatBetween(1.15, 1.8),
+        alpha: 0,
+        duration: Phaser.Math.Between(360, 620),
+        ease: "Cubic.easeOut",
+        onComplete: () => puff.destroy(),
+      });
+    }
+  }
+
+  /**
+   * 火薬樽の爆破魔（id: "electric"）破壊時のダイナマイト誘爆エフェクト
+   */
+  private triggerDynamiteBlast(fromX: number, fromY: number, sourceDamage: number): void {
     const chainDamage = this.gameState.getChainDamage(sourceDamage);
     const targetsToHit = Array.from(this.activeTargets.values());
 
+    // 爆心地の火球リング
+    const ring = this.scene.add.graphics().setDepth(38);
+    ring.lineStyle(5, 0xea580c, 0.9);
+    ring.strokeCircle(fromX, fromY, 45);
+    this.scene.tweens.add({
+      targets: ring,
+      scale: 2.2,
+      alpha: 0,
+      duration: 280,
+      onComplete: () => ring.destroy(),
+    });
+
     for (const other of targetsToHit) {
-      const line = this.scene.add.graphics().setDepth(20);
-      line.lineStyle(3, 0xa855f7, 1);
+      const line = this.scene.add.graphics().setDepth(35);
+      line.lineStyle(4, 0xea580c, 0.95);
+      line.beginPath();
+      line.moveTo(fromX, fromY);
+      line.lineTo(other.x, other.y);
+      line.strokePath();
+
+      line.lineStyle(1.5, 0xfef08a, 0.9);
       line.beginPath();
       line.moveTo(fromX, fromY);
       line.lineTo(other.x, other.y);
@@ -297,7 +359,7 @@ export class TargetManager {
       this.scene.tweens.add({
         targets: line,
         alpha: 0,
-        duration: 250,
+        duration: 260,
         onComplete: () => line.destroy(),
       });
 
@@ -305,7 +367,7 @@ export class TargetManager {
       if (other.hpBar) {
         this.updateHpBar(other.hpBar, other.currentHp, other.maxHp, other.def.radius);
       }
-      this.callbacks.onDamage(other.x, other.y, chainDamage, false, "#a855f7");
+      this.callbacks.onDamage(other.x, other.y, chainDamage, false, "#fb923c");
 
       if (other.currentHp <= 0) {
         this.scene.time.delayedCall(50, () => {

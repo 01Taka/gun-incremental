@@ -4,7 +4,6 @@ import type { ActiveTarget, ArenaBounds } from "./types";
 
 export class GunTurret {
   private scene: Phaser.Scene;
-  private bounds: ArenaBounds;
 
   // 銃の配置座標（アリーナ底辺の中央）
   public readonly x: number;
@@ -18,7 +17,7 @@ export class GunTurret {
   public readonly maxAngle: number = Phaser.Math.DegToRad(-15);
 
   // バレルの長さ（銃口までのオフセット）
-  public readonly barrelLength: number = 48;
+  public readonly barrelLength: number = 52;
 
   // コンポーネント
   public container: Phaser.GameObjects.Container;
@@ -29,7 +28,6 @@ export class GunTurret {
 
   constructor(scene: Phaser.Scene, bounds: ArenaBounds) {
     this.scene = scene;
-    this.bounds = bounds;
 
     // アリーナ底辺の中央
     this.x = bounds.left + bounds.size / 2;
@@ -37,15 +35,15 @@ export class GunTurret {
 
     this.container = this.scene.add.container(this.x, this.y).setDepth(80);
 
-    // 1. レーザーサイト（照準ガイド線）
+    // 1. 射線ガイド（乾いた西部の照準線）
     this.laserSight = this.scene.add.graphics().setDepth(70);
 
-    // 2. 台座ベースグラフィックス（回転しない）
+    // 2. 台座ベース（サドルレザー＆保安官の真鍮スター台座）
     this.baseGraphics = this.scene.add.graphics();
     this.drawBase();
     this.container.add(this.baseGraphics);
 
-    // 3. 回転するバレルコンテナ
+    // 3. 回転するリボルバー銃身コンテナ
     this.barrelContainer = this.scene.add.container(0, 0);
     this.barrelGraphics = this.scene.add.graphics();
     this.drawBarrel();
@@ -56,43 +54,60 @@ export class GunTurret {
   }
 
   private drawBase(): void {
-    this.baseGraphics.clear();
+    const g = this.baseGraphics;
+    g.clear();
 
-    // メタリックベースの外枠
-    this.baseGraphics.fillStyle(0x0f172a, 1.0);
-    this.baseGraphics.fillCircle(0, 0, 36);
-    this.baseGraphics.lineStyle(3, 0x1e293b, 1.0);
-    this.baseGraphics.strokeCircle(0, 0, 36);
+    // 革製ホルスター台座（ダークサドルブラウン）
+    g.fillStyle(0x261207, 1.0);
+    g.fillCircle(0, 0, 38);
+    g.lineStyle(3, 0x92400e, 1.0);
+    g.strokeCircle(0, 0, 38);
 
-    // ネオンリング
-    this.baseGraphics.lineStyle(2, 0x0284c7, 0.8);
-    this.baseGraphics.strokeCircle(0, 0, 26);
+    // 革のステッチ風ドット＆真鍮鋲（8方向）
+    for (let i = 0; i < 8; i++) {
+      const a = (Math.PI * 2 * i) / 8;
+      const rx = Math.cos(a) * 30;
+      const ry = Math.sin(a) * 30;
+      g.fillStyle(0xd97706, 0.9);
+      g.fillCircle(rx, ry, 2.5);
+    }
 
-    // コアプレート
-    this.baseGraphics.fillStyle(0x1e293b, 1.0);
-    this.baseGraphics.fillCircle(0, 0, 16);
-    this.baseGraphics.lineStyle(2, 0x38bdf8, 1.0);
-    this.baseGraphics.strokeCircle(0, 0, 16);
+    // 内側の真鍮リング
+    g.fillStyle(0x3f200d, 1.0);
+    g.fillCircle(0, 0, 21);
+    g.lineStyle(2.5, 0xfbbf24, 0.95);
+    g.strokeCircle(0, 0, 21);
   }
 
   private drawBarrel(): void {
-    this.barrelGraphics.clear();
+    const g = this.barrelGraphics;
+    g.clear();
 
-    // 銃身（バレル本体）: 長さ48px、幅16px
-    this.barrelGraphics.fillStyle(0x1e293b, 1.0);
-    this.barrelGraphics.fillRoundedRect(0, -9, 42, 18, 4);
-    this.barrelGraphics.lineStyle(2, 0x38bdf8, 1.0);
-    this.barrelGraphics.strokeRoundedRect(0, -9, 42, 18, 4);
+    // ウォールナット木製グリップ後端
+    g.fillStyle(0x5c2d12, 1.0);
+    g.fillRoundedRect(-18, -8, 18, 16, 5);
+    g.lineStyle(1.5, 0x291206, 1.0);
+    g.strokeRoundedRect(-18, -8, 18, 16, 5);
 
-    // マズル先端
-    this.barrelGraphics.fillStyle(0x0284c7, 1.0);
-    this.barrelGraphics.fillRoundedRect(38, -6, 10, 12, 3);
-    this.barrelGraphics.lineStyle(1.5, 0x38bdf8, 1.0);
-    this.barrelGraphics.strokeRoundedRect(38, -6, 10, 12, 3);
+    // 6連発シリンダー部の膨らみ（黒鉄＆真鍮フルート）
+    g.fillStyle(0x3a322d, 1.0);
+    g.fillRoundedRect(-2, -11, 20, 22, 4);
+    g.lineStyle(2, 0xb45309, 0.95);
+    g.strokeRoundedRect(-2, -11, 20, 22, 4);
 
-    // エネルギーコアライン
-    this.barrelGraphics.fillStyle(0x38bdf8, 0.9);
-    this.barrelGraphics.fillRect(8, -2, 28, 4);
+    // 長銃身（ブルースチール / ガンメタル）
+    g.fillStyle(0x4b423b, 1.0);
+    g.fillRoundedRect(16, -6, 34, 12, 3);
+    g.lineStyle(1.5, 0xd6b384, 0.75);
+    g.strokeRoundedRect(16, -6, 34, 12, 3);
+
+    // 銃身の上部リブ＆真鍮フロントサイト
+    g.fillStyle(0xfbbf24, 1.0);
+    g.fillRect(44, -2, 7, 4);
+
+    // 撃鉄（ハンマー）の突起
+    g.fillStyle(0xd97706, 1.0);
+    g.fillCircle(-3, 0, 4);
   }
 
   /**
@@ -118,7 +133,6 @@ export class GunTurret {
 
   /**
    * 銃口から前方に伸びる射線と的（円）の交差判定
-   * 射線と重なっている的の中で、銃から最も近いものを返す
    */
   public checkRayIntersection(targets: ActiveTarget[]): ActiveTarget | null {
     const muzzle = this.getMuzzlePosition();
@@ -132,16 +146,11 @@ export class GunTurret {
       const vx = target.x - muzzle.x;
       const vy = target.y - muzzle.y;
 
-      // 射線方向への射影長 t
       const t = vx * dirX + vy * dirY;
-      if (t < 0) {
-        // 的が銃口より後方にある場合は除外
-        continue;
-      }
+      if (t < 0) continue;
 
-      // 射線から的中心への垂直距離の2乗
       const distSq = vx * vx + vy * vy - t * t;
-      const radiusWithMargin = target.def.radius + 4; // 少し余裕を持たせた当たり判定
+      const radiusWithMargin = target.def.radius + 4;
 
       if (distSq <= radiusWithMargin * radiusWithMargin) {
         if (t < minT) {
@@ -155,8 +164,8 @@ export class GunTurret {
   }
 
   /**
-   * 銃口から前方に伸びる照準レーザーサイトを高視認性で描画
-   * リロード中は色をオレンジ/アンバー系（点滅や減光）に切り替えて装填中であることを直感的に伝える
+   * 銃口から前方に伸びる西部劇風デッドアイ照準線を描画
+   * 夕焼けの砂塵に映えるアンバーゴールド＆アイボリー系で視認性と世界観を両立
    */
   public drawLaserSight(isReloading: boolean = false): void {
     this.laserSight.clear();
@@ -167,70 +176,37 @@ export class GunTurret {
     const endY = muzzle.y + Math.sin(this.angle) * rayLength;
 
     if (isReloading) {
-      // リロード中: オレンジ/アンバー系（注意・装填中）
-      // 1. 外側のネオングロー (太さ 5px, オレンジ)
-      this.laserSight.lineStyle(5, 0xf59e0b, 0.25);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(endX, endY);
-      this.laserSight.strokePath();
+      // 再装填中: 赤錆・くすんだアンバーの細い破線調ライン
+      this.laserSight.lineStyle(4, 0x991b1b, 0.22);
+      this.laserSight.lineBetween(muzzle.x, muzzle.y, endX, endY);
 
-      // 2. メインのエネルギービーム (太さ 2.5px, 濃いアンバー)
-      this.laserSight.lineStyle(2.5, 0xd97706, 0.7);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(endX, endY);
-      this.laserSight.strokePath();
-
-      // 3. 中心のコアライン (太さ 1px, 薄いイエロー/白)
-      this.laserSight.lineStyle(1, 0xfef3c7, 0.85);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(endX, endY);
-      this.laserSight.strokePath();
-
-      // 銃口のマズルグロー (アンバー)
-      this.laserSight.fillStyle(0xf59e0b, 0.4);
-      this.laserSight.fillCircle(muzzle.x, muzzle.y, 7);
-      this.laserSight.fillStyle(0xfef3c7, 0.8);
-      this.laserSight.fillCircle(muzzle.x, muzzle.y, 3);
+      this.laserSight.lineStyle(1.8, 0xd97706, 0.48);
+      this.laserSight.lineBetween(muzzle.x, muzzle.y, endX, endY);
     } else {
-      // 通常時: シアン/スカイブルー系（射撃可能）
-      // 1. 外側のネオングロー (太さ 6px, シアン)
-      this.laserSight.lineStyle(6, 0x38bdf8, 0.35);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(endX, endY);
-      this.laserSight.strokePath();
+      // 射撃可能時: 夕陽の真鍮ゴールド＆灼熱アイボリーのシャープな弾道線
+      this.laserSight.lineStyle(6, 0xea580c, 0.24);
+      this.laserSight.lineBetween(muzzle.x, muzzle.y, endX, endY);
 
-      // 2. メインのエネルギービーム (太さ 3px, ディープブルー)
-      this.laserSight.lineStyle(3, 0x0284c7, 0.85);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(endX, endY);
-      this.laserSight.strokePath();
+      this.laserSight.lineStyle(2.6, 0xf59e0b, 0.8);
+      this.laserSight.lineBetween(muzzle.x, muzzle.y, endX, endY);
 
-      // 3. 中心のシャープな高輝度コアライン (太さ 1.5px, 白)
-      this.laserSight.lineStyle(1.5, 0xffffff, 0.95);
-      this.laserSight.beginPath();
-      this.laserSight.moveTo(muzzle.x, muzzle.y);
-      this.laserSight.lineTo(endX, endY);
-      this.laserSight.strokePath();
+      this.laserSight.lineStyle(1.2, 0xfffbeb, 0.92);
+      this.laserSight.lineBetween(muzzle.x, muzzle.y, endX, endY);
 
-      // 銃口のマズルグロー
-      this.laserSight.fillStyle(0x38bdf8, 0.5);
-      this.laserSight.fillCircle(muzzle.x, muzzle.y, 8);
-      this.laserSight.fillStyle(0xffffff, 0.9);
-      this.laserSight.fillCircle(muzzle.x, muzzle.y, 4);
+      // 銃口の火薬熱グロー
+      this.laserSight.fillStyle(0xf59e0b, 0.42);
+      this.laserSight.fillCircle(muzzle.x, muzzle.y, 7);
+      this.laserSight.fillStyle(0xfffbeb, 0.9);
+      this.laserSight.fillCircle(muzzle.x, muzzle.y, 3.2);
     }
   }
 
   /**
-   * 発射反動（キックバック）演出
+   * 発射反動（キックバック）＋ 派手なリボルバー黒色火薬の白煙＆薬莢排出演出！
    */
   public playRecoilAnimation(): void {
     this.scene.tweens.killTweensOf(this.barrelContainer);
-    const backDist = 7;
+    const backDist = 9;
     const offsetX = -Math.cos(this.angle) * backDist;
     const offsetY = -Math.sin(this.angle) * backDist;
 
@@ -239,24 +215,82 @@ export class GunTurret {
       targets: this.barrelContainer,
       x: 0,
       y: 0,
-      duration: 80,
+      duration: 95,
       ease: "Quad.easeOut",
     });
 
-    // マズルフラッシュの瞬間閃光
     const muzzle = this.getMuzzlePosition();
+
+    // 1. オレンジ＆ゴールドの激しいマズルフラッシュ（銃口閃光）
     const flash = this.scene.add.graphics().setDepth(95);
-    flash.fillStyle(0xffffff, 0.95);
-    flash.fillCircle(muzzle.x, muzzle.y, 10);
-    flash.fillStyle(0x38bdf8, 0.8);
-    flash.fillCircle(muzzle.x, muzzle.y, 16);
+    flash.fillStyle(0xea580c, 0.75);
+    flash.fillCircle(muzzle.x, muzzle.y, 24);
+    flash.fillStyle(0xfbbf24, 0.9);
+    flash.fillCircle(muzzle.x, muzzle.y, 15);
+    flash.fillStyle(0xfffbeb, 1.0);
+    flash.fillCircle(muzzle.x, muzzle.y, 8);
 
     this.scene.tweens.add({
       targets: flash,
       alpha: 0,
-      scale: 1.5,
-      duration: 60,
+      scale: 1.45,
+      duration: 75,
       onComplete: () => flash.destroy(),
+    });
+
+    // 2. リボルバー発砲時の派手な白煙（複数レイヤーのもくもく煙が前方・上方へ広がる）
+    if (this.scene.textures.exists("smoke_puff")) {
+      const smokeCount = 8;
+      for (let i = 0; i < smokeCount; i++) {
+        const spread = Phaser.Math.FloatBetween(-0.42, 0.42);
+        const dirAngle = this.angle + spread;
+        const dist = Phaser.Math.FloatBetween(26, 115);
+        const startScale = Phaser.Math.FloatBetween(0.35, 0.65);
+        const endScale = Phaser.Math.FloatBetween(1.15, 1.95);
+
+        const puff = this.scene.add
+          .image(muzzle.x, muzzle.y, "smoke_puff")
+          .setDepth(92)
+          .setScale(startScale)
+          .setAlpha(Phaser.Math.FloatBetween(0.72, 0.92))
+          .setRotation(Phaser.Math.FloatBetween(0, Math.PI * 2));
+
+        // わずかに砂色・アイボリーが混じる白煙トーン
+        const smokeTints = [0xffffff, 0xfafaf9, 0xf5f5f4, 0xe7e0d6];
+        puff.setTint(smokeTints[i % smokeTints.length]);
+
+        const targetX = muzzle.x + Math.cos(dirAngle) * dist + Phaser.Math.FloatBetween(-12, 12);
+        const targetY = muzzle.y + Math.sin(dirAngle) * dist - Phaser.Math.FloatBetween(12, 34);
+
+        this.scene.tweens.add({
+          targets: puff,
+          x: targetX,
+          y: targetY,
+          scale: endScale,
+          alpha: 0,
+          rotation: puff.rotation + Phaser.Math.FloatBetween(-1.1, 1.1),
+          duration: Phaser.Math.Between(380, 720),
+          ease: "Cubic.easeOut",
+          onComplete: () => puff.destroy(),
+        });
+      }
+    }
+
+    // 3. 銃の横へ跳ね飛ぶ真鍮の空薬莢演出
+    const shell = this.scene.add
+      .rectangle(this.x + 8, this.y - 6, 9, 4, 0xfbbf24, 0.95)
+      .setDepth(88);
+    const ejectX = this.x + Phaser.Math.Between(28, 62);
+    const ejectY = this.y + Phaser.Math.Between(10, 35);
+    this.scene.tweens.add({
+      targets: shell,
+      x: ejectX,
+      y: ejectY,
+      angle: Phaser.Math.Between(180, 540),
+      alpha: 0,
+      duration: 380,
+      ease: "Quad.easeOut",
+      onComplete: () => shell.destroy(),
     });
   }
 

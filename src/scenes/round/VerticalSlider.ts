@@ -5,7 +5,7 @@ import { addCrispText } from "../../utils/text";
 export interface VerticalSliderOptions {
   defaultCenterX: number;
   defaultCenterY: number;
-  halfLength: number; // 上下に伸びる半分の長さ (例: 160px)
+  halfLength: number; // 上下に伸びる半分の長さ (例: 188px)
   trackWidth: number; // トラック幅 (例: 20px)
 }
 
@@ -50,7 +50,7 @@ export class VerticalSlider {
     this.container = this.scene.add
       .container(this.currentCenterX, this.currentCenterY)
       .setDepth(85)
-      .setAlpha(0.6);
+      .setAlpha(0.72);
 
     // 1. トラックグラフィックス
     this.trackGraphics = this.scene.add.graphics();
@@ -60,31 +60,30 @@ export class VerticalSlider {
     this.centerLineGraphics = this.scene.add.graphics();
     this.container.add(this.centerLineGraphics);
 
-    // 3. ラベル（上: RIGHT, 下: LEFT, 中央: CENTER）
+    // 3. ラベル（上: 右照準, 下: 左照準, 中央: 正面）
     const halfL = options.halfLength;
     this.topLabel = addCrispText(this.scene, 0, -halfL - 22, "▲ RIGHT", {
       fontSize: "14px",
       fontFamily: "monospace",
       fontStyle: "bold",
-      color: "#38bdf8",
+      color: "#fbbf24",
     }).setOrigin(0.5);
 
     this.bottomLabel = addCrispText(this.scene, 0, halfL + 22, "▼ LEFT", {
       fontSize: "14px",
       fontFamily: "monospace",
       fontStyle: "bold",
-      color: "#38bdf8",
+      color: "#fbbf24",
     }).setOrigin(0.5);
 
-    this.centerLabel = addCrispText(this.scene, 42, 0, "◄ CENTER", {
-      fontSize: "12px",
-      fontFamily: "monospace",
-      color: "#64748b",
+    this.centerLabel = addCrispText(this.scene, 42, 0, "◄ 正面", {
+      fontSize: "13px",
+      color: "#d6b384",
     }).setOrigin(0, 0.5);
 
     this.container.add([this.topLabel, this.bottomLabel, this.centerLabel]);
 
-    // 4. ノブ（スライダーのつまみ）
+    // 4. ノブ（真鍮と革のレバーつまみ）
     this.knobContainer = this.scene.add.container(0, 0);
     this.knobGraphics = this.scene.add.graphics();
     this.knobContainer.add(this.knobGraphics);
@@ -112,27 +111,27 @@ export class VerticalSlider {
 
     const halfW = trackWidth / 2;
 
-    // 背景帯
-    g.fillStyle(0x0f172a, 0.85);
+    // 革・木製レール帯
+    g.fillStyle(0x211107, 0.9);
     g.fillRoundedRect(-halfW, -halfLength, trackWidth, halfLength * 2, 8);
 
-    // 外枠
-    g.lineStyle(2, 0x1e293b, 1.0);
+    // 真鍮外枠
+    g.lineStyle(2, 0x92400e, 1.0);
     g.strokeRoundedRect(-halfW, -halfLength, trackWidth, halfLength * 2, 8);
 
-    // 縦の中心ガイドライン
-    g.lineStyle(1.5, 0x0284c7, 0.4);
+    // 縦の中心真鍮ガイド溝
+    g.lineStyle(1.5, 0xd97706, 0.45);
     g.beginPath();
     g.moveTo(0, -halfLength + 6);
     g.lineTo(0, halfLength - 6);
     g.strokePath();
 
-    // 目盛り（Ticks）
+    // 目盛り（真鍮刻み）
     const steps = 6;
     for (let i = 0; i <= steps; i++) {
       const y = -halfLength + (halfLength * 2 * i) / steps;
       const isCenter = i === steps / 2;
-      g.lineStyle(isCenter ? 2 : 1, isCenter ? 0x38bdf8 : 0x475569, isCenter ? 0.9 : 0.5);
+      g.lineStyle(isCenter ? 2 : 1, isCenter ? 0xfbbf24 : 0x78350f, isCenter ? 0.95 : 0.65);
       g.beginPath();
       g.moveTo(-halfW + 3, y);
       g.lineTo(halfW - 3, y);
@@ -144,14 +143,13 @@ export class VerticalSlider {
     const g = this.centerLineGraphics;
     g.clear();
 
-    // 中央基準線の強調表示
-    g.lineStyle(2, 0x38bdf8, 0.8);
+    g.lineStyle(2, 0xd97706, 0.85);
     g.beginPath();
     g.moveTo(-28, 0);
     g.lineTo(28, 0);
     g.strokePath();
 
-    g.fillStyle(0x38bdf8, 1);
+    g.fillStyle(0xfbbf24, 1);
     g.fillCircle(0, 0, 4);
   }
 
@@ -162,26 +160,25 @@ export class VerticalSlider {
     const w = isHot ? 54 : 46;
     const h = isHot ? 20 : 16;
 
-    // 外側グロー
-    g.fillStyle(0x38bdf8, isHot ? 0.4 : 0.2);
+    // 外側アンバーグロー
+    g.fillStyle(0xf59e0b, isHot ? 0.35 : 0.16);
     g.fillRoundedRect(-w / 2 - 4, -h / 2 - 4, w + 8, h + 8, 6);
 
-    // メインボディ
-    g.fillStyle(isHot ? 0x0284c7 : 0x1e293b, 1.0);
+    // メインボディ（サドルレザー＆真鍮プレート）
+    g.fillStyle(isHot ? 0xb45309 : 0x3b1d0c, 1.0);
     g.fillRoundedRect(-w / 2, -h / 2, w, h, 4);
 
     // 枠線
-    g.lineStyle(2, isHot ? 0x38bdf8 : 0x0284c7, 1.0);
+    g.lineStyle(2, isHot ? 0xfef08a : 0xd97706, 1.0);
     g.strokeRoundedRect(-w / 2, -h / 2, w, h, 4);
 
-    // グリップライン
-    g.fillStyle(0xffffff, isHot ? 1.0 : 0.8);
+    // 中央の真鍮リベット溝
+    g.fillStyle(0xfef3c7, isHot ? 1.0 : 0.8);
     g.fillRect(-10, -2, 20, 4);
   }
 
   private updateKnobPosition(): void {
     const { halfLength } = this.options;
-    // ratio: 0.0 (下端 +halfLength) 〜 0.5 (中央 0) 〜 1.0 (上端 -halfLength)
     const localY = (0.5 - this.ratio) * (halfLength * 2);
     this.knobContainer.setPosition(0, localY);
   }
@@ -195,11 +192,8 @@ export class VerticalSlider {
     this.activePointerId = pointer.id;
     this.isDragging = true;
 
-    // ★ 画面上の任意の位置でタッチしたY座標をスライダーの中央（基準点）にする
     this.startY = pointer.y;
 
-    // スライダーの表示位置:
-    // 下部操作エリア(y >= 1040)ならタッチした指の下に表示、上部なら的の視界を遮らないよう下部中央に表示
     if (pointer.y >= 1040) {
       this.currentCenterX = pointer.x;
       this.currentCenterY = pointer.y;
@@ -214,7 +208,6 @@ export class VerticalSlider {
     this.container.setPosition(this.currentCenterX, this.currentCenterY);
     this.container.setAlpha(1.0);
 
-    // ★ 次にタップした時はその位置が基準となるため、銃が中央（ratio = 0.5）に戻る！
     this.ratio = 0.5;
     this.drawKnob(true);
     this.updateKnobPosition();
@@ -226,8 +219,6 @@ export class VerticalSlider {
     if (pointer.id !== this.activePointerId) return;
 
     const { halfLength } = this.options;
-    // 上へドラッグ（pointer.y < startY） -> deltaY < 0 -> ratio > 0.5 (右向き)
-    // 下へドラッグ（pointer.y > startY） -> deltaY > 0 -> ratio < 0.5 (左向き)
     const deltaY = pointer.y - this.startY;
     const dragRatio = deltaY / (halfLength * 2);
 
@@ -241,13 +232,10 @@ export class VerticalSlider {
     this.activePointerId = null;
     this.isDragging = false;
     this.drawKnob(false);
-    this.container.setAlpha(0.7);
-
-    // ★ 指を離しても銃の角度（ratio）はそのまま維持される！
+    this.container.setAlpha(0.75);
   }
 
   public update(deltaSeconds: number): void {
-    // キーボード操作サポート (A / D, 左右・上下矢印)
     let keyInput = 0;
     if (this.cursors && this.adKeys) {
       if (this.cursors.left.isDown || this.adKeys.A.isDown || this.cursors.down.isDown)
@@ -257,7 +245,7 @@ export class VerticalSlider {
     }
 
     if (keyInput !== 0 && !this.isDragging) {
-      const speed = 0.72; // 感度20%減少 (0.9 -> 0.72)
+      const speed = 0.72;
       this.ratio = Phaser.Math.Clamp(this.ratio + keyInput * speed * deltaSeconds, 0, 1);
       this.updateKnobPosition();
     }

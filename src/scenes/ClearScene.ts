@@ -4,9 +4,10 @@ import Phaser from "phaser";
 import { AudioManager } from "../audio/AudioManager";
 import { WEAPONS } from "../config/gameData";
 import { EventBus } from "../EventBus";
-import { formatNumber } from "../logic/format";
+import { formatMoney } from "../logic/format";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
+import { createWesternButton, drawParchmentCard, drawWesternBackdrop } from "./WesternDecor";
 
 export class ClearScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -21,77 +22,72 @@ export class ClearScene extends Phaser.Scene {
     this.gameState = GameState.getInstance();
     this.audio = AudioManager.getInstance();
 
+    this.audio.playBGM("western_town");
+
     const { width, height } = this.scale;
 
-    this.createBackground(width, height);
+    drawWesternBackdrop(this, width, height, {
+      horizonY: 980,
+      variant: "gold",
+      withBuildings: true,
+      withAtmosphere: true,
+    });
 
     this.audio.playSynthSE("laser", 0.9);
     this.fireConfetti();
 
-    // クリアタイトル (y = 190)
-    addCrispText(this, width / 2, 180, "🎉 GAME CLEAR! 🎉", {
-      fontSize: "58px",
+    addCrispText(this, width / 2, 165, "★ LEGEND OF THE WEST ★", {
+      fontSize: "48px",
+      fontFamily: "display",
       fontStyle: "bold",
-      color: "#facc15",
-      stroke: "#ca8a04",
-      strokeThickness: 5,
-    }).setOrigin(0.5);
+      color: "#fef08a",
+      stroke: "#451a03",
+      strokeThickness: 6,
+    })
+      .setOrigin(0.5)
+      .setDepth(10);
 
     addCrispText(
       this,
       width / 2,
-      260,
-      "おめでとうございます！\n全6種類の的の解放を達成しました！",
+      248,
+      "全6人の賞金首（WANTED）を制覇した伝説の早撃ち！\n「この町は俺には狭すぎる……次の荒野へ行くか」",
       {
-        fontSize: "24px",
+        fontSize: "21px",
         fontStyle: "bold",
-        color: "#38bdf8",
+        color: "#fde68a",
         align: "center",
       },
-    ).setOrigin(0.5);
+    )
+      .setOrigin(0.5)
+      .setDepth(10);
 
-    // クリア統計カード
     this.createRecordCard(width);
-
-    // アクションボタン
     this.createActionButtons(width);
   }
 
-  private createBackground(width: number, height: number): void {
-    const bg = this.add.graphics();
-    bg.fillGradientStyle(0x0a1628, 0x0a1628, 0x0f172a, 0x0f172a, 1);
-    bg.fillRect(0, 0, width, height);
-
-    bg.lineStyle(1, 0x1e293b, 0.35);
-    for (let x = 0; x < width; x += 60) {
-      bg.moveTo(x, 0);
-      bg.lineTo(x, height);
-    }
-    for (let y = 0; y < height; y += 60) {
-      bg.moveTo(0, y);
-      bg.lineTo(width, y);
-    }
-    bg.strokePath();
-  }
-
   private fireConfetti(): void {
+    const westernGoldColors = ["#fbbf24", "#d97706", "#fef3c7", "#b45309", "#dc2626"];
     try {
       confetti({
-        particleCount: 120,
+        particleCount: 110,
         spread: 90,
+        colors: westernGoldColors,
         origin: { y: 0.5 },
       });
       this.time.delayedCall(400, () => {
         confetti({
-          particleCount: 70,
+          particleCount: 65,
           angle: 60,
           spread: 70,
+          colors: westernGoldColors,
           origin: { x: 0 },
         });
         confetti({
-          particleCount: 70,
+          particleCount: 65,
           angle: 120,
           spread: 70,
+          colors: westernGoldColors,
           origin: { x: 1 },
         });
       });
@@ -103,130 +99,73 @@ export class ClearScene extends Phaser.Scene {
   private createRecordCard(width: number): void {
     const cardW = 780;
     const cardH = 480;
-    const cardY = 360;
+    const cardY = 345;
 
-    const g = this.add.graphics();
-    g.fillStyle(0x0f172a, 0.96);
-    g.fillRoundedRect(width / 2 - cardW / 2, cardY, cardW, cardH, 16);
-    g.lineStyle(2, 0xfacc15, 1);
-    g.strokeRoundedRect(width / 2 - cardW / 2, cardY, cardW, cardH, 16);
+    const g = this.add.graphics().setDepth(10);
+    drawParchmentCard(g, width / 2 - cardW / 2, cardY, cardW, cardH, {
+      borderColor: 0x78350f,
+      pinned: true,
+    });
 
     const stats = this.gameState.runStats;
-    const weaponNames = stats.weaponsPurchased.map((id) => WEAPONS[id].name).join(", ");
+    const weaponNames = stats.weaponsPurchased.map((id) => WEAPONS[id].name).join(" / ");
 
     const records = [
-      { label: "クリア到達ラウンド", val: `Round ${stats.round}` },
-      { label: "クリアした請求回数", val: `${stats.invoicesPassed} 回` },
-      { label: "累計獲得SP", val: `${formatNumber(stats.totalSpEarned)} SP` },
-      { label: "支払総額", val: `${formatNumber(stats.totalInvoicesPaidAmount)} SP` },
-      { label: "総破壊数", val: `${stats.targetsDestroyedTotal} 個` },
-      { label: "使用・購入した武器", val: weaponNames },
+      { label: "制覇到達決闘", val: `第 ${stats.round} 決闘` },
+      { label: "納めた上納金の回数", val: `${stats.invoicesPassed} 回` },
+      { label: "稼いだ賞金総額", val: `${formatMoney(stats.totalSpEarned)}` },
+      { label: "保安官への上納総額", val: `${formatMoney(stats.totalInvoicesPaidAmount)}` },
+      { label: "仕留めた賞金首総数", val: `${stats.targetsDestroyedTotal} 人` },
+      { label: "愛用した銃器", val: weaponNames },
     ];
 
     records.forEach((item, index) => {
-      const y = cardY + 50 + index * 70;
+      const y = cardY + 54 + index * 68;
 
-      addCrispText(this, width / 2 - 280, y, item.label, {
+      addCrispText(this, width / 2 - 285, y, item.label, {
         fontSize: "20px",
-        color: "#94a3b8",
-      });
-
-      addCrispText(this, width / 2 + 280, y, item.val, {
-        fontSize: "24px",
         fontStyle: "bold",
-        color: "#f8fafc",
-      }).setOrigin(1, 0);
+        color: "#5c2d10",
+      }).setDepth(12);
+
+      addCrispText(this, width / 2 + 285, y, item.val, {
+        fontSize: "22px",
+        fontStyle: "bold",
+        color: "#2b1206",
+      })
+        .setOrigin(1, 0)
+        .setDepth(12);
     });
   }
 
   private createActionButtons(width: number): void {
-    const btnY = 960;
-    const spacing = 120;
+    const btnY = 955;
+    const spacing = 116;
 
-    this.createButton(
+    createWesternButton(
+      this,
       width / 2,
       btnY,
-      "⭐ 永続強化画面へ",
-      0x7c3aed,
-      0x9333ea,
+      "★  酒場で鍛える（名声強化）",
+      "brass",
       () => {
-        this.audio.playSynthSE("click");
         this.scene.start("PermanentUpgradeScene");
       },
-      520,
-      76,
-    );
+      540,
+      78,
+    ).setDepth(15);
 
-    this.createButton(
+    createWesternButton(
+      this,
       width / 2,
       btnY + spacing,
-      "🏠 タイトルへ戻る",
-      0x0284c7,
-      0x0ea5e9,
+      "🤠  タイトルへ戻る",
+      "rust",
       () => {
-        this.audio.playSynthSE("click");
         this.scene.start("TitleScene");
       },
-      520,
-      76,
-    );
-  }
-
-  private createButton(
-    x: number,
-    y: number,
-    text: string,
-    color: number,
-    hoverColor: number,
-    onClick: () => void,
-    width = 480,
-    height = 76,
-  ): Phaser.GameObjects.Container {
-    const container = this.add.container(x, y);
-
-    const bg = this.add.graphics();
-    bg.fillStyle(color, 1);
-    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
-    bg.lineStyle(2, 0xffffff, 0.4);
-    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
-
-    const label = addCrispText(this, 0, 0, text, {
-      fontSize: "24px",
-      fontStyle: "bold",
-      color: "#ffffff",
-    }).setOrigin(0.5);
-
-    container.add([bg, label]);
-    container.setSize(width, height);
-    container.setInteractive({ useHandCursor: true });
-
-    container.on("pointerover", () => {
-      bg.clear();
-      bg.fillStyle(hoverColor, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
-      bg.lineStyle(3, 0xffffff, 0.9);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
-      container.setScale(1.03);
-    });
-
-    container.on("pointerout", () => {
-      bg.clear();
-      bg.fillStyle(color, 1);
-      bg.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
-      bg.lineStyle(2, 0xffffff, 0.4);
-      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
-      container.setScale(1.0);
-    });
-
-    container.on("pointerdown", () => {
-      container.setScale(0.97);
-    });
-
-    container.on("pointerup", () => {
-      container.setScale(1.03);
-      onClick();
-    });
-
-    return container;
+      540,
+      78,
+    ).setDepth(15);
   }
 }

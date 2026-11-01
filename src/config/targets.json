@@ -2,76 +2,76 @@
   "targets": [
     {
       "id": "standard",
-      "name": "標準",
+      "name": "無法者",
       "hp": 1,
       "baseSp": 5,
       "weight": 100,
       "radius": 46,
-      "color": "#38bdf8",
-      "border": "#0284c7",
+      "color": "#c27849",
+      "border": "#6b3410",
       "unlockPoints": 0,
-      "description": "HP低・SP低。もっとも標準的な的。"
+      "description": "荒野をうろつく小悪党。まずはこいつで早撃ちの腕を慣らせ。"
     },
     {
       "id": "hard",
-      "name": "硬い的",
+      "name": "鉄板の重罪人",
       "hp": 5,
       "baseSp": 25,
       "weight": 40,
       "radius": 54,
-      "color": "#94a3b8",
-      "border": "#475569",
+      "color": "#8c7a6b",
+      "border": "#3f3228",
       "unlockPoints": 200,
-      "description": "HP高・SP中。装甲が硬く複数回攻撃が必要。"
+      "description": "胸にストーブの鉄板を仕込んだタフな賞金首。鉛玉を叩き込め。"
     },
     {
       "id": "gold",
-      "name": "金の的",
+      "name": "黄金の大悪党",
       "hp": 2,
       "baseSp": 80,
       "weight": 15,
       "radius": 40,
-      "color": "#facc15",
-      "border": "#ca8a04",
+      "color": "#eab308",
+      "border": "#854d0e",
       "lifetime": 1.5,
       "unlockPoints": 900,
-      "description": "SP高・消滅が早い。短時間で消えるため最優先で狙おう。"
+      "description": "莫大な懸賞金が懸かった逃げ足の速い大物。煙に巻かれる前に撃て。"
     },
     {
       "id": "electric",
-      "name": "電撃の的",
+      "name": "火薬樽の爆破魔",
       "hp": 3,
       "baseSp": 22,
       "weight": 30,
       "radius": 44,
-      "color": "#a855f7",
-      "border": "#7e22ce",
+      "color": "#dc2626",
+      "border": "#7f1d1d",
       "unlockPoints": 2800,
-      "description": "破壊時に放電し、画面内の他の的に連鎖ダメージを与える。"
+      "description": "ダイナマイトを背負った危険人物。撃ち抜けば周囲の賞金首もろとも吹き飛ばす。"
     },
     {
       "id": "small",
-      "name": "小さい的",
+      "name": "早撃ちキッド",
       "hp": 2,
       "baseSp": 22,
       "weight": 30,
       "radius": 26,
-      "color": "#ec4899",
-      "border": "#be185d",
+      "color": "#d97706",
+      "border": "#78350f",
       "unlockPoints": 8500,
-      "description": "当てにくいがSP高め。素早く正確に狙う的。"
+      "description": "小柄で素早い凄腕の賞金首。狙いを絞って眉間を撃ち抜け。"
     },
     {
       "id": "time",
-      "name": "時間の的",
+      "name": "真昼の懐中時計",
       "hp": 3,
       "baseSp": 12,
       "weight": 15,
       "radius": 42,
-      "color": "#22c55e",
-      "border": "#15803d",
+      "color": "#ca8a04",
+      "border": "#713f12",
       "unlockPoints": 25000,
-      "description": "破壊するとラウンド残り時間が延長される貴重な的。"
+      "description": "保安官が落とした金時計。撃ち抜けば決闘の刻限が延びる。"
     }
   ]
 }

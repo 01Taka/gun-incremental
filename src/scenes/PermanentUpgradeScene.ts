@@ -1,12 +1,14 @@
 import Phaser from "phaser";
 
+import { AudioManager } from "../audio/AudioManager";
 import { EventBus } from "../EventBus";
 import { GameState } from "../logic/GameState";
+import { drawWesternBackdrop } from "./WesternDecor";
 
 /**
- * 永続強化画面シーン。
- * 実際の永続強化カード一覧・購入 UI は React (PermanentUpgradeOverlay) 側で描画する。
- * このシーンは背景描画とシーン遷移のライフサイクル連携を担当する。
+ * 永続強化（酒場の鍛錬）画面シーン。
+ * 実際のカード一覧・購入 UI は React (PermanentUpgradeOverlay) 側で描画する。
+ * このシーンは西部劇背景描画とシーン遷移のライフサイクル連携を担当する。
  */
 export class PermanentUpgradeScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -18,9 +20,15 @@ export class PermanentUpgradeScene extends Phaser.Scene {
   create() {
     EventBus.emit("current-scene-ready", this);
     this.gameState = GameState.getInstance();
+    AudioManager.getInstance().playBGM("western_town");
 
     const { width, height } = this.scale;
-    this.createBackground(width, height);
+    drawWesternBackdrop(this, width, height, {
+      horizonY: 980,
+      variant: "sunset",
+      withBuildings: true,
+      withAtmosphere: false,
+    });
 
     const handleStartRun = () => {
       this.gameState.startNewRun();
@@ -40,22 +48,5 @@ export class PermanentUpgradeScene extends Phaser.Scene {
       EventBus.off("permanent-upgrade-back-title", handleBackToTitle);
       EventBus.emit("permanent-upgrade-scene-active", false);
     });
-  }
-
-  private createBackground(width: number, height: number): void {
-    const bg = this.add.graphics();
-    bg.fillGradientStyle(0x070b14, 0x070b14, 0x0f172a, 0x0f172a, 1);
-    bg.fillRect(0, 0, width, height);
-
-    bg.lineStyle(1, 0x1e293b, 0.35);
-    for (let x = 0; x < width; x += 60) {
-      bg.moveTo(x, 0);
-      bg.lineTo(x, height);
-    }
-    for (let y = 0; y < height; y += 60) {
-      bg.moveTo(0, y);
-      bg.lineTo(width, y);
-    }
-    bg.strokePath();
   }
 }

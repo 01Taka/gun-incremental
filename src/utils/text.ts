@@ -9,15 +9,18 @@ export const getDeviceResolution = (): number => {
   return Math.min(Math.max(dpr, 2), 2);
 };
 
-// Windows・Mac・iOS・Androidすべてで最高品質のアンチエイリアスが効くフォントスタック
+// 西部劇ポスター・木札風スラブセリフ & 重厚明朝フォントスタック
+export const WESTERN_DISPLAY_FONT_STACK =
+  '"Rye", "Roboto Slab", "Rockwell", "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", Georgia, serif';
+
 export const SYSTEM_FONT_STACK =
-  'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif';
+  '"Roboto Slab", "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", "Rockwell", Georgia, serif';
 
 export const MONO_FONT_STACK =
-  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+  '"Courier Prime", "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
 /**
- * 高解像度・文字欠け防止・美麗フォントスタックを安全に適用するテキスト作成ヘルパー
+ * 高解像度・文字欠け防止・西部劇スラブセリフフォントスタックを安全に適用するテキスト作成ヘルパー
  */
 export function addCrispText(
   scene: Phaser.Scene,
@@ -26,9 +29,15 @@ export function addCrispText(
   text: string | string[],
   style?: Phaser.Types.GameObjects.Text.TextStyle,
 ): Phaser.GameObjects.Text {
-  const isMono = style?.fontFamily?.includes("mono") || style?.fontFamily?.includes("Courier");
+  const rawFamily = style?.fontFamily ?? "";
+  const isMono = rawFamily.includes("mono") || rawFamily.includes("Courier");
+  const isDisplay = rawFamily.includes("display") || rawFamily.includes("Rye");
 
-  const chosenFontFamily = isMono ? MONO_FONT_STACK : SYSTEM_FONT_STACK;
+  const chosenFontFamily = isMono
+    ? MONO_FONT_STACK
+    : isDisplay
+      ? WESTERN_DISPLAY_FONT_STACK
+      : SYSTEM_FONT_STACK;
 
   // styleからstrokeThicknessやfontFamilyを取り除き、確実に安全な値をセット（NaN防止）
   const cleanStyle: Phaser.Types.GameObjects.Text.TextStyle = {
@@ -39,7 +48,7 @@ export function addCrispText(
 
   const textObj = scene.add.text(x, y, text, {
     resolution: getDeviceResolution(),
-    padding: { x: 4, y: 4 },
+    padding: { x: 6, y: 6 },
     ...cleanStyle,
     // strokeThicknessが明示的に数値で指定されている場合のみ渡す
     ...(typeof style?.strokeThickness === "number" && style.strokeThickness > 0
