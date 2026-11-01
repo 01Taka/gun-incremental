@@ -2,6 +2,7 @@ import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
 import { TARGETS } from "../config/gameData";
+import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { formatMoney, formatNumber } from "../logic/format";
 import { GameState } from "../logic/GameState";
@@ -39,7 +40,7 @@ export class ResultScene extends Phaser.Scene {
     });
 
     // ヘッダー
-    addCrispText(this, width / 2, 118, `第 ${this.gameState.round} 決闘 — 賞金精算`, {
+    addCrispText(this, width / 2, 118, VOCAB.progression.roundHeader(this.gameState.round), {
       fontSize: "42px",
       fontFamily: "display",
       fontStyle: "bold",
@@ -82,7 +83,7 @@ export class ResultScene extends Phaser.Scene {
       pinned: true,
     });
 
-    addCrispText(this, width / 2 - 195, cardY + 52, "今回の獲得賞金", {
+    addCrispText(this, width / 2 - 195, cardY + 52, VOCAB.currency.earnedMoney, {
       fontSize: "21px",
       fontStyle: "bold",
       color: "#5c2d10",
@@ -104,7 +105,7 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(12);
 
-    addCrispText(this, width / 2 + 195, cardY + 52, "現在の所持金", {
+    addCrispText(this, width / 2 + 195, cardY + 52, `現在の${VOCAB.currency.moneyName}`, {
       fontSize: "21px",
       fontStyle: "bold",
       color: "#5c2d10",
@@ -124,7 +125,7 @@ export class ResultScene extends Phaser.Scene {
       this,
       width / 2,
       cardY + 185,
-      `仕留めた賞金首: ${this.gameState.lastRoundTargetsDestroyed} 人`,
+      `仕留めた${VOCAB.combat.targetName}: ${this.gameState.lastRoundTargetsDestroyed} ${VOCAB.combat.targetUnit}`,
       {
         fontSize: "21px",
         fontStyle: "bold",
@@ -149,7 +150,7 @@ export class ResultScene extends Phaser.Scene {
 
     const progress = this.gameState.getTargetUnlockProgress();
 
-    addCrispText(this, width / 2, cardY + 38, "📜 WANTED手配網 ＆ 懸賞金評価", {
+    addCrispText(this, width / 2, cardY + 38, `📜 WANTED手配網 ＆ ${VOCAB.currency.bountyScore}`, {
       fontSize: "25px",
       fontStyle: "bold",
       color: "#fde68a",
@@ -162,7 +163,7 @@ export class ResultScene extends Phaser.Scene {
         this,
         width / 2,
         cardY + 88,
-        `次の賞金首: 【${progress.nextTarget.name}】 (${progress.percent}%)`,
+        `次の${VOCAB.combat.targetName}: 【${progress.nextTarget.name}】 (${progress.percent}%)`,
         {
           fontSize: "22px",
           fontStyle: "bold",
@@ -193,7 +194,7 @@ export class ResultScene extends Phaser.Scene {
         this,
         width / 2,
         cardY + 195,
-        `累計懸賞金評価: ${formatNumber(this.gameState.targetPoints)}`,
+        `累計${VOCAB.currency.bountyScore}: ${formatNumber(this.gameState.targetPoints)}`,
         {
           fontSize: "20px",
           color: "#d6b384",
@@ -202,11 +203,17 @@ export class ResultScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setDepth(12);
     } else {
-      addCrispText(this, width / 2, cardY + 120, "★ 全ての賞金首の手配書が揃った！ ★", {
-        fontSize: "26px",
-        fontStyle: "bold",
-        color: "#fbbf24",
-      })
+      addCrispText(
+        this,
+        width / 2,
+        cardY + 120,
+        `★ 全ての${VOCAB.combat.targetName}の手配書が揃った！ ★`,
+        {
+          fontSize: "26px",
+          fontStyle: "bold",
+          color: "#fbbf24",
+        },
+      )
         .setOrigin(0.5)
         .setDepth(12);
     }
@@ -273,8 +280,8 @@ export class ResultScene extends Phaser.Scene {
     g.strokeRoundedRect(width / 2 - 390, alertY, 780, 86, 10);
 
     const alertMsg = canAfford
-      ? `⚠️ 次の第${nextRound}決闘後、保安官の上納金【${formatMoney(invoiceCost)}】！ 所持金の温存を忘れるな！`
-      : `🚨 警告: 次の第${nextRound}決闘後、保安官の上納金【${formatMoney(invoiceCost)}】！ 現在所持金が足りねえ！`;
+      ? `⚠️ 次の第${nextRound}決闘後、${VOCAB.progression.invoiceTerm}【${formatMoney(invoiceCost)}】！ ${VOCAB.currency.moneyName}の温存を忘れるな！`
+      : `🚨 警告: 次の第${nextRound}決闘後、${VOCAB.progression.invoiceTerm}【${formatMoney(invoiceCost)}】！ 現在${VOCAB.currency.moneyName}が足りねえ！`;
 
     addCrispText(this, width / 2, alertY + 43, alertMsg, {
       fontSize: "18px",
@@ -293,7 +300,7 @@ export class ResultScene extends Phaser.Scene {
       this,
       width / 2,
       btnY,
-      "🔫  早撃ち技能 ＆ 銃砲店へ",
+      `🔫  ${VOCAB.actions.toUpgrade}`,
       "brass",
       () => {
         this.scene.start("UpgradeScene");
@@ -306,7 +313,7 @@ export class ResultScene extends Phaser.Scene {
       this,
       width / 2,
       btnY + spacing,
-      "▶  次の決闘場へ進む",
+      `▶  ${VOCAB.actions.nextDuel}`,
       "rust",
       () => {
         this.proceedToNext();

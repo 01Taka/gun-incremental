@@ -26,6 +26,7 @@ import type {
   SkillStatId,
   SkillTreeSide,
 } from "./types";
+import { VOCAB } from "./vocab";
 
 // ------------------------------------------
 // ステータス定義 (JSON の effect.stat で参照)
@@ -36,19 +37,37 @@ export interface SkillStatDefinition {
 }
 
 export const SKILL_STATS: Record<SkillStatId, SkillStatDefinition> = {
-  damage: { label: "基礎威力", unit: "威力" },
-  critRate: { label: "急所撃ち率", unit: "%" },
-  fireRateReduction: { label: "早撃ち間隔短縮", unit: "%" },
-  magazineCapacity: { label: "装填弾数", unit: "発" },
-  magazineMultiplier: { label: "装填増加率", unit: "%" },
-  reloadTimeReduction: { label: "再装填時間短縮", unit: "%" },
-  roundTime: { label: "決闘時間", unit: "秒" },
-  maxTargets: { label: "同時出現賞金首", unit: "人" },
-  spMultiplier: { label: "獲得賞金倍率", unit: "%" },
-  targetPointMultiplier: { label: "懸賞金評価倍率", unit: "%" },
-  shopDiscount: { label: "銃砲店割引", unit: "%" },
-  timeTargetBonus: { label: "懐中時計延長量", unit: "秒" },
-  chainDamage: { label: "誘爆ダメージ倍率", unit: "%" },
+  damage: { label: VOCAB.stats.damage.label, unit: VOCAB.stats.damage.unit },
+  critRate: { label: VOCAB.stats.critRate.label, unit: VOCAB.stats.critRate.unit },
+  fireRateReduction: {
+    label: VOCAB.stats.fireRateReduction.label,
+    unit: VOCAB.stats.fireRateReduction.unit,
+  },
+  magazineCapacity: {
+    label: VOCAB.stats.magazineCapacity.label,
+    unit: VOCAB.stats.magazineCapacity.unit,
+  },
+  magazineMultiplier: {
+    label: VOCAB.stats.magazineMultiplier.label,
+    unit: VOCAB.stats.magazineMultiplier.unit,
+  },
+  reloadTimeReduction: {
+    label: VOCAB.stats.reloadTimeReduction.label,
+    unit: VOCAB.stats.reloadTimeReduction.unit,
+  },
+  roundTime: { label: VOCAB.stats.roundTime.label, unit: VOCAB.stats.roundTime.unit },
+  maxTargets: { label: VOCAB.stats.maxTargets.label, unit: VOCAB.stats.maxTargets.unit },
+  spMultiplier: { label: VOCAB.stats.spMultiplier.label, unit: VOCAB.stats.spMultiplier.unit },
+  targetPointMultiplier: {
+    label: VOCAB.stats.targetPointMultiplier.label,
+    unit: VOCAB.stats.targetPointMultiplier.unit,
+  },
+  shopDiscount: { label: VOCAB.stats.shopDiscount.label, unit: VOCAB.stats.shopDiscount.unit },
+  timeTargetBonus: {
+    label: VOCAB.stats.timeTargetBonus.label,
+    unit: VOCAB.stats.timeTargetBonus.unit,
+  },
+  chainDamage: { label: VOCAB.stats.chainDamage.label, unit: VOCAB.stats.chainDamage.unit },
 };
 
 // ------------------------------------------

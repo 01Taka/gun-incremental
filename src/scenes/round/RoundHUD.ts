@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 
 import { AudioManager } from "../../audio/AudioManager";
 import { WEAPONS } from "../../config/gameData";
+import { VOCAB } from "../../config/vocab";
 import { formatMoney, formatSeconds } from "../../logic/format";
 import { GameState } from "../../logic/GameState";
 import { addCrispText } from "../../utils/text";
@@ -61,7 +62,7 @@ export class RoundHUD {
       this.scene,
       44,
       hudTop + 16,
-      `第 ${this.gameState.round} 決闘`,
+      VOCAB.progression.roundName(this.gameState.round),
       {
         fontSize: "28px",
         fontFamily: "display",
@@ -84,18 +85,24 @@ export class RoundHUD {
       color: "#fef3c7",
     });
 
-    this.ammoSubText = addCrispText(this.scene, 126, hudTop + 122, "6連シリンダー", {
+    this.ammoSubText = addCrispText(this.scene, 126, hudTop + 122, VOCAB.combat.cylinderIconSub, {
       fontSize: "13px",
       color: "#d6b384",
     });
 
     // 中央: 照準状態 ＆ 決闘残り時間
-    this.lockOnStatusText = addCrispText(this.scene, width / 2, hudTop + 20, "STANDOFF...", {
-      fontSize: "17px",
-      fontStyle: "bold",
-      color: "#d6b384",
-      fontFamily: "monospace",
-    }).setOrigin(0.5, 0);
+    this.lockOnStatusText = addCrispText(
+      this.scene,
+      width / 2,
+      hudTop + 20,
+      VOCAB.combat.lockOnStandoff,
+      {
+        fontSize: "17px",
+        fontStyle: "bold",
+        color: "#d6b384",
+        fontFamily: "monospace",
+      },
+    ).setOrigin(0.5, 0);
 
     this.timerText = addCrispText(
       this.scene,
@@ -119,7 +126,7 @@ export class RoundHUD {
       this.scene,
       width - 44,
       hudTop + 22,
-      `所持金 ${formatMoney(this.gameState.sp)}`,
+      `${VOCAB.currency.moneyName} ${formatMoney(this.gameState.sp)}`,
       {
         fontSize: "26px",
         fontStyle: "bold",
@@ -133,7 +140,7 @@ export class RoundHUD {
       this.scene,
       width - 44,
       hudTop + 62,
-      `獲得賞金 +${formatMoney(this.gameState.lastRoundSpEarned)}`,
+      `${VOCAB.currency.earnedMoney} +${formatMoney(this.gameState.lastRoundSpEarned)}`,
       {
         fontSize: "19px",
         fontStyle: "bold",
@@ -302,7 +309,9 @@ export class RoundHUD {
     if (isReloading) {
       // リロード中はシリンダーをくるくる回転させる
       this.cylinderContainer.setRotation(reloadProgress * Math.PI * 4);
-      this.ammoText.setText(`装填中 ${Math.floor(reloadProgress * 100)}%`);
+      this.ammoText.setText(
+        `${VOCAB.combat.cylinderSpinning} ${Math.floor(reloadProgress * 100)}%`,
+      );
       this.ammoText.setColor("#f59e0b");
       this.ammoSubText.setText("CYLINDER SPIN");
 
@@ -327,7 +336,11 @@ export class RoundHUD {
       }
 
       const extraRounds = Math.max(0, currentAmmo - 6);
-      this.ammoSubText.setText(extraRounds > 0 ? `予備弾帯 +${extraRounds}発` : "6連シリンダー");
+      this.ammoSubText.setText(
+        extraRounds > 0
+          ? VOCAB.combat.cylinderReserveAmmo(extraRounds)
+          : VOCAB.combat.cylinderIconSub,
+      );
 
       const ratio = maxAmmo > 0 ? currentAmmo / maxAmmo : 0;
       this.reloadBarGraphics.fillStyle(0x3b1d0c, 0.85);
@@ -417,11 +430,17 @@ export class RoundHUD {
     bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 8);
     bg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 8);
 
-    const label = addCrispText(this.scene, 0, 0, `自動早撃ち照準: ${isOn ? "ON" : "OFF"}`, {
-      fontSize: "15px",
-      fontStyle: "bold",
-      color: isOn ? "#fef3c7" : "#c2a378",
-    }).setOrigin(0.5);
+    const label = addCrispText(
+      this.scene,
+      0,
+      0,
+      `${VOCAB.combat.autoFireAim}: ${isOn ? "ON" : "OFF"}`,
+      {
+        fontSize: "15px",
+        fontStyle: "bold",
+        color: isOn ? "#fef3c7" : "#c2a378",
+      },
+    ).setOrigin(0.5);
 
     this.autoFireToggleContainer.add([bg, label]);
     this.autoFireToggleContainer.setSize(btnW, btnH);
@@ -479,7 +498,7 @@ export class RoundHUD {
     const centerX = this.bounds.left + this.bounds.size / 2;
     const centerY = this.bounds.top + this.bounds.size / 2;
 
-    const banner = addCrispText(this.scene, centerX, centerY, "DRAW!", {
+    const banner = addCrispText(this.scene, centerX, centerY, VOCAB.combat.draw, {
       fontSize: "84px",
       fontFamily: "display",
       fontStyle: "bold",
@@ -507,7 +526,7 @@ export class RoundHUD {
     const centerX = this.bounds.left + this.bounds.size / 2;
     const centerY = this.bounds.top + this.bounds.size / 2;
 
-    const banner = addCrispText(this.scene, centerX, centerY, "決着！", {
+    const banner = addCrispText(this.scene, centerX, centerY, VOCAB.combat.roundEnd, {
       fontSize: "82px",
       fontStyle: "bold",
       color: "#fef3c7",
@@ -527,7 +546,7 @@ export class RoundHUD {
   }
 
   public showDamagePopup(x: number, y: number, dmg: number, isCrit: boolean, color?: string): void {
-    const text = isCrit ? `DEADEYE! -${dmg}` : `-${dmg}`;
+    const text = isCrit ? `${VOCAB.combat.critHit} -${dmg}` : `-${dmg}`;
     const fontColor = color ? color : isCrit ? "#fbbf24" : "#fef3c7";
     const fontSize = isCrit ? "28px" : "22px";
 

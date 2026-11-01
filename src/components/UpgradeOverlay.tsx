@@ -14,6 +14,8 @@ import { useCallback, useState } from "react";
 import { AudioManager } from "../audio/AudioManager";
 import { WEAPONS } from "../config/gameData";
 import type { WeaponId } from "../config/types";
+import { VOCAB } from "../config/vocab";
+import { useI18n } from "../i18n";
 import { formatMoney, formatPercent } from "../logic/format";
 import { GameState } from "../logic/GameState";
 import { SkillTreeView } from "./SkillTreeView";
@@ -32,6 +34,7 @@ const WEAPON_IDS: WeaponId[] = ["handgun", "rifle", "sniper"];
 export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
   const gameState = GameState.getInstance();
   const audio = AudioManager.getInstance();
+  useI18n(); // 言語切り替え時に再レンダリング
 
   const [currentTab, setCurrentTab] = useState<TabType>("skills");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -96,28 +99,30 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
               ) : (
                 <Menu className="h-4 w-4 text-amber-400" />
               )}
-              <span>{currentTab === "skills" ? "早撃ち技能" : "銃砲店"}</span>
+              <span>
+                {currentTab === "skills" ? VOCAB.facilities.skills : VOCAB.facilities.weaponsShop}
+              </span>
             </button>
           </div>
 
           {/* 中央: 所持金（$） & 次回上納金 */}
           <div className="flex min-w-0 flex-col items-center leading-tight">
             <div className="truncate text-sm font-extrabold text-amber-300 drop-shadow sm:text-lg">
-              所持金 {formatMoney(gameState.sp)}
+              {VOCAB.currency.moneyName} {formatMoney(gameState.sp)}
             </div>
             <div
               className={`truncate text-[11px] font-bold sm:text-xs ${
                 canAffordInvoice ? "text-amber-200/85" : "text-red-400"
               }`}
             >
-              上納金: {formatMoney(nextInvoice)}
+              {VOCAB.progression.invoiceShort}: {formatMoney(nextInvoice)}
             </div>
           </div>
 
           {/* 右端: 決闘数表示 */}
           <div className="flex justify-end">
             <span className="font-western-display rounded border border-amber-800/70 bg-[#1a0c05]/80 px-2 py-0.5 text-[11px] font-bold text-amber-300/90 sm:text-xs">
-              第{gameState.round}決闘後
+              {VOCAB.progression.roundSuffix(gameState.round)}
             </span>
           </div>
         </header>
@@ -157,7 +162,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                   }`}
                 >
                   <Zap className="h-5 w-5 flex-shrink-0 text-amber-300" />
-                  <span>早撃ち技能ツリー</span>
+                  <span>{VOCAB.facilities.skillsTree}</span>
                 </button>
 
                 <button
@@ -175,15 +180,17 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                   {isShopUnlocked ? (
                     <>
                       <Crosshair className="h-5 w-5 flex-shrink-0 text-amber-300" />
-                      <span>銃砲店（GUNSMITH）</span>
+                      <span>
+                        {VOCAB.facilities.weaponsShop}（{VOCAB.facilities.weaponsShopSub}）
+                      </span>
                     </>
                   ) : (
                     <>
                       <Lock className="h-5 w-5 flex-shrink-0" />
                       <div className="flex flex-col leading-tight">
-                        <span>銃砲店（準備中）</span>
+                        <span>{VOCAB.facilities.weaponsShop}（準備中）</span>
                         <span className="mt-0.5 text-[11px] font-normal text-amber-700">
-                          第 3 決闘で開店
+                          {VOCAB.progression.roundName(3)}で開店
                         </span>
                       </div>
                     </>
@@ -266,7 +273,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                         {isEquipped ? (
                           <div className="flex items-center gap-1.5 rounded-md border border-amber-800/50 bg-amber-950/15 px-4 py-1.5 text-sm font-extrabold text-[#7c2d12] sm:text-base">
                             <Check className="h-5 w-5" />
-                            <span>★ ホルスターに装備中</span>
+                            <span>★ {VOCAB.actions.equipped}</span>
                           </div>
                         ) : isOwned ? (
                           <button
@@ -274,7 +281,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                             onClick={() => handleEquipWeapon(weaponId)}
                             className="western-btn-wood cursor-pointer rounded-lg px-8 py-2 text-sm font-bold text-amber-50 transition-all active:scale-95 sm:text-base"
                           >
-                            愛銃に持ち替える
+                            {VOCAB.actions.equipWeapon}
                           </button>
                         ) : (
                           <button
@@ -289,7 +296,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                           >
                             <ShoppingBag className="h-4 w-4" />
                             <span>
-                              買い取る: {formatMoney(price)}
+                              {VOCAB.actions.buyWeapon}: {formatMoney(price)}
                               {isDiscounted ? ` (${formatPercent(discount)} OFF)` : ""}
                             </span>
                           </button>
@@ -302,7 +309,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
                 {gameState.canToggleAutoFire() && (
                   <div className="western-wood flex items-center justify-center gap-2 rounded-lg border border-amber-500/70 px-3 py-2.5 text-center text-xs font-bold text-amber-300 sm:text-sm">
                     <Sparkles className="h-4 w-4 flex-shrink-0" />
-                    <span>全3挺の名銃が揃った！「自動早撃ち照準」が使えるぜ！</span>
+                    <span>全3挺の名銃が揃った！「{VOCAB.combat.autoFireAim}」が使えるぜ！</span>
                   </div>
                 )}
               </div>

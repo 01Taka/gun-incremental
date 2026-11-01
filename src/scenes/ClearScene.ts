@@ -3,6 +3,7 @@ import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
 import { WEAPONS } from "../config/gameData";
+import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { formatMoney } from "../logic/format";
 import { GameState } from "../logic/GameState";
@@ -111,11 +112,20 @@ export class ClearScene extends Phaser.Scene {
     const weaponNames = stats.weaponsPurchased.map((id) => WEAPONS[id].name).join(" / ");
 
     const records = [
-      { label: "制覇到達決闘", val: `第 ${stats.round} 決闘` },
-      { label: "納めた上納金の回数", val: `${stats.invoicesPassed} 回` },
-      { label: "稼いだ賞金総額", val: `${formatMoney(stats.totalSpEarned)}` },
-      { label: "保安官への上納総額", val: `${formatMoney(stats.totalInvoicesPaidAmount)}` },
-      { label: "仕留めた賞金首総数", val: `${stats.targetsDestroyedTotal} 人` },
+      { label: "制覇到達決闘", val: VOCAB.progression.roundName(stats.round) },
+      { label: `納めた${VOCAB.progression.invoiceShort}の回数`, val: `${stats.invoicesPassed} 回` },
+      {
+        label: `稼いだ${VOCAB.currency.earnedMoney}総額`,
+        val: `${formatMoney(stats.totalSpEarned)}`,
+      },
+      {
+        label: `${VOCAB.progression.invoiceTerm}総額`,
+        val: `${formatMoney(stats.totalInvoicesPaidAmount)}`,
+      },
+      {
+        label: `仕留めた${VOCAB.combat.targetName}総数`,
+        val: `${stats.targetsDestroyedTotal} ${VOCAB.combat.targetUnit}`,
+      },
       { label: "愛用した銃器", val: weaponNames },
     ];
 
@@ -146,7 +156,7 @@ export class ClearScene extends Phaser.Scene {
       this,
       width / 2,
       btnY,
-      "★  酒場で鍛える（名声強化）",
+      `★  ${VOCAB.actions.trainSaloon}`,
       "brass",
       () => {
         this.scene.start("PermanentUpgradeScene");
@@ -159,7 +169,7 @@ export class ClearScene extends Phaser.Scene {
       this,
       width / 2,
       btnY + spacing,
-      "🤠  タイトルへ戻る",
+      `🤠  ${VOCAB.actions.backToTitle}`,
       "rust",
       () => {
         this.scene.start("TitleScene");

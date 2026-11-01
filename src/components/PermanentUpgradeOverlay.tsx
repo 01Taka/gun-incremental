@@ -15,6 +15,8 @@ import { useCallback, useState } from "react";
 import { AudioManager } from "../audio/AudioManager";
 import { PERMANENT_UPGRADES } from "../config/gameData";
 import type { PermanentUpgradeId } from "../config/types";
+import { VOCAB } from "../config/vocab";
+import { useI18n } from "../i18n";
 import { formatNumber } from "../logic/format";
 import { GameState } from "../logic/GameState";
 
@@ -55,6 +57,7 @@ export function PermanentUpgradeOverlay({
 }: PermanentUpgradeOverlayProps) {
   const gameState = GameState.getInstance();
   const audio = AudioManager.getInstance();
+  useI18n(); // 言語切り替え時に再レンダリング
 
   const [, setRevision] = useState(0);
 
@@ -92,7 +95,7 @@ export function PermanentUpgradeOverlay({
             </span>
             <div className="flex min-w-0 flex-col leading-tight">
               <h1 className="truncate text-base font-extrabold text-amber-200 sm:text-lg">
-                酒場の鍛錬（ガンマンの流儀）
+                {VOCAB.facilities.saloon}（{VOCAB.facilities.saloonSub}）
               </h1>
               <span className="font-western-display text-[10px] font-bold tracking-wider text-amber-400/80">
                 SALOON &amp; OUTLAW CREED
@@ -102,7 +105,9 @@ export function PermanentUpgradeOverlay({
 
           <div className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-amber-500/60 bg-[#180b04]/90 px-3 py-1.5 shadow-inner">
             <Star className="h-4 w-4 fill-amber-400 text-amber-300" />
-            <span className="text-xs font-semibold text-amber-200/80 sm:text-sm">名声:</span>
+            <span className="text-xs font-semibold text-amber-200/80 sm:text-sm">
+              {VOCAB.currency.metaPointsAbbr}:
+            </span>
             <span className="text-sm font-extrabold text-amber-300 sm:text-base">
               {formatNumber(points)}
             </span>
@@ -164,7 +169,7 @@ export function PermanentUpgradeOverlay({
                     {isMax ? (
                       <div className="flex h-10 items-center gap-1 rounded-lg border border-amber-400/60 bg-amber-950/70 px-3 text-xs font-extrabold text-amber-300 sm:text-sm">
                         <Check className="h-4 w-4" />
-                        <span>習得完了</span>
+                        <span>{VOCAB.actions.mastered}</span>
                       </div>
                     ) : (
                       <button
@@ -178,7 +183,7 @@ export function PermanentUpgradeOverlay({
                         }`}
                       >
                         <span className="text-xs sm:text-sm">
-                          鍛える (★ {cost !== null ? formatNumber(cost) : 0})
+                          {VOCAB.actions.trainCost(cost !== null ? formatNumber(cost) : 0)}
                         </span>
                       </button>
                     )}
@@ -241,7 +246,7 @@ export function PermanentUpgradeOverlay({
             className="western-btn-wood flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-extrabold text-amber-50 transition-all active:scale-[0.98] sm:h-12 sm:text-base"
           >
             <Play className="h-4 w-4 fill-current" />
-            <span>荒野へ繰り出す（決闘開始）</span>
+            <span>{VOCAB.actions.startDuel}</span>
           </button>
 
           <button
@@ -250,7 +255,7 @@ export function PermanentUpgradeOverlay({
             className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-amber-800 bg-[#241208] text-sm font-bold text-amber-200 transition-all hover:border-amber-500 hover:bg-[#331a0c] hover:text-amber-50 active:scale-[0.98] sm:h-11 sm:text-base"
           >
             <Home className="h-4 w-4" />
-            <span>酒場の表へ出る（タイトル）</span>
+            <span>{VOCAB.actions.backToTitleFromSaloon}</span>
           </button>
         </footer>
       </div>

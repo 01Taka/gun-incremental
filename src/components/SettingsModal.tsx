@@ -1,6 +1,8 @@
-import { Maximize2, Minimize2, Settings, Volume2, VolumeX, X } from "lucide-react";
+import { Globe, Maximize2, Minimize2, Settings, Volume2, VolumeX, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { VOCAB } from "../config/vocab";
+import { useI18n } from "../i18n";
 import { useGameSettings } from "../stores/useGameSettings";
 import { useInputMode } from "../stores/useInputMode";
 
@@ -11,6 +13,7 @@ interface SettingsModalProps {
 export function SettingsModal({ onClose }: SettingsModalProps) {
   const settings = useGameSettings();
   const inputMode = useInputMode((s) => s.mode);
+  const { locale, setLocale } = useI18n();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // スマホ版では「カーソルを追従」はDisabled（元の設定値は維持）
@@ -22,7 +25,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   const joystickDisabled = inputMode === "pc" && settings.followCursor;
 
   const getModalHeader = () => ({
-    title: "酒場の設定",
+    title: VOCAB.facilities.settingsSaloon,
     icon: <Settings className="h-5 w-5 text-amber-400" />,
   });
 
@@ -100,12 +103,49 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
         {/* スクロール可能な設定項目セクション群 */}
         <div className="flex-1 touch-pan-y space-y-3 overflow-y-auto overscroll-contain py-3 pr-1">
+          {/* 言語切り替え (Language Toggle) */}
+          <div className="western-leather flex items-center justify-between rounded-xl border border-amber-800/60 p-3">
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-amber-400" />
+              <div>
+                <div className="text-sm font-bold text-amber-100">{VOCAB.ui.language}</div>
+                <div className="text-xs text-amber-300/70">
+                  {locale === "ja" ? VOCAB.ui.languageJa : VOCAB.ui.languageEn}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => setLocale("ja")}
+                className={`cursor-pointer rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                  locale === "ja"
+                    ? "western-btn-brass text-amber-50 shadow"
+                    : "border border-amber-900 bg-[#1f0f07] text-amber-200/80 hover:border-amber-600"
+                }`}
+              >
+                JP
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale("en")}
+                className={`cursor-pointer rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                  locale === "en"
+                    ? "western-btn-brass text-amber-50 shadow"
+                    : "border border-amber-900 bg-[#1f0f07] text-amber-200/80 hover:border-amber-600"
+                }`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+
           {/* 全画面表示切り替え */}
           <div className="western-leather flex items-center justify-between rounded-xl border border-amber-800/60 p-3">
             <div>
-              <div className="text-sm font-bold text-amber-100">画面表示</div>
+              <div className="text-sm font-bold text-amber-100">{VOCAB.ui.fullscreen}</div>
               <div className="text-xs text-amber-300/70">
-                {isFullscreen ? "全画面表示中" : "通常表示"}
+                {isFullscreen ? VOCAB.ui.fullscreenOn : VOCAB.ui.fullscreenOff}
               </div>
             </div>
             <button
@@ -116,12 +156,12 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
               {isFullscreen ? (
                 <>
                   <Minimize2 className="h-4 w-4" />
-                  <span>全画面解除</span>
+                  <span>{VOCAB.ui.fullscreenExit}</span>
                 </>
               ) : (
                 <>
                   <Maximize2 className="h-4 w-4" />
-                  <span>全画面にする</span>
+                  <span>{VOCAB.ui.fullscreenToggle}</span>
                 </>
               )}
             </button>
@@ -136,15 +176,15 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-amber-100">カーソルを追従</span>
+                  <span className="text-sm font-bold text-amber-100">{VOCAB.ui.cursorFollow}</span>
                   {isMobile && (
                     <span className="rounded bg-amber-950 px-1.5 py-0.5 text-[10px] text-amber-300">
-                      スマホ版（無効）
+                      {VOCAB.ui.mobileDisabled}
                     </span>
                   )}
                 </div>
                 <div className="text-xs text-amber-300/70">
-                  {cursorFollowActive ? "マウス位置へ直接エイム" : "スライダー操作を使用"}
+                  {cursorFollowActive ? VOCAB.ui.cursorFollowDescOn : VOCAB.ui.cursorFollowDescOff}
                 </div>
               </div>
               <button
@@ -173,15 +213,19 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-amber-100">レバー操作位置</span>
+                <span className="text-sm font-bold text-amber-100">
+                  {VOCAB.ui.joystickPosition}
+                </span>
                 {joystickDisabled && (
                   <span className="rounded bg-amber-950 px-1.5 py-0.5 text-[10px] text-amber-300">
-                    無効（カーソル追従中）
+                    {VOCAB.ui.pcCursorFollowActive}
                   </span>
                 )}
               </div>
               <span className="text-xs text-amber-300/70">
-                {settings.joystickType === "dynamic" ? "指の位置に追従" : "画面下部に固定"}
+                {settings.joystickType === "dynamic"
+                  ? VOCAB.ui.joystickDynamic
+                  : VOCAB.ui.joystickFixed}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -195,7 +239,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                     : "border border-amber-900 bg-[#1f0f07] text-amber-200/80 hover:border-amber-600"
                 } ${joystickDisabled ? "cursor-not-allowed" : ""}`}
               >
-                追従（Dynamic）
+                {VOCAB.ui.joystickDynamic}
               </button>
               <button
                 type="button"
@@ -207,7 +251,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                     : "border border-amber-900 bg-[#1f0f07] text-amber-200/80 hover:border-amber-600"
                 } ${joystickDisabled ? "cursor-not-allowed" : ""}`}
               >
-                固定（Fixed）
+                {VOCAB.ui.joystickFixed}
               </button>
             </div>
           </div>
@@ -215,7 +259,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           {/* BGM 音量（口笛・ギター・ハーモニカ） */}
           <div className="western-leather rounded-xl border border-amber-800/60 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-bold text-amber-100">BGM 音量（口笛・ギター）</span>
+              <span className="text-sm font-bold text-amber-100">{VOCAB.ui.bgmVolume}</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -246,9 +290,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           {/* SE 音量（銃声・拍車・シリンダー） */}
           <div className="western-leather rounded-xl border border-amber-800/60 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-bold text-amber-100">
-                効果音（銃声・拍車・シリンダー）
-              </span>
+              <span className="text-sm font-bold text-amber-100">{VOCAB.ui.seVolume}</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"

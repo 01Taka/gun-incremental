@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AudioManager } from "../audio/AudioManager";
 import { SKILL_IDS, SKILL_STATS, SKILL_TREE, SKILLS } from "../config/skillTree";
 import type { SkillNodeId, SkillNodeSize } from "../config/types";
+import { VOCAB } from "../config/vocab";
+import { useI18n } from "../i18n";
 import { layoutFishbone } from "../logic/fishboneLayout";
 import { formatMoney, formatPercent } from "../logic/format";
 import { GameState } from "../logic/GameState";
@@ -71,6 +73,7 @@ interface SkillTreeViewProps {
 export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) {
   const gameState = GameState.getInstance();
   const audio = AudioManager.getInstance();
+  useI18n(); // 言語切り替え検知
 
   const [selectedSkillId, setSelectedSkillId] = useState<SkillNodeId>(SKILL_TREE.rootId);
   const selectedSkillIdRef = useRef<SkillNodeId>(SKILL_TREE.rootId);
@@ -550,7 +553,7 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
           onClick={onProceed}
           className="western-btn-wood flex h-9 cursor-pointer items-center gap-1 rounded-lg px-3.5 text-xs font-extrabold text-amber-50 transition-all active:scale-95 sm:px-4 sm:text-sm"
         >
-          <span>次の決闘へ</span>
+          <span>{VOCAB.actions.nextDuel}</span>
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>

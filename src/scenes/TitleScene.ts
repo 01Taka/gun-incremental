@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
+import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { GameState } from "../logic/GameState";
 import { addCrispText } from "../utils/text";
@@ -35,7 +36,7 @@ export class TitleScene extends Phaser.Scene {
     });
 
     // 2. 右上の木札「設定」ボタン
-    this.createSmallWoodButton(width - 96, 68, "⚙ 設定", () => {
+    this.createSmallWoodButton(width - 96, 68, `⚙ ${VOCAB.facilities.settings}`, () => {
       audio.playSynthSE("spur", 0.65);
       EventBus.emit("open-settings");
     });
@@ -133,13 +134,19 @@ export class TitleScene extends Phaser.Scene {
       rivets: true,
     });
 
-    addCrispText(this, width / 2, statsY + 42, `★ 所持名声バッジ: ${permPoints}`, {
-      fontSize: "27px",
-      color: "#fbbf24",
-      fontStyle: "bold",
-      stroke: "#1c0a04",
-      strokeThickness: 3,
-    })
+    addCrispText(
+      this,
+      width / 2,
+      statsY + 42,
+      `★ 所持${VOCAB.currency.metaPoints}: ${permPoints}`,
+      {
+        fontSize: "27px",
+        color: "#fbbf24",
+        fontStyle: "bold",
+        stroke: "#1c0a04",
+        strokeThickness: 3,
+      },
+    )
       .setOrigin(0.5)
       .setDepth(12);
 
@@ -147,7 +154,7 @@ export class TitleScene extends Phaser.Scene {
       this,
       width / 2,
       statsY + 90,
-      `最高到達: 第 ${highestRound} 決闘   |   決闘歴: ${totalRuns} 回`,
+      `最高到達: ${VOCAB.progression.roundName(highestRound)}   |   決闘歴: ${totalRuns} 回`,
       {
         fontSize: "19px",
         color: "#d6b384",
@@ -164,7 +171,7 @@ export class TitleScene extends Phaser.Scene {
       this,
       width / 2,
       buttonY,
-      "🔫  荒野へ繰り出す（決闘開始）",
+      `🔫  ${VOCAB.actions.startDuel}`,
       "rust",
       () => {
         gameState.startNewRun();
@@ -176,8 +183,8 @@ export class TitleScene extends Phaser.Scene {
 
     const permBtnText =
       permPoints > 0
-        ? `★  酒場で鍛える（名声: ${permPoints}）`
-        : "★  酒場で鍛える（ガンマンの流儀）";
+        ? `★  ${VOCAB.actions.trainSaloonWithPoints(permPoints)}`
+        : `★  ${VOCAB.facilities.saloon}（${VOCAB.facilities.saloonSub}）`;
     createWesternButton(
       this,
       width / 2,

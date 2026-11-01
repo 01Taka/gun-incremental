@@ -2,6 +2,7 @@ import Phaser from "phaser";
 
 import { AudioManager } from "../audio/AudioManager";
 import { TARGET_UNLOCK_SEQUENCE } from "../config/gameData";
+import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { formatMoney } from "../logic/format";
 import { GameState } from "../logic/GameState";
@@ -73,14 +74,23 @@ export class GameOverScene extends Phaser.Scene {
     const stats = this.gameState.runStats;
 
     const items = [
-      { label: "到達した決闘", val: `第 ${stats.round} 決闘` },
-      { label: "納めた上納金の回数", val: `${stats.invoicesPassed} 回` },
-      { label: "稼いだ賞金総額", val: `${formatMoney(stats.totalSpEarned)}` },
-      { label: "保安官への上納総額", val: `${formatMoney(stats.totalInvoicesPaidAmount)}` },
-      { label: "仕留めた賞金首の総数", val: `${stats.targetsDestroyedTotal} 人` },
+      { label: "到達した決闘", val: VOCAB.progression.roundName(stats.round) },
+      { label: `納めた${VOCAB.progression.invoiceShort}の回数`, val: `${stats.invoicesPassed} 回` },
       {
-        label: "手配書を暴いた賞金首",
-        val: `${this.gameState.unlockedTargets.length} / ${TARGET_UNLOCK_SEQUENCE.length} 人`,
+        label: `稼いだ${VOCAB.currency.earnedMoney}総額`,
+        val: `${formatMoney(stats.totalSpEarned)}`,
+      },
+      {
+        label: `${VOCAB.progression.invoiceTerm}総額`,
+        val: `${formatMoney(stats.totalInvoicesPaidAmount)}`,
+      },
+      {
+        label: `仕留めた${VOCAB.combat.targetName}の総数`,
+        val: `${stats.targetsDestroyedTotal} ${VOCAB.combat.targetUnit}`,
+      },
+      {
+        label: `手配書を暴いた${VOCAB.combat.targetName}`,
+        val: `${this.gameState.unlockedTargets.length} / ${TARGET_UNLOCK_SEQUENCE.length} ${VOCAB.combat.targetUnit}`,
       },
     ];
 
@@ -115,11 +125,17 @@ export class GameOverScene extends Phaser.Scene {
       rivets: true,
     });
 
-    addCrispText(this, width / 2, cardY + 40, "★ 上納総額の2%を「名声バッジ」として獲得！ ★", {
-      fontSize: "21px",
-      fontStyle: "bold",
-      color: "#fde68a",
-    })
+    addCrispText(
+      this,
+      width / 2,
+      cardY + 40,
+      `★ 上納総額の2%を「${VOCAB.currency.metaPoints}」として獲得！ ★`,
+      {
+        fontSize: "21px",
+        fontStyle: "bold",
+        color: "#fde68a",
+      },
+    )
       .setOrigin(0.5)
       .setDepth(12);
 
@@ -143,7 +159,7 @@ export class GameOverScene extends Phaser.Scene {
       this,
       width / 2,
       btnY,
-      "★  酒場で鍛える（名声強化）",
+      `★  ${VOCAB.actions.trainSaloon}`,
       "brass",
       () => {
         this.scene.start("PermanentUpgradeScene");
@@ -156,7 +172,7 @@ export class GameOverScene extends Phaser.Scene {
       this,
       width / 2,
       btnY + spacing,
-      "🤠  タイトルへ戻る",
+      `🤠  ${VOCAB.actions.backToTitle}`,
       "leather",
       () => {
         this.scene.start("TitleScene");

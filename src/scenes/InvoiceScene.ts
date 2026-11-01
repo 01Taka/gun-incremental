@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { AudioManager } from "../audio/AudioManager";
 import { PASSIVES } from "../config/gameData";
 import type { PassiveId } from "../config/types";
+import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
 import { formatMoney } from "../logic/format";
 import { GameState } from "../logic/GameState";
@@ -61,7 +62,7 @@ export class InvoiceScene extends Phaser.Scene {
       this,
       width / 2,
       215,
-      `★ 保安官の取り立て (第 ${invoiceNumber} 回) ★`,
+      `★ ${VOCAB.progression.invoiceTitle(invoiceNumber)} ★`,
       {
         fontSize: "44px",
         fontStyle: "bold",
@@ -96,25 +97,25 @@ export class InvoiceScene extends Phaser.Scene {
     });
     this.mainContainer.add(g);
 
-    const desc = addCrispText(
-      this,
-      width / 2,
-      cardY + 68,
-      "5決闘ごとの縄張り代・上納金の徴収書だ。\n支払えなければ、この町から追放（ゲームオーバー）となる。",
-      {
-        fontSize: "20px",
-        fontStyle: "bold",
-        color: "#4a2109",
-        align: "center",
-      },
-    ).setOrigin(0.5);
+    const desc = addCrispText(this, width / 2, cardY + 68, VOCAB.progression.invoiceDueDesc, {
+      fontSize: "20px",
+      fontStyle: "bold",
+      color: "#4a2109",
+      align: "center",
+    }).setOrigin(0.5);
     this.mainContainer.add(desc);
 
-    const costLabel = addCrispText(this, width / 2, cardY + 165, "— 上納金 徴収額 —", {
-      fontSize: "24px",
-      fontStyle: "bold",
-      color: "#6b2710",
-    }).setOrigin(0.5);
+    const costLabel = addCrispText(
+      this,
+      width / 2,
+      cardY + 165,
+      `— ${VOCAB.progression.invoiceShort} 徴収額 —`,
+      {
+        fontSize: "24px",
+        fontStyle: "bold",
+        color: "#6b2710",
+      },
+    ).setOrigin(0.5);
     this.mainContainer.add(costLabel);
 
     const costValue = addCrispText(this, width / 2, cardY + 235, `${formatMoney(invoiceCost)}`, {
@@ -128,7 +129,7 @@ export class InvoiceScene extends Phaser.Scene {
       this,
       width / 2,
       cardY + 355,
-      `現在の所持金: ${formatMoney(this.gameState.sp)}\n(${canAfford ? "支払い可能 — 保安官も納得の額だ" : "所持金不足 — 袋の底が空っぽだ！"})`,
+      `現在の${VOCAB.currency.moneyName}: ${formatMoney(this.gameState.sp)}\n(${canAfford ? "支払い可能 — 保安官も納得の額だ" : "所持金不足 — 袋の底が空っぽだ！"})`,
       {
         fontSize: "22px",
         fontStyle: "bold",
@@ -143,7 +144,7 @@ export class InvoiceScene extends Phaser.Scene {
         this,
         width / 2,
         cardY + cardH + 105,
-        "💰  上納金を支払う",
+        `💰  ${VOCAB.actions.payInvoice}`,
         "brass",
         () => {
           if (this.gameState.payInvoice()) {
@@ -160,7 +161,7 @@ export class InvoiceScene extends Phaser.Scene {
         this,
         width / 2,
         cardY + cardH + 105,
-        "💀  支払い不能（荒野へ追放）",
+        `💀  ${VOCAB.actions.bankruptSurrender}`,
         "danger",
         () => {
           this.audio.playSynthSE("gameover");
@@ -182,7 +183,7 @@ export class InvoiceScene extends Phaser.Scene {
     const { width } = this.scale;
     const choices = this.gameState.rollPassives();
 
-    const title = addCrispText(this, width / 2, 130, "🥃 保安官の黙認 — ガンマンの心得", {
+    const title = addCrispText(this, width / 2, 130, `🥃 ${VOCAB.facilities.passivesSub}`, {
       fontSize: "38px",
       fontStyle: "bold",
       color: "#fde68a",
@@ -195,7 +196,7 @@ export class InvoiceScene extends Phaser.Scene {
       this,
       width / 2,
       192,
-      "3つの心得から1つを選んで身につけろ（重複習得可能）",
+      `3つの${VOCAB.facilities.passivesTitle}から1つを選んで身につけろ（重複習得可能）`,
       {
         fontSize: "20px",
         color: "#d6b384",
@@ -253,7 +254,7 @@ export class InvoiceScene extends Phaser.Scene {
       btn.fillRoundedRect(160, -32, 190, 64, 8);
       btn.strokeRoundedRect(160, -32, 190, 64, 8);
 
-      const btnLabel = addCrispText(this, 255, 0, "選び取る", {
+      const btnLabel = addCrispText(this, 255, 0, VOCAB.actions.choosePassive, {
         fontSize: "22px",
         fontStyle: "bold",
         color: "#fef3c7",
