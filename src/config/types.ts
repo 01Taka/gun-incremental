@@ -90,7 +90,7 @@ export interface SkillDefinition {
 }
 
 export type PassiveId =
-  "sp_bonus" | "dmg_bonus" | "time_bonus" | "target_bonus" | "shop_discount" | "tp_bonus";
+  "sp_bonus" | "dmg_bonus" | "time_bonus" | "target_bonus" | "crit_bonus" | "tp_bonus";
 
 export interface PassiveDefinition {
   id: PassiveId;
@@ -132,6 +132,7 @@ export interface InvoiceConfig {
 
 export interface CombatConfig {
   critMultiplier: number; // 会心ダメージ倍率
+  maxCritRate: number; // 会心率の上限 (0〜1)
   maxFireRateReduction: number; // 発射間隔短縮の上限率 (0〜1未満)
   minFireInterval: number; // 発射間隔の下限 (秒)
   maxReloadTimeReduction: number; // リロード短縮の上限率 (0〜1未満)

@@ -1,25 +1,26 @@
 {
   "round": {
-    "baseDuration": 7.0,
+    "baseDuration": 8.0,
     "baseTargetCount": 3,
-    "maxTargetCountCap": 8,
-    "timeTargetBaseExtension": 0.8,
-    "countdownDuration": 1.15,
+    "maxTargetCountCap": 7,
+    "timeTargetBaseExtension": 0.6,
+    "countdownDuration": 1.1,
     "lowTimeWarningThreshold": 2.5
   },
   "invoice": {
     "intervalRounds": 5,
-    "baseCost": 150,
-    "growthRate": 1.6,
+    "baseCost": 72,
+    "growthRate": 5.0,
     "minCost": 10,
-    "permanentPointRate": 0.02
+    "permanentPointRate": 0.05
   },
   "combat": {
     "critMultiplier": 2.0,
-    "maxFireRateReduction": 0.8,
+    "maxCritRate": 0.75,
+    "maxFireRateReduction": 0.75,
     "minFireInterval": 0.08,
-    "maxReloadTimeReduction": 0.8,
-    "minReloadTime": 0.2,
+    "maxReloadTimeReduction": 0.75,
+    "minReloadTime": 0.22,
     "maxShopDiscount": 0.5
   },
   "progression": {
@@ -31,17 +32,17 @@
   "arena": {
     "turretMinAngleDeg": -165,
     "turretMaxAngleDeg": -15,
-    "rayHitMarginRatio": 0.67,
-    "autoAimSpeed": 1.5,
-    "keyboardAimSpeed": 0.72,
-    "targetRespawnDelayMs": 200,
+    "rayHitMarginRatio": 0.68,
+    "autoAimSpeed": 1.65,
+    "keyboardAimSpeed": 0.78,
+    "targetRespawnDelayMs": 180,
     "targetBlinkThresholdSeconds": 0.8,
     "bulletOutPadding": 20
   },
   "simulation": {
-    "assumedAccuracy": 0.9,
+    "assumedAccuracy": 0.88,
     "maxRoundsGuard": 120,
-    "invoiceReserveRatio": 0.35,
-    "sniperPurchaseMinRound": 10
+    "invoiceReserveRatio": 0.55,
+    "sniperPurchaseMinRound": 11
   }
 }

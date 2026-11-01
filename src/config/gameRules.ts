@@ -41,6 +41,7 @@ const invoiceSchema = z
 const combatSchema = z
   .object({
     critMultiplier: z.number().min(1),
+    maxCritRate: z.number().min(0).max(1),
     maxFireRateReduction: z.number().min(0).max(0.99),
     minFireInterval: z.number().positive(),
     maxReloadTimeReduction: z.number().min(0).max(0.99),

@@ -3,46 +3,46 @@
     {
       "id": "handgun",
       "name": "ピースメイカー",
-      "description": "連射とリロードが速い、扱いやすい6連発リボルバー。",
-      "fireInterval": 1.0,
+      "description": "連射とリロードの隙が少ない扱いやすい6連発リボルバー。弾の当たり判定もやや広く狙いやすい。",
+      "fireInterval": 0.46,
       "damage": 1,
       "magazineSize": 6,
-      "reloadTime": 1.5,
+      "reloadTime": 1.2,
       "price": 0,
       "unlockRound": 1,
       "bullet": {
-        "speed": 1850,
-        "radius": 6
+        "speed": 1800,
+        "radius": 7
       }
     },
     {
       "id": "rifle",
       "name": "ウィンチェスター銃",
-      "description": "中威力で装弾数が多いレバーアクション連発銃。",
-      "fireInterval": 0.6,
-      "damage": 3,
-      "magazineSize": 10,
-      "reloadTime": 1.3,
-      "price": 120,
+      "description": "高速連射と大容量マガジンを誇るレバーアクション連発銃。手数で賞金首を圧倒する。",
+      "fireInterval": 0.36,
+      "damage": 2,
+      "magazineSize": 9,
+      "reloadTime": 1.15,
+      "price": 160,
       "unlockRound": 3,
       "bullet": {
-        "speed": 1850,
+        "speed": 2350,
         "radius": 6
       }
     },
     {
       "id": "sniper",
       "name": "シャープス大口径銃",
-      "description": "装弾数は少なくリロードも重いが、硬い標的も一撃で砕く高威力ライフル。",
-      "fireInterval": 1.15,
-      "damage": 8,
-      "magazineSize": 5,
-      "reloadTime": 1.7,
-      "price": 450,
-      "unlockRound": 6,
+      "description": "超高速・極太の大口径鉛弾を放つ重ライフル。装甲標的を一撃で砕き、ダイナマイト誘爆も劇的に強化する。",
+      "fireInterval": 0.38,
+      "damage": 6,
+      "magazineSize": 8,
+      "reloadTime": 1.2,
+      "price": 760,
+      "unlockRound": 7,
       "bullet": {
-        "speed": 1850,
-        "radius": 6
+        "speed": 3200,
+        "radius": 10
       }
     }
   ]

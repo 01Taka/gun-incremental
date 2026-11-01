@@ -23,9 +23,11 @@ const DEFAULT_SAVE_DATA: PersistentSaveData = {
 };
 
 export class StorageService {
+  private static memoryFallback: PersistentSaveData | null = null;
+
   public static load(): PersistentSaveData {
     if (typeof window === "undefined" || !window.localStorage) {
-      return structuredClone(DEFAULT_SAVE_DATA);
+      return structuredClone(this.memoryFallback ?? DEFAULT_SAVE_DATA);
     }
     try {
       const raw = window.localStorage.getItem(SAVE_STORAGE_KEY);
@@ -60,16 +62,19 @@ export class StorageService {
 
   public static save(data: PersistentSaveData): void {
     if (typeof window === "undefined" || !window.localStorage) {
+      this.memoryFallback = structuredClone(data);
       return;
     }
     try {
       window.localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
       console.error("Failed to save data to localStorage:", e);
+      this.memoryFallback = structuredClone(data);
     }
   }
 
   public static clear(): void {
+    this.memoryFallback = null;
     if (typeof window === "undefined" || !window.localStorage) {
       return;
     }

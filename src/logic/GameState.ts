@@ -241,9 +241,14 @@ export class GameState {
     return Math.max(1, Math.round(base));
   }
 
+  public getCritRate(): number {
+    const skillCrit = this.getSkillStat("critRate");
+    const passiveCrit = this.passives.crit_bonus * PASSIVES.crit_bonus.effectPerStack;
+    return Math.min(COMBAT_CONFIG.maxCritRate, skillCrit + passiveCrit);
+  }
+
   public rollCrit(): boolean {
-    const critRate = this.getSkillStat("critRate");
-    return this.rng.next() < critRate;
+    return this.rng.next() < this.getCritRate();
   }
 
   public getFireInterval(id: WeaponId = this.equippedWeapon): number {
@@ -301,8 +306,7 @@ export class GameState {
 
   public getShopDiscount(): number {
     const skillDisc = this.getSkillStat("shopDiscount");
-    const passiveDisc = this.passives.shop_discount * PASSIVES.shop_discount.effectPerStack;
-    return Math.min(COMBAT_CONFIG.maxShopDiscount, skillDisc + passiveDisc);
+    return Math.min(COMBAT_CONFIG.maxShopDiscount, skillDisc);
   }
 
   public getWeaponPrice(id: WeaponId): number {

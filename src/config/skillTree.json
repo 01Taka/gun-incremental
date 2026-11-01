@@ -8,7 +8,7 @@
       "icon": "Swords",
       "category": "combat",
       "maxLevel": 5,
-      "costs": [20, 50, 130, 320, 800],
+      "costs": [14, 48, 165, 560, 1900],
       "effect": { "stat": "damage", "perLevel": 1 }
     },
     {
@@ -21,8 +21,8 @@
       "description": "発射間隔を短縮し、連射速度を上げる",
       "icon": "Zap",
       "category": "combat",
-      "maxLevel": 3,
-      "costs": [45, 120, 300],
+      "maxLevel": 4,
+      "costs": [24, 82, 280, 950],
       "effect": { "stat": "fireRateReduction", "perLevel": 0.1 }
     },
     {
@@ -31,11 +31,11 @@
       "parent": "fire_rate",
       "unlockLevel": 1,
       "name": "標的の増加",
-      "description": "画面に同時出現する標的の最大数を増やす",
+      "description": "画面に同時出現する標的の最大数を増やし、照準移動の無駄を減らす",
       "icon": "Users",
       "category": "combat",
-      "maxLevel": 3,
-      "costs": [60, 160, 420],
+      "maxLevel": 2,
+      "costs": [55, 220],
       "effect": { "stat": "maxTargets", "perLevel": 1 }
     },
     {
@@ -45,12 +45,12 @@
       "side": "right",
       "unlockLevel": 2,
       "name": "急所撃ち",
-      "description": "ダメージが2倍になる会心（急所）率を上げる",
+      "description": "ダメージが倍増する会心（急所）率を上げる",
       "icon": "Crosshair",
       "category": "combat",
-      "maxLevel": 3,
-      "costs": [80, 200, 500],
-      "effect": { "stat": "critRate", "perLevel": 0.15 }
+      "maxLevel": 4,
+      "costs": [48, 165, 560, 1850],
+      "effect": { "stat": "critRate", "perLevel": 0.1 }
     },
     {
       "id": "chain_damage",
@@ -58,12 +58,12 @@
       "parent": "crit_rate",
       "unlockLevel": 1,
       "name": "ダイナマイト誘爆",
-      "description": "「ダイナマイト樽」撃破時に周囲へ与える誘爆ダメージを強化する",
+      "description": "「ダイナマイト樽」撃破時に周囲へ与える誘爆ダメージ倍率を強化する",
       "icon": "Flame",
       "category": "combat",
       "maxLevel": 3,
-      "costs": [160, 380, 900],
-      "effect": { "stat": "chainDamage", "perLevel": 0.5 }
+      "costs": [95, 320, 1080],
+      "effect": { "stat": "chainDamage", "perLevel": 0.35 }
     },
     {
       "id": "round_time",
@@ -75,8 +75,8 @@
       "icon": "Timer",
       "category": "economy",
       "maxLevel": 5,
-      "costs": [25, 60, 150, 380, 900],
-      "effect": { "stat": "roundTime", "perLevel": 1 }
+      "costs": [18, 62, 210, 720, 2400],
+      "effect": { "stat": "roundTime", "perLevel": 0.75 }
     },
     {
       "id": "time_target_bonus",
@@ -89,8 +89,8 @@
       "icon": "Hourglass",
       "category": "combat",
       "maxLevel": 3,
-      "costs": [130, 320, 800],
-      "effect": { "stat": "timeTargetBonus", "perLevel": 0.5 }
+      "costs": [55, 190, 640],
+      "effect": { "stat": "timeTargetBonus", "perLevel": 0.2 }
     },
     {
       "id": "magazine_size",
@@ -102,9 +102,9 @@
       "description": "すべての銃の装弾数を増やし、リロード回数を減らす",
       "icon": "Layers",
       "category": "combat",
-      "maxLevel": 3,
-      "costs": [25, 65, 160],
-      "effect": { "stat": "magazineCapacity", "perLevel": 3 }
+      "maxLevel": 4,
+      "costs": [22, 75, 250, 850],
+      "effect": { "stat": "magazineCapacity", "perLevel": 2 }
     },
     {
       "id": "reload_speed",
@@ -116,8 +116,8 @@
       "icon": "RotateCw",
       "category": "combat",
       "maxLevel": 3,
-      "costs": [35, 85, 200],
-      "effect": { "stat": "reloadTimeReduction", "perLevel": 0.2 }
+      "costs": [35, 120, 400],
+      "effect": { "stat": "reloadTimeReduction", "perLevel": 0.16 }
     },
     {
       "id": "sp_multiplier",
@@ -129,8 +129,8 @@
       "icon": "Coins",
       "category": "economy",
       "maxLevel": 5,
-      "costs": [40, 100, 250, 600, 1400],
-      "effect": { "stat": "spMultiplier", "perLevel": 0.2 }
+      "costs": [30, 105, 360, 1200, 3800],
+      "effect": { "stat": "spMultiplier", "perLevel": 0.16 }
     },
     {
       "id": "target_point_mult",
@@ -142,23 +142,23 @@
       "description": "新しい標的を解放する「手配ポイント」の獲得量を増やす",
       "icon": "Award",
       "category": "economy",
-      "maxLevel": 3,
-      "costs": [90, 240, 600],
-      "effect": { "stat": "targetPointMultiplier", "perLevel": 0.25 }
+      "maxLevel": 4,
+      "costs": [65, 220, 740, 2400],
+      "effect": { "stat": "targetPointMultiplier", "perLevel": 0.18 }
     },
     {
-      "id": "shop_discount",
+      "id": "magazine_mult",
       "size": "medium",
       "parent": "sp_multiplier",
       "side": "right",
       "unlockLevel": 2,
-      "name": "銃砲店の割引",
-      "description": "銃砲店で購入する武器の価格を割り引く",
-      "icon": "Tag",
-      "category": "economy",
+      "name": "特製ガンベルト",
+      "description": "装弾数を割合で大きく引き上げ、圧倒的な弾幕を維持する",
+      "icon": "Repeat",
+      "category": "combat",
       "maxLevel": 3,
-      "costs": [110, 280, 700],
-      "effect": { "stat": "shopDiscount", "perLevel": 0.15 }
+      "costs": [90, 300, 980],
+      "effect": { "stat": "magazineMultiplier", "perLevel": 0.25 }
     }
   ]
 }

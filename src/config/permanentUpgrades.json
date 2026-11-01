@@ -5,8 +5,8 @@
       "name": "砂金の軍資金",
       "description": "ゲーム開始時の初期所持金（$）を増やす",
       "maxLevel": 3,
-      "costs": [15, 35, 75],
-      "effects": [30, 80, 160],
+      "costs": [6, 24, 85],
+      "effects": [50, 160, 400],
       "effectUnit": "$"
     },
     {
@@ -14,8 +14,8 @@
       "name": "伝説の早撃ち術",
       "description": "ゲーム開始時からの基礎威力を増やす",
       "maxLevel": 3,
-      "costs": [15, 35, 75],
-      "effects": [1, 2, 3],
+      "costs": [9, 32, 110],
+      "effects": [2, 4, 7],
       "effectUnit": ""
     },
     {
@@ -23,8 +23,8 @@
       "name": "死線の集中力",
       "description": "ラウンドの制限時間を延長する",
       "maxLevel": 3,
-      "costs": [15, 35, 75],
-      "effects": [0.5, 1.0, 1.5],
+      "costs": [6, 26, 95],
+      "effects": [1.8, 3.8, 6.0],
       "effectUnit": "秒"
     },
     {
@@ -32,8 +32,8 @@
       "name": "手配書コレクター",
       "description": "新しい標的を解放する「手配ポイント」の獲得量を増やす",
       "maxLevel": 3,
-      "costs": [15, 35, 75],
-      "effects": [15, 30, 50],
+      "costs": [7, 28, 100],
+      "effects": [50, 120, 220],
       "effectUnit": "%"
     },
     {
@@ -41,8 +41,8 @@
       "name": "保安官への袖の下",
       "description": "5ラウンドごとの「保安官の上納金」を軽減する",
       "maxLevel": 3,
-      "costs": [15, 35, 75],
-      "effects": [5, 10, 15],
+      "costs": [6, 26, 95],
+      "effects": [20, 38, 55],
       "effectUnit": "%"
     }
   ]

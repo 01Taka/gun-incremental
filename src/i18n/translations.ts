@@ -12,6 +12,7 @@ import {
   PROGRESSION_CONFIG,
   ROUND_CONFIG,
   TARGET_UNLOCK_SEQUENCE,
+  WEAPONS,
 } from "../config/gameData";
 import type {
   PassiveId,
@@ -393,37 +394,38 @@ export const translations: Record<Locale, Translations> = {
     weapons: {
       handgun: {
         name: "ピースメイカー",
-        description: "連射とリロードが速い、扱いやすい6連発リボルバー。",
+        description: `連射とリロードの隙が少ない扱いやすい${WEAPONS.handgun.magazineSize}連発リボルバー。弾の当たり判定もやや広く狙いやすい。`,
       },
       rifle: {
         name: "ウィンチェスター銃",
-        description: "中威力で装弾数が多いレバーアクション連発銃。",
+        description: `高速連射と${WEAPONS.rifle.magazineSize}発の大容量マガジンを誇るレバーアクション連発銃。手数で賞金首を圧倒する。`,
       },
       sniper: {
         name: "シャープス大口径銃",
-        description: "装弾数は少なくリロードも重いが、硬い標的も一撃で砕く高威力ライフル。",
+        description:
+          "超高速・極太の大口径鉛弾を放つ重ライフル。装甲標的を一撃で砕き、ダイナマイト誘爆も劇的に強化する。",
       },
     },
     targets: {
       standard: {
         name: "無法者",
-        description: "HPが低い標準的な標的。まずはこいつで早撃ちの腕を慣らそう。",
+        description: "HPが低い標準的な標的。威力を1段階鍛えれば一撃で仕留められる。",
       },
       hard: {
         name: "鉄板の重罪人",
-        description: "胸に鉄板を仕込んだ硬い標的。HPは高いが賞金も弾む。",
+        description: "胸に鉄板を仕込んだ硬い標的。タフだが仕留めれば高額賞金が手に入る。",
       },
       gold: {
         name: "黄金の賞金首",
-        description: "賞金が高い大物だが、短時間で逃げて消えるため最優先で狙おう。",
+        description: "荒野に名を轟かせる伝説の大悪党。こいつを手配書に載せれば荒野制覇だ。",
       },
       electric: {
         name: "ダイナマイト樽",
-        description: "撃ち抜くと爆発し、画面内の他の標的にも誘爆ダメージを与える。",
+        description: "撃ち抜くと大爆発し、とどめの一撃に応じた誘爆ダメージを全標的に与える。",
       },
       small: {
         name: "早撃ちキッド",
-        description: "小さくて当てにくいが、賞金が高めの素早い賞金首。",
+        description: "小柄で素早く逃げるが、仕留めれば大金になる厄介な賞金首。",
       },
       time: {
         name: "懐中時計",
@@ -479,6 +481,10 @@ export const translations: Record<Locale, Translations> = {
         name: "銃砲店の割引",
         description: "銃砲店で購入する武器の価格を割り引く",
       },
+      magazine_mult: {
+        name: "特製ガンベルト",
+        description: "装弾数を割合で大きく引き上げ、圧倒的な弾幕を維持する",
+      },
     },
     passives: {
       sp_bonus: {
@@ -497,9 +503,9 @@ export const translations: Record<Locale, Translations> = {
         name: "一斉指名手配",
         description: `標的の同時出現数 +${PASSIVES.target_bonus.effectPerStack}`,
       },
-      shop_discount: {
-        name: "銃砲店の顔パス",
-        description: `銃砲店の武器価格 -${Math.round(PASSIVES.shop_discount.effectPerStack * 100)}%`,
+      crit_bonus: {
+        name: "死神の眼光",
+        description: `会心（急所）率 +${Math.round(PASSIVES.crit_bonus.effectPerStack * 100)}%`,
       },
       tp_bonus: {
         name: "広域指名手配",
@@ -753,21 +759,22 @@ export const translations: Record<Locale, Translations> = {
     weapons: {
       handgun: {
         name: "Peacemaker",
-        description: "Balanced 6-shot revolver with fast firing and quick reloads.",
+        description: `Reliable ${WEAPONS.handgun.magazineSize}-shot revolver with quick reloads and slightly wider lead bullets.`,
       },
       rifle: {
         name: "Winchester Rifle",
-        description: "Lever-action repeater with solid damage and a large magazine.",
+        description: `Rapid-fire lever-action repeater with a ${WEAPONS.rifle.magazineSize}-round tube magazine to overwhelm outlaws.`,
       },
       sniper: {
         name: "Sharps Buffalo Rifle",
-        description: "Slow to reload, but packs massive damage to one-shot tough targets.",
+        description:
+          "Fires ultra-fast, oversized heavy slugs that shatter armor and supercharge Dynamite blasts.",
       },
     },
     targets: {
       standard: {
         name: "Outlaw",
-        description: "Standard target with low HP. Warm up your trigger finger.",
+        description: "Low-HP standard target. Just +1 Damage lets you drop them in one shot.",
       },
       hard: {
         name: "Ironclad Bandit",
@@ -775,15 +782,16 @@ export const translations: Record<Locale, Translations> = {
       },
       gold: {
         name: "Golden Desperado",
-        description: "Huge bounty, but vanishes quickly. Shoot on sight!",
+        description: "Legendary outlaw of the Frontier. Unlock this bounty to conquer the West!",
       },
       electric: {
         name: "Dynamite Barrel",
-        description: "Explodes when shot, dealing blast damage to other targets.",
+        description:
+          "Explodes when shot, dealing blast damage scaled by the killing shot to all targets.",
       },
       small: {
         name: "Quick-Draw Kid",
-        description: "Small and tricky to hit, but pays well.",
+        description: "Small and quick to flee, but pays a handsome bounty.",
       },
       time: {
         name: "Pocket Watch",
@@ -839,6 +847,10 @@ export const translations: Record<Locale, Translations> = {
         name: "Gunsmith Deal",
         description: "Discounts weapon prices at the Gunsmith.",
       },
+      magazine_mult: {
+        name: "Custom Bandolier",
+        description: "Multiplies ammo capacity by a large percentage for sustained barrages.",
+      },
     },
     passives: {
       sp_bonus: {
@@ -857,9 +869,9 @@ export const translations: Record<Locale, Translations> = {
         name: "Mass Wanted Posters",
         description: `Simultaneous Targets +${PASSIVES.target_bonus.effectPerStack}`,
       },
-      shop_discount: {
-        name: "Gunsmith Regular",
-        description: `Gunsmith Weapon Prices -${Math.round(PASSIVES.shop_discount.effectPerStack * 100)}%`,
+      crit_bonus: {
+        name: "Reaper's Eye",
+        description: `Critical Hit Chance +${Math.round(PASSIVES.crit_bonus.effectPerStack * 100)}%`,
       },
       tp_bonus: {
         name: "Wide Wanted Network",

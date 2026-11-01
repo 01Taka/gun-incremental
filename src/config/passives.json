@@ -3,16 +3,16 @@
     {
       "id": "sp_bonus",
       "name": "賞金稼ぎの嗅覚",
-      "description": "獲得賞金（$） +10%",
+      "description": "獲得賞金（$） +15%",
       "icon": "💰",
-      "effectPerStack": 0.1
+      "effectPerStack": 0.15
     },
     {
       "id": "dmg_bonus",
       "name": "大口径鉛弾",
-      "description": "すべての銃の基礎威力 +15%",
+      "description": "すべての銃の基礎威力 +20%",
       "icon": "💥",
-      "effectPerStack": 0.15
+      "effectPerStack": 0.2
     },
     {
       "id": "time_bonus",
@@ -25,22 +25,22 @@
       "id": "target_bonus",
       "name": "一斉指名手配",
       "description": "標的の同時出現数 +1",
-      "icon": "🎯",
+      "icon": "🤠",
       "effectPerStack": 1
     },
     {
-      "id": "shop_discount",
-      "name": "銃砲店の顔パス",
-      "description": "銃砲店の武器価格 -10%",
-      "icon": "🏷️",
+      "id": "crit_bonus",
+      "name": "死神の眼光",
+      "description": "会心（急所）率 +10%",
+      "icon": "🎯",
       "effectPerStack": 0.1
     },
     {
       "id": "tp_bonus",
       "name": "広域指名手配",
-      "description": "手配ポイント（新標的の解放） +10%",
+      "description": "手配ポイント（新標的の解放） +20%",
       "icon": "📜",
-      "effectPerStack": 0.1
+      "effectPerStack": 0.2
     }
   ]
 }
