@@ -233,23 +233,6 @@ export class RoundHUD {
 
     this.autoFireToggleContainer = this.scene.add.container(width - 150, 1148);
     this.refreshAutoFireToggle();
-
-    addCrispText(this.scene, width / 2, 1212, VOCAB.combat.dragAimHint, {
-      fontSize: "19px",
-      fontStyle: "bold",
-      color: "#fde68a",
-    }).setOrigin(0.5);
-
-    addCrispText(this.scene, width / 2, 1246, VOCAB.combat.autoFireHint, {
-      fontSize: "17px",
-      fontStyle: "bold",
-      color: "#f59e0b",
-    }).setOrigin(0.5);
-
-    addCrispText(this.scene, width / 2, 1532, VOCAB.combat.keyboardAimHint, {
-      fontSize: "15px",
-      color: "#a88b67",
-    }).setOrigin(0.5);
   }
 
   public updateTimer(timeRemaining: number): void {

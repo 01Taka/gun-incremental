@@ -521,6 +521,10 @@ export class GameState {
   }
 
   // --- 請求処理 ---
+  public completeInvoiceIntro(): void {
+    this.invoiceIntroduced = true;
+  }
+
   public shouldShowInvoiceIntro(): boolean {
     return this.round === INVOICE_CONFIG.intervalRounds && !this.invoiceIntroduced;
   }

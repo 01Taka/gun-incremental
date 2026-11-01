@@ -3,17 +3,14 @@ import Phaser from "phaser";
 import { AudioManager } from "../audio/AudioManager";
 import { VOCAB } from "../config/vocab";
 import { EventBus } from "../EventBus";
-import { useI18n } from "../i18n";
 import { GameState } from "../logic/GameState";
-import { addCrispText } from "../utils/text";
-import {
-  createWesternButton,
-  drawParchmentCard,
-  drawWesternBackdrop,
-  drawWoodPanel,
-  showCinemaTitleCard,
-} from "./WesternDecor";
+import { drawWesternBackdrop, showCinemaTitleCard } from "./WesternDecor";
 
+/**
+ * タイトル画面シーン。
+ * UI（WANTEDポスター、各種ボタン、戦歴パネル等）はすべて React (TitleOverlay) 側で描画する。
+ * このシーンは西部劇背景描画とシーン遷移のライフサイクル連携を担当する。
+ */
 export class TitleScene extends Phaser.Scene {
   constructor() {
     super("TitleScene");
@@ -24,17 +21,6 @@ export class TitleScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const gameState = GameState.getInstance();
     const audio = AudioManager.getInstance();
-    const locale = useI18n.getState().locale;
-
-    // 言語切り替え時にタイトル画面のテキストを即時更新
-    const unsubscribeI18n = useI18n.subscribe((state, prevState) => {
-      if (state.locale !== prevState.locale && this.scene.isActive()) {
-        this.scene.restart();
-      }
-    });
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      unsubscribeI18n();
-    });
 
     // エンニオ・モリコーネ風の口笛・ギター・ハーモニカBGMを開始
     audio.playBGM("western_town");
@@ -47,166 +33,7 @@ export class TitleScene extends Phaser.Scene {
       withAtmosphere: true,
     });
 
-    // 2. 右上の木札「設定」ボタン
-    this.createSmallWoodButton(width - 96, 68, `⚙ ${VOCAB.facilities.settings}`, () => {
-      audio.playSynthSE("spur", 0.65);
-      EventBus.emit("open-settings");
-    });
-
-    // 3. WANTED指名手配書風のメインタイトルボード
-    const posterW = 730;
-    const posterH = 440;
-    const posterX = width / 2 - posterW / 2;
-    const posterY = 155;
-
-    const posterG = this.add.graphics().setDepth(10);
-    drawParchmentCard(posterG, posterX, posterY, posterW, posterH, {
-      borderColor: 0x4a2109,
-      pinned: true,
-    });
-
-    // 手配書の弾痕アクセント
-    if (this.textures.exists("bullet_hole")) {
-      this.add
-        .image(posterX + 58, posterY + 62, "bullet_hole")
-        .setDepth(12)
-        .setAlpha(0.85);
-      this.add
-        .image(posterX + posterW - 52, posterY + posterH - 54, "bullet_hole")
-        .setDepth(12)
-        .setScale(0.9)
-        .setAlpha(0.8);
-    }
-
-    addCrispText(this, width / 2, posterY + 58, "★  W A N T E D  ★", {
-      fontSize: "48px",
-      fontFamily: "display",
-      fontStyle: "bold",
-      color: "#5c1f0b",
-    })
-      .setOrigin(0.5)
-      .setDepth(12);
-
-    addCrispText(this, width / 2, posterY + 108, "— DEAD OR ALIVE —", {
-      fontSize: "19px",
-      fontFamily: "display",
-      fontStyle: "bold",
-      color: "#7c2d12",
-    })
-      .setOrigin(0.5)
-      .setDepth(12);
-
-    addCrispText(this, width / 2, posterY + 190, VOCAB.titleScreen.mainTitleTop, {
-      fontSize: locale === "en" ? "52px" : "66px",
-      fontFamily: locale === "en" ? "display" : undefined,
-      fontStyle: "bold",
-      color: "#2b1206",
-      stroke: "#ecd9b5",
-      strokeThickness: 2,
-    })
-      .setOrigin(0.5)
-      .setDepth(12);
-
-    addCrispText(this, width / 2, posterY + 272, VOCAB.titleScreen.mainTitleBottom, {
-      fontSize: locale === "en" ? "44px" : "54px",
-      fontFamily: locale === "en" ? "display" : undefined,
-      fontStyle: "bold",
-      color: "#7f1d1d",
-    })
-      .setOrigin(0.5)
-      .setDepth(12);
-
-    addCrispText(this, width / 2, posterY + 344, VOCAB.titleScreen.tagline, {
-      fontSize: "20px",
-      fontStyle: "bold",
-      color: "#4a250d",
-    })
-      .setOrigin(0.5)
-      .setDepth(12);
-
-    addCrispText(this, width / 2, posterY + 394, VOCAB.titleScreen.posterQuote, {
-      fontSize: locale === "en" ? "19px" : "22px",
-      fontStyle: "bold",
-      color: "#6b2710",
-    })
-      .setOrigin(0.5)
-      .setDepth(12);
-
-    // 4. 賞金稼ぎの戦歴・名声バッジ木札パネル
-    const permPoints = gameState.persistentData.permanentPoints;
-    const highestRound = gameState.persistentData.stats.highestRound;
-    const totalRuns = gameState.persistentData.stats.totalRuns;
-
-    const statsW = 730;
-    const statsH = 132;
-    const statsY = 635;
-
-    const statsBg = this.add.graphics().setDepth(10);
-    drawWoodPanel(statsBg, width / 2 - statsW / 2, statsY, statsW, statsH, {
-      fill: 0x261308,
-      border: 0xb45309,
-      rivets: true,
-    });
-
-    addCrispText(this, width / 2, statsY + 42, VOCAB.titleScreen.heldBadges(permPoints), {
-      fontSize: "27px",
-      color: "#fbbf24",
-      fontStyle: "bold",
-      stroke: "#1c0a04",
-      strokeThickness: 3,
-    })
-      .setOrigin(0.5)
-      .setDepth(12);
-
-    addCrispText(
-      this,
-      width / 2,
-      statsY + 90,
-      VOCAB.titleScreen.careerRecord(highestRound, totalRuns),
-      {
-        fontSize: "19px",
-        color: "#d6b384",
-      },
-    )
-      .setOrigin(0.5)
-      .setDepth(12);
-
-    // 5. アクション木札ボタン群
-    const buttonY = 875;
-    const buttonSpacing = 112;
-
-    createWesternButton(
-      this,
-      width / 2,
-      buttonY,
-      `🔫  ${VOCAB.actions.startDuel}`,
-      "rust",
-      () => {
-        gameState.startNewRun();
-        this.scene.start("RoundScene");
-      },
-      550,
-      80,
-    ).setDepth(15);
-
-    const permBtnText =
-      permPoints > 0
-        ? `★  ${VOCAB.actions.trainSaloonWithPoints(permPoints)}`
-        : `★  ${VOCAB.actions.trainSaloon}`;
-    createWesternButton(
-      this,
-      width / 2,
-      buttonY + buttonSpacing,
-      permBtnText,
-      permPoints > 0 ? "brass" : "leather",
-      () => {
-        this.scene.start("PermanentUpgradeScene");
-      },
-      550,
-      80,
-    ).setDepth(15);
-
-    // 6. 映画タイトルカード風の開幕レターボックス演出（非ブロッキング・自動フェード）
+    // 2. 映画タイトルカード風の開幕レターボックス演出（非ブロッキング・自動フェード）
     showCinemaTitleCard(this, {
       actLabel: "A FISTFUL OF BOUNTY",
       title: "HIGH NOON",
@@ -216,46 +43,25 @@ export class TitleScene extends Phaser.Scene {
       fadeMs: 550,
       letterbox: true,
     });
-  }
 
-  private createSmallWoodButton(
-    x: number,
-    y: number,
-    text: string,
-    onClick: () => void,
-  ): Phaser.GameObjects.Container {
-    const container = this.add.container(x, y).setDepth(20);
-    const bg = this.add.graphics();
-
-    const draw = (hover: boolean) => {
-      bg.clear();
-      bg.fillStyle(hover ? 0x4a2511 : 0x2b1509, 0.95);
-      bg.lineStyle(hover ? 2 : 1.5, hover ? 0xfbbf24 : 0x92400e, 1);
-      bg.fillRoundedRect(-58, -23, 116, 46, 8);
-      bg.strokeRoundedRect(-58, -23, 116, 46, 8);
+    // React 側の TitleOverlay からのイベントを処理
+    const handleStartGame = () => {
+      gameState.startNewRun();
+      this.scene.start("RoundScene");
     };
-    draw(false);
 
-    const label = addCrispText(this, 0, 0, text, {
-      fontSize: "18px",
-      fontStyle: "bold",
-      color: "#fde68a",
-    }).setOrigin(0.5);
+    const handleOpenPermanent = () => {
+      this.scene.start("PermanentUpgradeScene");
+    };
 
-    container.add([bg, label]);
-    container.setSize(116, 46);
-    container.setInteractive({ useHandCursor: true });
+    EventBus.on("title-start-game", handleStartGame);
+    EventBus.on("title-open-permanent", handleOpenPermanent);
+    EventBus.emit("title-scene-active", true);
 
-    container.on("pointerover", () => {
-      draw(true);
-      container.setScale(1.05);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      EventBus.off("title-start-game", handleStartGame);
+      EventBus.off("title-open-permanent", handleOpenPermanent);
+      EventBus.emit("title-scene-active", false);
     });
-    container.on("pointerout", () => {
-      draw(false);
-      container.setScale(1.0);
-    });
-    container.on("pointerup", onClick);
-
-    return container;
   }
 }
