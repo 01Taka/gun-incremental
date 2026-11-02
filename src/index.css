@@ -190,3 +190,22 @@ body,
   background: linear-gradient(180deg, #eab308 0%, #d97706 55%, #92400e 100%);
   border-color: #fef3c7;
 }
+
+/* モバイル・PWA等のノッチやステータスバー（セーフエリア上部）に対応するユーティリティ */
+.safe-pt-2 {
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+}
+
+.safe-pt-2\.5 {
+  padding-top: calc(0.625rem + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 640px) {
+  .sm\:safe-pt-3 {
+    padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  }
+}
+
+.safe-pt-4 {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}

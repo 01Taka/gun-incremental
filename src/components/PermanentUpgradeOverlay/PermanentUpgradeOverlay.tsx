@@ -42,7 +42,7 @@ export function PermanentUpgradeOverlay({
     <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
       <div className="font-western-slab pointer-events-auto relative flex h-full max-h-full w-full max-w-[calc(100dvh*9/16)] flex-col overflow-hidden bg-[#1a0d06]/92 text-amber-50 backdrop-blur-[2px]">
         {/* 上部木札ヘッダー */}
-        <header className="western-wood z-20 flex flex-shrink-0 items-center justify-between gap-2 border-b-2 border-amber-700/80 px-3.5 py-2.5 sm:px-5 sm:py-3">
+        <header className="western-wood safe-pt-2.5 sm:safe-pt-3 z-20 flex flex-shrink-0 items-center justify-between gap-2 border-b-2 border-amber-700/80 px-3.5 pb-2.5 sm:px-5 sm:pb-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-amber-500/70 bg-amber-950/80 text-amber-300 shadow">
               <Star className="h-5 w-5 fill-amber-400 text-amber-200" />

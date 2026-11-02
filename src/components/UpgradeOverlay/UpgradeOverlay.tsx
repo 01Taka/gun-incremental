@@ -46,7 +46,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
       {/* 9:16 のゲーム画面領域にぴったり重なる西部劇コンテナ */}
       <div className="font-western-slab pointer-events-auto relative flex h-full max-h-full w-full max-w-[calc(100dvh*9/16)] flex-col overflow-hidden bg-[#1a0d06]/92 text-amber-50 backdrop-blur-[2px]">
         {/* 上部ヘッダー（木札＆真鍮鋲デザイン） */}
-        <header className="western-wood z-20 grid flex-shrink-0 grid-cols-3 items-center gap-2 border-b-2 border-amber-700/80 px-3 py-2 sm:px-4">
+        <header className="western-wood safe-pt-2 z-20 grid flex-shrink-0 grid-cols-3 items-center gap-2 border-b-2 border-amber-700/80 px-3 pb-2 sm:px-4 sm:pb-2">
           {/* 左端: サイドバートグルボタン */}
           <div className="flex justify-start">
             <button
@@ -96,7 +96,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
           >
             <aside
               onClick={(e) => e.stopPropagation()}
-              className="western-wood flex h-full w-64 max-w-[78%] flex-col border-r-2 border-amber-700 p-4 shadow-2xl"
+              className="western-wood safe-pt-4 flex h-full w-64 max-w-[78%] flex-col border-r-2 border-amber-700 px-4 pb-4 shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-amber-800/70 pb-3">
                 <span className="font-western-display text-sm font-extrabold tracking-wider text-amber-300">
