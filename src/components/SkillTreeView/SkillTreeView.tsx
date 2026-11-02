@@ -23,6 +23,9 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
     selectedSkillId,
     longPressState,
     viewportRef,
+    wrapperRef,
+    innerRef,
+    zoom,
     canvasMetrics,
     executePurchase,
     startDpadPan,
@@ -180,218 +183,230 @@ export function SkillTreeView({ onStateChange, onProceed }: SkillTreeViewProps) 
         className="western-map-bg relative min-h-0 flex-1 touch-none overflow-auto rounded-xl border-2 border-amber-800/75 shadow-inner"
       >
         <div
+          ref={wrapperRef}
           className="relative mx-auto select-none"
           style={{
-            width: `${canvasMetrics.width}px`,
-            height: `${canvasMetrics.height}px`,
+            width: `${canvasMetrics.width * zoom}px`,
+            height: `${canvasMetrics.height * zoom}px`,
           }}
         >
-          {/* 接続線 SVG レイヤー */}
-          <svg
-            width={canvasMetrics.width}
-            height={canvasMetrics.height}
-            className="pointer-events-none absolute inset-0"
+          <div
+            ref={innerRef}
+            className="relative"
+            style={{
+              width: `${canvasMetrics.width}px`,
+              height: `${canvasMetrics.height}px`,
+              transform: `scale(${zoom})`,
+              transformOrigin: "0 0",
+            }}
           >
+            {/* 接続線 SVG レイヤー */}
+            <svg
+              width={canvasMetrics.width}
+              height={canvasMetrics.height}
+              className="pointer-events-none absolute inset-0"
+            >
+              {SKILL_IDS.map((skillId) => {
+                const def = SKILLS[skillId];
+                if (!def.requirement) return null;
+
+                const parentPos = canvasMetrics.coords[def.requirement.nodeId];
+                const childPos = canvasMetrics.coords[skillId];
+                if (!parentPos || !childPos) return null;
+
+                const isConditionMet = gameState.isSkillRequirementMet(skillId);
+                const childLevel = gameState.getSkillLevel(skillId);
+                const isChildMax = childLevel >= def.maxLevel;
+                const style = NODE_STYLE[def.size];
+
+                let stroke = "#3b1f0e";
+                let opacity = 0.72;
+                let strokeWidth = style.lineWidth;
+
+                if (isChildMax) {
+                  stroke = "#fde047";
+                  opacity = 0.96;
+                  strokeWidth = style.lineWidth + 1.2;
+                } else if (childLevel > 0) {
+                  stroke = "#f59e0b";
+                  opacity = 0.95;
+                  strokeWidth = style.lineWidth + 0.8;
+                } else if (isConditionMet) {
+                  stroke = "#b45309";
+                  opacity = 0.85;
+                  strokeWidth = style.lineWidth + 0.4;
+                }
+
+                // 子ノード手前の矢印マーカー座標計算
+                const dx = childPos.x - parentPos.x;
+                const dy = childPos.y - parentPos.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const ux = dx / len;
+                const uy = dy / len;
+                const tipOffset = style.radius + 5;
+                const tipX = childPos.x - ux * tipOffset;
+                const tipY = childPos.y - uy * tipOffset;
+                const arrowLen = 10;
+                const arrowHalf = 6;
+
+                const p1 = `${tipX},${tipY}`;
+                const p2 = `${tipX - ux * arrowLen - uy * arrowHalf},${tipY - uy * arrowLen + ux * arrowHalf}`;
+                const p3 = `${tipX - ux * arrowLen + uy * arrowHalf},${tipY - uy * arrowLen - ux * arrowHalf}`;
+
+                return (
+                  <g key={`edge-${skillId}`} opacity={opacity}>
+                    <line
+                      x1={parentPos.x}
+                      y1={parentPos.y}
+                      x2={childPos.x}
+                      y2={childPos.y}
+                      stroke={stroke}
+                      strokeWidth={strokeWidth}
+                      strokeLinecap="round"
+                    />
+                    <polygon points={`${p1} ${p2} ${p3}`} fill={stroke} />
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* ノード群 */}
             {SKILL_IDS.map((skillId) => {
               const def = SKILLS[skillId];
-              if (!def.requirement) return null;
-
-              const parentPos = canvasMetrics.coords[def.requirement.nodeId];
-              const childPos = canvasMetrics.coords[skillId];
-              if (!parentPos || !childPos) return null;
-
-              const isConditionMet = gameState.isSkillRequirementMet(skillId);
-              const childLevel = gameState.getSkillLevel(skillId);
-              const isChildMax = childLevel >= def.maxLevel;
+              const nodeText = VOCAB.skills[skillId] ?? {
+                name: def.name,
+                description: def.description,
+              };
               const style = NODE_STYLE[def.size];
+              const pos = canvasMetrics.coords[skillId];
+              const curLevel = gameState.getSkillLevel(skillId);
+              const isMax = curLevel >= def.maxLevel;
+              const canUnlock = gameState.canUnlockSkill(skillId);
+              const isReqMet = gameState.isSkillRequirementMet(skillId);
+              const cost = gameState.getSkillCost(skillId);
+              const isSelected = selectedSkillId === skillId;
 
-              let stroke = "#3b1f0e";
-              let opacity = 0.72;
-              let strokeWidth = style.lineWidth;
+              // 長押し進捗
+              const lpProgress =
+                longPressState && longPressState.skillId === skillId ? longPressState.progress : 0;
+              const ringRadius = style.radius + 4;
+              const ringCircumference = 2 * Math.PI * ringRadius;
 
-              if (isChildMax) {
-                stroke = "#fde047";
-                opacity = 0.96;
-                strokeWidth = style.lineWidth + 1.2;
-              } else if (childLevel > 0) {
-                stroke = "#f59e0b";
-                opacity = 0.95;
-                strokeWidth = style.lineWidth + 0.8;
-              } else if (isConditionMet) {
-                stroke = "#b45309";
-                opacity = 0.85;
-                strokeWidth = style.lineWidth + 0.4;
+              // ノード外枠・背景スタイル
+              let borderClass: string;
+              let glowShadow = "";
+
+              if (!isReqMet) {
+                borderClass = "border-[#3b1c0c] bg-[#140803] opacity-60";
+              } else if (isMax) {
+                borderClass = "border-amber-300 bg-[#3b1d07] text-amber-200";
+                glowShadow = "0 0 14px rgba(251, 191, 36, 0.45)";
+              } else if (curLevel > 0) {
+                borderClass = "border-amber-500 bg-[#2b1407] text-amber-100";
+                glowShadow = "0 0 8px rgba(245, 158, 11, 0.35)";
+              } else if (canUnlock) {
+                borderClass = "border-amber-600 bg-[#241006] text-amber-200 animate-pulse";
+              } else {
+                borderClass = "border-[#6b3515] bg-[#1a0a03] text-amber-300/80";
               }
 
-              // 子ノード手前の矢印マーカー座標計算
-              const dx = childPos.x - parentPos.x;
-              const dy = childPos.y - parentPos.y;
-              const len = Math.hypot(dx, dy) || 1;
-              const ux = dx / len;
-              const uy = dy / len;
-              const tipOffset = style.radius + 5;
-              const tipX = childPos.x - ux * tipOffset;
-              const tipY = childPos.y - uy * tipOffset;
-              const arrowLen = 10;
-              const arrowHalf = 6;
-
-              const p1 = `${tipX},${tipY}`;
-              const p2 = `${tipX - ux * arrowLen - uy * arrowHalf},${tipY - uy * arrowLen + ux * arrowHalf}`;
-              const p3 = `${tipX - ux * arrowLen + uy * arrowHalf},${tipY - uy * arrowLen - ux * arrowHalf}`;
-
               return (
-                <g key={`edge-${skillId}`} opacity={opacity}>
-                  <line
-                    x1={parentPos.x}
-                    y1={parentPos.y}
-                    x2={childPos.x}
-                    y2={childPos.y}
-                    stroke={stroke}
-                    strokeWidth={strokeWidth}
-                    strokeLinecap="round"
-                  />
-                  <polygon points={`${p1} ${p2} ${p3}`} fill={stroke} />
-                </g>
-              );
-            })}
-          </svg>
-
-          {/* ノード群 */}
-          {SKILL_IDS.map((skillId) => {
-            const def = SKILLS[skillId];
-            const nodeText = VOCAB.skills[skillId] ?? {
-              name: def.name,
-              description: def.description,
-            };
-            const style = NODE_STYLE[def.size];
-            const pos = canvasMetrics.coords[skillId];
-            const curLevel = gameState.getSkillLevel(skillId);
-            const isMax = curLevel >= def.maxLevel;
-            const canUnlock = gameState.canUnlockSkill(skillId);
-            const isReqMet = gameState.isSkillRequirementMet(skillId);
-            const cost = gameState.getSkillCost(skillId);
-            const isSelected = selectedSkillId === skillId;
-
-            // 長押し進捗
-            const lpProgress =
-              longPressState && longPressState.skillId === skillId ? longPressState.progress : 0;
-            const ringRadius = style.radius + 4;
-            const ringCircumference = 2 * Math.PI * ringRadius;
-
-            // ノード外枠・背景スタイル
-            let borderClass: string;
-            let glowShadow = "";
-
-            if (!isReqMet) {
-              borderClass = "border-[#3b1c0c] bg-[#140803] opacity-60";
-            } else if (isMax) {
-              borderClass = "border-amber-300 bg-[#3b1d07] text-amber-200";
-              glowShadow = "0 0 14px rgba(251, 191, 36, 0.45)";
-            } else if (curLevel > 0) {
-              borderClass = "border-amber-500 bg-[#2b1407] text-amber-100";
-              glowShadow = "0 0 8px rgba(245, 158, 11, 0.35)";
-            } else if (canUnlock) {
-              borderClass = "border-amber-600 bg-[#241006] text-amber-200 animate-pulse";
-            } else {
-              borderClass = "border-[#6b3515] bg-[#1a0a03] text-amber-300/80";
-            }
-
-            return (
-              <div
-                key={skillId}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  left: `${pos.x}px`,
-                  top: `${pos.y}px`,
-                }}
-              >
-                {/* ノード上部: スキル名バッジ */}
-                <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 text-center whitespace-nowrap">
-                  <span
-                    className={`rounded px-1.5 py-0.5 font-extrabold tracking-tight shadow ${style.nameTextClass} ${
-                      !isReqMet
-                        ? "bg-[#180a04]/90 text-amber-800"
-                        : isSelected
-                          ? "border border-amber-400 bg-amber-950 text-amber-200"
-                          : "border border-amber-900/60 bg-[#210e05]/95 text-amber-200"
-                    }`}
-                  >
-                    {!isReqMet ? "???" : nodeText.name}
-                  </span>
-                </div>
-
-                {/* メイン円形ノードボタン */}
-                <button
-                  type="button"
-                  onPointerDown={(e) => handleNodePointerDown(skillId, e)}
-                  onClick={() => handleNodeClick(skillId)}
-                  className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-full border-2 transition-transform active:scale-95 ${borderClass} ${
-                    isSelected ? "ring-3 ring-amber-400 ring-offset-2 ring-offset-black" : ""
-                  }`}
+                <div
+                  key={skillId}
+                  className="absolute -translate-x-1/2 -translate-y-1/2"
                   style={{
-                    width: `${style.radius * 2}px`,
-                    height: `${style.radius * 2}px`,
-                    boxShadow: glowShadow,
+                    left: `${pos.x}px`,
+                    top: `${pos.y}px`,
                   }}
-                  aria-label={nodeText.name}
                 >
-                  {/* 長押し購入進捗リング (SVG) */}
-                  {lpProgress > 0 && (
-                    <svg
-                      width={(ringRadius + 4) * 2}
-                      height={(ringRadius + 4) * 2}
-                      className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90"
-                    >
-                      <circle
-                        cx={ringRadius + 4}
-                        cy={ringRadius + 4}
-                        r={ringRadius}
-                        fill="none"
-                        stroke="#fbbf24"
-                        strokeWidth={3.5}
-                        strokeDasharray={ringCircumference}
-                        strokeDashoffset={ringCircumference * (1 - lpProgress)}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  )}
-
-                  <div className="flex items-center justify-center">
-                    {!isReqMet ? (
-                      <Lock size={Math.round(style.iconSize * 0.85)} className="text-[#6b462b]" />
-                    ) : (
-                      <SkillIcon name={def.icon} size={style.iconSize} strokeWidth={2.2} />
-                    )}
-                  </div>
-
-                  {isReqMet && (
+                  {/* ノード上部: スキル名バッジ */}
+                  <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 text-center whitespace-nowrap">
                     <span
-                      className={`mt-0.5 leading-none font-extrabold tracking-tight ${style.levelTextClass} ${
-                        isMax
-                          ? "text-amber-300"
-                          : curLevel > 0
-                            ? "text-amber-200"
-                            : "text-amber-400/80"
+                      className={`rounded px-1.5 py-0.5 font-extrabold tracking-tight shadow ${style.nameTextClass} ${
+                        !isReqMet
+                          ? "bg-[#180a04]/90 text-amber-800"
+                          : isSelected
+                            ? "border border-amber-400 bg-amber-950 text-amber-200"
+                            : "border border-amber-900/60 bg-[#210e05]/95 text-amber-200"
                       }`}
                     >
-                      {isMax ? "MAX" : `${curLevel}/${def.maxLevel}`}
+                      {!isReqMet ? "???" : nodeText.name}
                     </span>
-                  )}
-                </button>
+                  </div>
 
-                {/* コスト表示 (ノード下部: $表記) */}
-                <div className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 text-[11px] font-bold whitespace-nowrap">
-                  {!isReqMet ? null : isMax ? (
-                    <span className="text-amber-300">{VOCAB.skillTreeUi.maxBadge}</span>
-                  ) : cost !== null ? (
-                    <span className={canUnlock ? "text-amber-300" : "text-red-400"}>
-                      {formatMoney(cost)}
-                    </span>
-                  ) : null}
+                  {/* メイン円形ノードボタン */}
+                  <button
+                    type="button"
+                    onPointerDown={(e) => handleNodePointerDown(skillId, e)}
+                    onClick={() => handleNodeClick(skillId)}
+                    className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-full border-2 transition-transform active:scale-95 ${borderClass} ${
+                      isSelected ? "ring-3 ring-amber-400 ring-offset-2 ring-offset-black" : ""
+                    }`}
+                    style={{
+                      width: `${style.radius * 2}px`,
+                      height: `${style.radius * 2}px`,
+                      boxShadow: glowShadow,
+                    }}
+                    aria-label={nodeText.name}
+                  >
+                    {/* 長押し購入進捗リング (SVG) */}
+                    {lpProgress > 0 && (
+                      <svg
+                        width={(ringRadius + 4) * 2}
+                        height={(ringRadius + 4) * 2}
+                        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90"
+                      >
+                        <circle
+                          cx={ringRadius + 4}
+                          cy={ringRadius + 4}
+                          r={ringRadius}
+                          fill="none"
+                          stroke="#fbbf24"
+                          strokeWidth={3.5}
+                          strokeDasharray={ringCircumference}
+                          strokeDashoffset={ringCircumference * (1 - lpProgress)}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    )}
+
+                    <div className="flex items-center justify-center">
+                      {!isReqMet ? (
+                        <Lock size={Math.round(style.iconSize * 0.85)} className="text-[#6b462b]" />
+                      ) : (
+                        <SkillIcon name={def.icon} size={style.iconSize} strokeWidth={2.2} />
+                      )}
+                    </div>
+
+                    {isReqMet && (
+                      <span
+                        className={`mt-0.5 leading-none font-extrabold tracking-tight ${style.levelTextClass} ${
+                          isMax
+                            ? "text-amber-300"
+                            : curLevel > 0
+                              ? "text-amber-200"
+                              : "text-amber-400/80"
+                        }`}
+                      >
+                        {isMax ? "MAX" : `${curLevel}/${def.maxLevel}`}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* コスト表示 (ノード下部: $表記) */}
+                  <div className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 text-[11px] font-bold whitespace-nowrap">
+                    {!isReqMet ? null : isMax ? (
+                      <span className="text-amber-300">{VOCAB.skillTreeUi.maxBadge}</span>
+                    ) : cost !== null ? (
+                      <span className={canUnlock ? "text-amber-300" : "text-red-400"}>
+                        {formatMoney(cost)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 

@@ -14,6 +14,7 @@ import {
   findNextNodeInDirection,
   formatSkillStatValue,
   LONG_PRESS_DURATION,
+  SKILL_TREE_ZOOM,
   STICK_MOVE_COOLDOWN,
   STICK_REPEAT_DELAY,
   STICK_REPEAT_INTERVAL,
@@ -45,6 +46,21 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
   } | null>(null);
 
   const viewportRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  // ズーム倍率
+  const [zoom, setZoom] = useState<number>(SKILL_TREE_ZOOM.default);
+  const zoomRef = useRef<number>(SKILL_TREE_ZOOM.default);
+
+  // マルチタッチ（ピンチ操作） & ポインター追跡用
+  const activePointersRef = useRef<Map<number, { clientX: number; clientY: number }>>(new Map());
+  const pinchRef = useRef<{
+    prevDist: number;
+    prevMidX: number;
+    prevMidY: number;
+  } | null>(null);
+  const hasPinchedRef = useRef(false);
 
   // ドラッグスクロール & 長押し管理用 ref
   const dragRef = useRef<{
@@ -84,14 +100,15 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
+    const currentZoom = zoomRef.current;
     const pos = canvasMetrics.coords[selectedSkillIdRef.current];
     if (pos) {
       const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth);
       const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
-      el.scrollLeft = Math.min(maxLeft, Math.max(0, pos.x - el.clientWidth / 2));
-      el.scrollTop = Math.min(maxTop, Math.max(0, pos.y - el.clientHeight / 2));
+      el.scrollLeft = Math.min(maxLeft, Math.max(0, pos.x * currentZoom - el.clientWidth / 2));
+      el.scrollTop = Math.min(maxTop, Math.max(0, pos.y * currentZoom - el.clientHeight / 2));
     } else {
-      const targetLeft = Math.max(0, canvasMetrics.centerX - el.clientWidth / 2);
+      const targetLeft = Math.max(0, canvasMetrics.centerX * currentZoom - el.clientWidth / 2);
       el.scrollLeft = targetLeft;
       el.scrollTop = 0;
     }
@@ -181,10 +198,11 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
       const pos = canvasMetrics.coords[skillId];
       if (!el || !pos) return;
 
+      const currentZoom = zoomRef.current;
       const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth);
       const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
-      const targetLeft = Math.min(maxLeft, Math.max(0, pos.x - el.clientWidth / 2));
-      const targetTop = Math.min(maxTop, Math.max(0, pos.y - el.clientHeight / 2));
+      const targetLeft = Math.min(maxLeft, Math.max(0, pos.x * currentZoom - el.clientWidth / 2));
+      const targetTop = Math.min(maxTop, Math.max(0, pos.y * currentZoom - el.clientHeight / 2));
 
       el.scrollTo({
         left: targetLeft,
@@ -290,53 +308,194 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
     };
   }, [stepSelection]);
 
-  // --- ビューポートのドラッグパン操作 (PCマウスドラッグ & スマホタッチスクロール両対応) ---
+  // 拡大縮小処理（指定の viewport クライアント座標を中心としてズーム）
+  const applyZoomAt = useCallback(
+    (zoomFactor: number, clientX: number, clientY: number, panDx = 0, panDy = 0) => {
+      const el = viewportRef.current;
+      const wrapperEl = wrapperRef.current;
+      const innerEl = innerRef.current;
+      if (!el) return;
+
+      const currentZoom = zoomRef.current;
+      const targetZoom = Math.min(
+        SKILL_TREE_ZOOM.max,
+        Math.max(SKILL_TREE_ZOOM.min, currentZoom * zoomFactor),
+      );
+
+      // ズーム倍率の変化がなく、パン移動もない場合は処理しない
+      if (Math.abs(targetZoom - currentZoom) < 0.001 && panDx === 0 && panDy === 0) {
+        return;
+      }
+
+      const rect = el.getBoundingClientRect();
+      const viewportX = clientX - rect.left;
+      const viewportY = clientY - rect.top;
+
+      // ズーム中心となるコンテンツ座標（倍率1.0基準）
+      const contentX = (el.scrollLeft + viewportX) / currentZoom;
+      const contentY = (el.scrollTop + viewportY) / currentZoom;
+
+      zoomRef.current = targetZoom;
+      setZoom(targetZoom);
+
+      // DOMサイズとtransformを即時更新してスクロール計算のクランプを防止
+      if (wrapperEl) {
+        wrapperEl.style.width = `${canvasMetrics.width * targetZoom}px`;
+        wrapperEl.style.height = `${canvasMetrics.height * targetZoom}px`;
+      }
+      if (innerEl) {
+        innerEl.style.transform = `scale(${targetZoom})`;
+      }
+
+      // 新しいスクロール位置
+      const nextScrollLeft = contentX * targetZoom - viewportX - panDx;
+      const nextScrollTop = contentY * targetZoom - viewportY - panDy;
+
+      el.scrollLeft = nextScrollLeft;
+      el.scrollTop = nextScrollTop;
+    },
+    [canvasMetrics.height, canvasMetrics.width],
+  );
+
+  // マウスホイールによる拡大縮小
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? SKILL_TREE_ZOOM.wheelFactorIn : SKILL_TREE_ZOOM.wheelFactorOut;
+      applyZoomAt(factor, e.clientX, e.clientY);
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", handleWheel);
+    };
+  }, [applyZoomAt]);
+
+  // --- ビューポートのドラッグパン操作 & マルチタッチピンチズーム ---
   const handleViewportPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = viewportRef.current;
     if (!el) return;
-    dragRef.current = {
-      isDown: true,
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      scrollLeft: el.scrollLeft,
-      scrollTop: el.scrollTop,
-      hasDragged: false,
-    };
+
+    activePointersRef.current.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+    if (activePointersRef.current.size === 1 && e.button === 0) {
+      dragRef.current = {
+        isDown: true,
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        scrollLeft: el.scrollLeft,
+        scrollTop: el.scrollTop,
+        hasDragged: false,
+      };
+    } else if (activePointersRef.current.size === 2) {
+      // 2本指検知 -> ピンチ操作開始
+      cancelLongPress();
+      if (dragRef.current) {
+        dragRef.current.isDown = false;
+      }
+      hasPinchedRef.current = true;
+
+      const [p1, p2] = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+      const midX = (p1.clientX + p2.clientX) / 2;
+      const midY = (p1.clientY + p2.clientY) / 2;
+
+      pinchRef.current = {
+        prevDist: dist,
+        prevMidX: midX,
+        prevMidY: midY,
+      };
+    }
   };
 
   const handleViewportPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    // 長押し中に指・マウスが動いたらキャンセル
-    if (longPressTimerRef.current) {
-      const dist = Math.hypot(
-        e.clientX - longPressTimerRef.current.startX,
-        e.clientY - longPressTimerRef.current.startY,
-      );
-      if (dist >= DRAG_THRESHOLD) {
-        cancelLongPress();
-      }
-    }
+    if (!activePointersRef.current.has(e.pointerId)) return;
+    activePointersRef.current.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
 
-    const drag = dragRef.current;
     const el = viewportRef.current;
-    if (!drag || !drag.isDown || !el || drag.pointerId !== e.pointerId) return;
+    if (!el) return;
 
-    const dx = e.clientX - drag.startX;
-    const dy = e.clientY - drag.startY;
-    if (!drag.hasDragged && Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
-      drag.hasDragged = true;
+    if (activePointersRef.current.size === 2 && pinchRef.current) {
+      // ピンチ操作 & 2本指パン
+      cancelLongPress();
+      hasPinchedRef.current = true;
+
+      const [p1, p2] = Array.from(activePointersRef.current.values());
+      const currentDist = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+      const currentMidX = (p1.clientX + p2.clientX) / 2;
+      const currentMidY = (p1.clientY + p2.clientY) / 2;
+
+      const factor = currentDist / Math.max(1, pinchRef.current.prevDist);
+      const panDx = currentMidX - pinchRef.current.prevMidX;
+      const panDy = currentMidY - pinchRef.current.prevMidY;
+
+      pinchRef.current.prevDist = currentDist;
+      pinchRef.current.prevMidX = currentMidX;
+      pinchRef.current.prevMidY = currentMidY;
+
+      applyZoomAt(factor, currentMidX, currentMidY, panDx, panDy);
+      return;
     }
 
-    if (drag.hasDragged) {
-      el.scrollLeft = drag.scrollLeft - dx;
-      el.scrollTop = drag.scrollTop - dy;
+    if (activePointersRef.current.size === 1) {
+      // 長押し中に指・マウスが動いたらキャンセル
+      if (longPressTimerRef.current) {
+        const dist = Math.hypot(
+          e.clientX - longPressTimerRef.current.startX,
+          e.clientY - longPressTimerRef.current.startY,
+        );
+        if (dist >= DRAG_THRESHOLD) {
+          cancelLongPress();
+        }
+      }
+
+      const drag = dragRef.current;
+      if (!drag || !drag.isDown || drag.pointerId !== e.pointerId) return;
+
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (!drag.hasDragged && Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+        drag.hasDragged = true;
+      }
+
+      if (drag.hasDragged) {
+        el.scrollLeft = drag.scrollLeft - dx;
+        el.scrollTop = drag.scrollTop - dy;
+      }
     }
   };
 
-  const handleViewportPointerUpOrCancel = () => {
-    cancelLongPress();
-    if (dragRef.current) {
-      dragRef.current.isDown = false;
+  const handleViewportPointerUpOrCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    activePointersRef.current.delete(e.pointerId);
+
+    if (activePointersRef.current.size === 0) {
+      cancelLongPress();
+      if (dragRef.current) {
+        dragRef.current.isDown = false;
+      }
+      pinchRef.current = null;
+      window.setTimeout(() => {
+        hasPinchedRef.current = false;
+      }, 50);
+    } else if (activePointersRef.current.size === 1) {
+      pinchRef.current = null;
+      const el = viewportRef.current;
+      if (el) {
+        const [remainingId, p] = Array.from(activePointersRef.current.entries())[0];
+        dragRef.current = {
+          isDown: true,
+          pointerId: remainingId,
+          startX: p.clientX,
+          startY: p.clientY,
+          scrollLeft: el.scrollLeft,
+          scrollTop: el.scrollTop,
+          hasDragged: true,
+        };
+      }
     }
   };
 
@@ -347,7 +506,7 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
   };
 
   const handleNodeClick = (skillId: SkillNodeId) => {
-    if (dragRef.current?.hasDragged) return;
+    if (dragRef.current?.hasDragged || hasPinchedRef.current) return;
     selectSkill(skillId);
   };
 
@@ -382,6 +541,9 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
     selectedSkillId,
     longPressState,
     viewportRef,
+    wrapperRef,
+    innerRef,
+    zoom,
     canvasMetrics,
     executePurchase,
     startDpadPan,

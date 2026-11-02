@@ -25,6 +25,17 @@ export const STICK_REPEAT_INTERVAL = 280; // スティックを倒し続けた�
 export const DPAD_REPEAT_DELAY = STICK_REPEAT_DELAY;
 export const DPAD_REPEAT_INTERVAL = STICK_REPEAT_INTERVAL;
 
+/** スキルツリーの拡大縮小パラメータ */
+export const SKILL_TREE_ZOOM = {
+  min: 0.55,
+  max: 1.6,
+  default: 1.0,
+  stepIn: 1.2,
+  stepOut: 0.833,
+  wheelFactorIn: 1.12,
+  wheelFactorOut: 0.89,
+};
+
 export const NODE_STYLE: Record<
   SkillNodeSize,
   {
