@@ -8,7 +8,7 @@ import {
   TARGETS,
   WEAPONS,
 } from "../config/gameData";
-import { createEmptySkillLevels, SKILLS } from "../config/skillTree";
+import { createEmptySkillLevels, SKILL_TREE, SKILLS } from "../config/skillTree";
 import type {
   PassiveId,
   PermanentUpgradeId,
@@ -56,6 +56,7 @@ export class GameState {
   public equippedWeapon: WeaponId = PROGRESSION_CONFIG.initialWeaponId;
   public ownedWeapons: WeaponId[] = [PROGRESSION_CONFIG.initialWeaponId];
   public skillLevels: Record<SkillNodeId, number> = createEmptySkillLevels();
+  public lastFocusedSkillId: SkillNodeId = SKILL_TREE.rootId;
   public passives: Record<PassiveId, number> = createInitialPassives();
   public invoiceCount: number = 0; // これまでクリアした請求回数
   public invoiceIntroduced: boolean = false; // 上納金システムが初登場告知されたか
@@ -125,6 +126,7 @@ export class GameState {
     this.ownedWeapons = [initialWeapon];
 
     this.skillLevels = createEmptySkillLevels();
+    this.lastFocusedSkillId = SKILL_TREE.rootId;
     this.passives = createInitialPassives();
 
     this.invoiceCount = 0;
@@ -294,6 +296,10 @@ export class GameState {
   }
 
   // --- スキル購入 ---
+  public setLastFocusedSkillId(id: SkillNodeId): void {
+    this.lastFocusedSkillId = id;
+  }
+
   public getSkillLevel(id: SkillNodeId): number {
     return this.skillLevels[id] ?? 0;
   }

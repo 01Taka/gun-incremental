@@ -28,8 +28,13 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
   const audio = AudioManager.getInstance();
   useI18n(); // 言語切り替え検知
 
-  const [selectedSkillId, setSelectedSkillId] = useState<SkillNodeId>(SKILL_TREE.rootId);
-  const selectedSkillIdRef = useRef<SkillNodeId>(SKILL_TREE.rootId);
+  const initialSkillId: SkillNodeId =
+    gameState.lastFocusedSkillId && SKILLS[gameState.lastFocusedSkillId]
+      ? gameState.lastFocusedSkillId
+      : SKILL_TREE.rootId;
+
+  const [selectedSkillId, setSelectedSkillId] = useState<SkillNodeId>(initialSkillId);
+  const selectedSkillIdRef = useRef<SkillNodeId>(initialSkillId);
   // GameState はミュータブルなシングルトンのため、購入時に再描画をトリガーするカウンタ
   const [, setRevision] = useState(0);
 
@@ -75,14 +80,22 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
   // キャンバスのピクセルサイズと各ノードの中心座標を算出
   const canvasMetrics = useMemo(() => calculateCanvasMetrics(treeLayout), [treeLayout]);
 
-  // 初回マウント時にルートノード（背骨中央）へスクロール位置を合わせる
+  // 初回マウント時に選択ノードへスクロール位置を合わせる
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
-    const targetLeft = Math.max(0, canvasMetrics.centerX - el.clientWidth / 2);
-    el.scrollLeft = targetLeft;
-    el.scrollTop = 0;
-  }, [canvasMetrics.centerX]);
+    const pos = canvasMetrics.coords[selectedSkillIdRef.current];
+    if (pos) {
+      const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
+      el.scrollLeft = Math.min(maxLeft, Math.max(0, pos.x - el.clientWidth / 2));
+      el.scrollTop = Math.min(maxTop, Math.max(0, pos.y - el.clientHeight / 2));
+    } else {
+      const targetLeft = Math.max(0, canvasMetrics.centerX - el.clientWidth / 2);
+      el.scrollLeft = targetLeft;
+      el.scrollTop = 0;
+    }
+  }, [canvasMetrics]);
 
   const cancelLongPress = useCallback(() => {
     if (longPressTimerRef.current) {
@@ -182,20 +195,30 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
     [canvasMetrics.coords],
   );
 
+  const selectSkill = useCallback(
+    (skillId: SkillNodeId) => {
+      if (selectedSkillIdRef.current !== skillId) {
+        selectedSkillIdRef.current = skillId;
+        setSelectedSkillId(skillId);
+        gameState.setLastFocusedSkillId(skillId);
+        audio.playSynthSE("click");
+      }
+    },
+    [audio, gameState],
+  );
+
   const stepSelection = useCallback(
     (dx: number, dy: number) => {
       const currentId = selectedSkillIdRef.current;
       const nextId = findNextNodeInDirection(currentId, dx, dy, treeLayout.positions);
       if (nextId && nextId !== currentId) {
-        selectedSkillIdRef.current = nextId;
-        setSelectedSkillId(nextId);
-        audio.playSynthSE("click");
+        selectSkill(nextId);
         scrollNodeIntoView(nextId);
       } else {
         scrollNodeIntoView(currentId);
       }
     },
-    [audio, scrollNodeIntoView, treeLayout.positions],
+    [scrollNodeIntoView, selectSkill, treeLayout.positions],
   );
 
   // --- スティック・方向入力による選択ノード移動 & インターバル付き連続移動 ---
@@ -319,22 +342,13 @@ export function useSkillTree({ onStateChange }: UseSkillTreeOptions = {}) {
 
   // --- ノード操作 ---
   const handleNodePointerDown = (skillId: SkillNodeId, e: React.PointerEvent) => {
-    if (selectedSkillIdRef.current !== skillId) {
-      selectedSkillIdRef.current = skillId;
-      setSelectedSkillId(skillId);
-      audio.playSynthSE("click");
-    }
+    selectSkill(skillId);
     startLongPress(skillId, e.clientX, e.clientY);
   };
 
   const handleNodeClick = (skillId: SkillNodeId) => {
     if (dragRef.current?.hasDragged) return;
-
-    if (selectedSkillIdRef.current !== skillId) {
-      selectedSkillIdRef.current = skillId;
-      setSelectedSkillId(skillId);
-      audio.playSynthSE("click");
-    }
+    selectSkill(skillId);
   };
 
   // --- 選択中ノードの詳細データ ---
