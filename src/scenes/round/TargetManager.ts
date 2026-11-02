@@ -9,6 +9,13 @@ export interface TargetCallbacks {
   onDamage: (x: number, y: number, damage: number, isCrit: boolean, color?: string) => void;
   onSpEarned: (x: number, y: number, sp: number) => void;
   onTimeBonus: (x: number, y: number, bonusSeconds: number) => void;
+  onDestroyTarget?: (
+    target: ActiveTarget,
+    hitX: number,
+    hitY: number,
+    killingDamage: number,
+    spEarned: number,
+  ) => void;
 }
 
 export class TargetManager {
@@ -207,9 +214,15 @@ export class TargetManager {
     }
   }
 
-  public hitTarget(target: ActiveTarget, hitX: number, hitY: number): HitResult {
-    const isCrit = this.gameState.rollCrit();
-    const damage = this.gameState.calculateDamage(isCrit);
+  public hitTarget(
+    target: ActiveTarget,
+    hitX: number,
+    hitY: number,
+    overrideDamage?: number,
+  ): HitResult {
+    const isCrit = overrideDamage !== undefined ? false : this.gameState.rollCrit();
+    const damage =
+      overrideDamage !== undefined ? overrideDamage : this.gameState.calculateDamage(isCrit);
 
     if (isCrit) {
       // 急所ヒット時は西部劇の跳弾音（ピチューン！）を重ねる
@@ -241,7 +254,7 @@ export class TargetManager {
 
     if (target.currentHp <= 0) {
       destroyed = true;
-      const res = this.destroyTarget(target, damage);
+      const res = this.destroyTarget(target, damage, hitX, hitY);
       spEarned = res.spEarned;
       bonusTime = res.bonusTime;
     }
@@ -252,12 +265,15 @@ export class TargetManager {
   private destroyTarget(
     target: ActiveTarget,
     killingDamage: number,
+    hitX: number = target.x,
+    hitY: number = target.y,
   ): { spEarned: number; bonusTime: number } {
     this.activeTargets.delete(target.id);
     this.audio.playSynthSE("explosion", 0.8);
 
     const spEarned = this.gameState.onTargetDestroyed(target.def.id);
     this.callbacks.onSpEarned(target.x, target.y, spEarned);
+    this.callbacks.onDestroyTarget?.(target, hitX, hitY, killingDamage, spEarned);
 
     let bonusTime = 0;
     if (target.def.id === "time") {

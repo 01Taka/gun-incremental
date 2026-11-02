@@ -63,6 +63,12 @@ export class GameState {
     TARGET_UNLOCK_SEQUENCE[0]?.targetId ?? ("standard" as TargetId),
   ];
 
+  // 動的インゲームスキル（タレット・破片など）の習得レベル（0で無効）
+  public inGameSkills: Record<string, number> = {
+    shrapnel_burst: 1, // 検証用に初期値1（0でOFF）
+    auto_turret: 1, // 検証用に初期値1（0でOFF）
+  };
+
   // 直近ラウンド結果
   public lastRoundSpEarned: number = 0;
   public lastRoundTargetsDestroyed: number = 0;
@@ -564,5 +570,18 @@ export class GameState {
     }
 
     StorageService.save(this.persistentData);
+  }
+
+  // --- インゲームスキル（動的スキル）管理 ---
+  public getInGameSkillLevel(skillId: string): number {
+    return this.inGameSkills[skillId] ?? 0;
+  }
+
+  public setInGameSkillLevel(skillId: string, level: number): void {
+    this.inGameSkills[skillId] = Math.max(0, level);
+  }
+
+  public getAcquiredInGameSkills(): Record<string, number> {
+    return { ...this.inGameSkills };
   }
 }

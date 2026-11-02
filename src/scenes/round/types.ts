@@ -41,4 +41,5 @@ export interface Bullet {
   angle: number;
   speed: number;
   radius: number;
+  customDamage?: number;
 }

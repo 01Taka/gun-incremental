@@ -9,6 +9,9 @@ import { addCrispText } from "../utils/text";
 import { BulletManager } from "./round/BulletManager";
 import { GunTurret } from "./round/GunTurret";
 import { RoundHUD } from "./round/RoundHUD";
+import { SKILL_HOOK_REGISTRY } from "./round/skills/registry";
+import { RoundHookManager } from "./round/skills/RoundHookManager";
+import type { RoundContext } from "./round/skills/types";
 import { TargetManager } from "./round/TargetManager";
 import type { ArenaBounds } from "./round/types";
 import { VerticalSlider } from "./round/VerticalSlider";
@@ -40,6 +43,7 @@ export class RoundScene extends Phaser.Scene {
   private bulletManager!: BulletManager;
   private targetManager!: TargetManager;
   private hud!: RoundHUD;
+  private hookManager!: RoundHookManager;
 
   // ラウンド進行状態
   private timeRemaining: number = ROUND_CONFIG.baseDuration;
@@ -138,6 +142,15 @@ export class RoundScene extends Phaser.Scene {
         this.timeRemaining += bonusSeconds;
         this.hud.showTimeBonusPopup(x, y, bonusSeconds);
       },
+      onDestroyTarget: (target, hitX, hitY, killingDamage, spEarned) => {
+        this.hookManager.triggerTargetDestroyed({
+          target,
+          deathX: hitX,
+          deathY: hitY,
+          killingDamage,
+          spEarned,
+        });
+      },
     });
     this.targetManager.spawnInitialTargets();
 
@@ -146,10 +159,13 @@ export class RoundScene extends Phaser.Scene {
       onHitTarget: () => {},
     });
 
-    // 8. 入力イベント設定
+    // 8. インゲームスキル（動的スキル）フックのセットアップ
+    this.setupSkillHooks();
+
+    // 9. 入力イベント設定
     this.setupInputHandlers();
 
-    // 9. 初期照準の描画 & 映画タイトルカード風のステージ開幕演出
+    // 10. 初期照準の描画 & 映画タイトルカード風のステージ開幕演出
     this.gunTurret.setAimRatio(this.verticalSlider.ratio);
     this.gunTurret.drawLaserSight();
     this.hud.setReadyStatus();
@@ -354,6 +370,7 @@ export class RoundScene extends Phaser.Scene {
 
     this.bulletManager.update(deltaSeconds);
     this.targetManager.update(deltaSeconds);
+    this.hookManager.triggerUpdate(deltaSeconds);
 
     if (this.timeRemaining <= 0) {
       this.onRoundTimeUp();
@@ -366,6 +383,7 @@ export class RoundScene extends Phaser.Scene {
     this.audio.playSE("start", { volume: 0.9 });
     this.audio.playBGM("western_duel");
     this.hud.showStartBanner();
+    this.hookManager.triggerRoundStart();
   }
 
   private onWeaponEquipped(): void {
@@ -386,6 +404,7 @@ export class RoundScene extends Phaser.Scene {
     // シリンダーを回すカチカチ音
     this.audio.playSynthSE("reload", 0.75);
     this.hud.updateAmmo(0, this.gameState.getMagazineSize(), true, 0);
+    this.hookManager.triggerReloadStart();
   }
 
   private finishReload(): void {
@@ -395,6 +414,7 @@ export class RoundScene extends Phaser.Scene {
     this.reloadStage = 0;
     this.audio.playSynthSE("reload_complete", 0.78);
     this.hud.updateAmmo(this.currentAmmo, this.currentAmmo, false, 0);
+    this.hookManager.triggerReloadComplete();
   }
 
   private attemptAutoFire(): void {
@@ -431,6 +451,11 @@ export class RoundScene extends Phaser.Scene {
     const bulletConfig = this.gameState.getBulletConfig();
     this.bulletManager.spawnBullet(muzzle.x, muzzle.y, this.gunTurret.angle, bulletConfig);
     this.gunTurret.playRecoilAnimation();
+    this.hookManager.triggerPlayerShoot({
+      muzzleX: muzzle.x,
+      muzzleY: muzzle.y,
+      angle: this.gunTurret.angle,
+    });
 
     if (this.currentAmmo <= 0) {
       this.startReload();
@@ -443,6 +468,7 @@ export class RoundScene extends Phaser.Scene {
     this.targetManager.setRoundActive(false);
     this.hud.updateTimer(0);
     this.bulletManager.clear();
+    this.hookManager.triggerRoundEnd();
 
     this.gameState.endRound();
     this.audio.playSynthSE("bell", 0.65);
@@ -456,5 +482,51 @@ export class RoundScene extends Phaser.Scene {
         this.scene.start("ResultScene");
       }
     });
+  }
+
+  /**
+   * インゲームスキル（動的スキル）のフックマネージャーを初期化し、
+   * GameState で習得中の有効スキルを登録する。
+   */
+  private setupSkillHooks(): void {
+    const ctx: RoundContext = {
+      scene: this,
+      spawnBullet: (x, y, angle, config, customDamage) => {
+        const baseConfig = this.gameState.getBulletConfig();
+        const finalConfig = {
+          speed: config?.speed ?? baseConfig.speed,
+          radius: config?.radius ?? baseConfig.radius,
+        };
+        this.bulletManager.spawnBullet(x, y, angle, finalConfig, customDamage);
+      },
+      getTargets: () => this.targetManager.getTargets(),
+      getClosestTarget: (x, y) => this.targetManager.getClosestTarget(x, y),
+      dealDamageToTarget: (target, damage) => {
+        return this.targetManager.hitTarget(target, target.x, target.y, damage);
+      },
+      playSE: (soundKey, volume) => {
+        this.audio.playSE(soundKey, { volume: volume ?? 1.0 });
+      },
+      playSynthSE: (soundKey, volume) => {
+        this.audio.playSynthSE(soundKey, volume ?? 1.0);
+      },
+      emitSparks: (x, y, count = 8) => {
+        this.sparkEmitter.explode(count, x, y);
+      },
+      getPlayerBaseDamage: () => {
+        return this.gameState.calculateDamage(false);
+      },
+    };
+
+    this.hookManager = new RoundHookManager(ctx);
+
+    const acquiredSkills = this.gameState.getAcquiredInGameSkills();
+    for (const [skillId, level] of Object.entries(acquiredSkills)) {
+      if (level <= 0) continue;
+      const factory = SKILL_HOOK_REGISTRY[skillId];
+      if (factory) {
+        this.hookManager.register(factory(level));
+      }
+    }
   }
 }

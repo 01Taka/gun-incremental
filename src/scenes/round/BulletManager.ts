@@ -34,13 +34,14 @@ export class BulletManager {
   }
 
   /**
-   * 指定位置から指定角度へ、銃固有の弾パラメータで鉛弾を発射
+   * 指定位置から指定角度へ、銃固有またはカスタムの弾パラメータで鉛弾を発射
    */
   public spawnBullet(
     startX: number,
     startY: number,
     angle: number,
     bulletConfig: WeaponBulletConfig,
+    customDamage?: number,
   ): Bullet {
     const id = `bullet_${this.nextBulletId++}`;
     const { speed, radius } = bulletConfig;
@@ -62,6 +63,7 @@ export class BulletManager {
       angle,
       speed,
       radius,
+      customDamage,
     };
 
     this.bullets.set(id, bullet);
@@ -87,6 +89,7 @@ export class BulletManager {
           collision.target,
           collision.hitX,
           collision.hitY,
+          bullet.customDamage,
         );
         this.callbacks.onHitTarget(hitResult, collision.hitX, collision.hitY);
 
