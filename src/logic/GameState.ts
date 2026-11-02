@@ -496,6 +496,12 @@ export class GameState {
     this.invoiceIntroduced = true;
   }
 
+  public hasInvoiceAppeared(): boolean {
+    return (
+      this.invoiceIntroduced || this.invoiceCount > 0 || this.round >= INVOICE_CONFIG.intervalRounds
+    );
+  }
+
   public shouldShowInvoiceIntro(): boolean {
     return this.round === INVOICE_CONFIG.intervalRounds && !this.invoiceIntroduced;
   }

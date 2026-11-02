@@ -45,7 +45,7 @@ export interface Translations {
     roundHudLabel: (round: number) => string;
     roundSuffix: (round: number) => string;
     roundHeader: (round: number) => string;
-    nextInvoiceHeader: (dueRound: number, amount: string) => string;
+    nextInvoiceHeader: (roundsRemaining: number, amount: string) => string;
     shopUnlockAt: (round: number) => string;
     invoiceTitle: (count: number) => string;
     invoiceTerm: string;
@@ -232,8 +232,8 @@ export const translations: Record<Locale, Translations> = {
       roundHudLabel: (round: number) => `ROUND ${round}`,
       roundSuffix: (round: number) => `Round ${round} 終了後`,
       roundHeader: (round: number) => `Round ${round} — 賞金精算`,
-      nextInvoiceHeader: (dueRound: number, amount: string) =>
-        `次回上納金 (R${dueRound}): ${amount}`,
+      nextInvoiceHeader: (roundsRemaining: number, amount: string) =>
+        `次回上納金: ${amount} (あと${roundsRemaining}R)`,
       shopUnlockAt: (round: number) => `Round ${round} で開店`,
       invoiceTitle: (count: number) => `保安官の上納金（第 ${count} 回）`,
       invoiceTerm: "保安官の上納金",
@@ -595,7 +595,8 @@ export const translations: Record<Locale, Translations> = {
       roundHudLabel: (round: number) => `ROUND ${round}`,
       roundSuffix: (round: number) => `After R${round}`,
       roundHeader: (round: number) => `Round ${round} — Bounty Payout`,
-      nextInvoiceHeader: (dueRound: number, amount: string) => `Next Tax (R${dueRound}): ${amount}`,
+      nextInvoiceHeader: (roundsRemaining: number, amount: string) =>
+        `Next Tax: ${amount} (${roundsRemaining}R left)`,
       shopUnlockAt: (round: number) => `Opens at Round ${round}`,
       invoiceTitle: (count: number) => `Sheriff's Tax (#${count})`,
       invoiceTerm: "Sheriff's Tax",

@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 
 import { AudioManager } from "../../audio/AudioManager";
-import { INVOICE_CONFIG } from "../../config/gameData";
 import type { WeaponId } from "../../config/types";
 import { useI18n } from "../../i18n";
 import { GameState } from "../../logic/GameState";
@@ -27,8 +26,9 @@ export function useUpgradeOverlay({ onProceed }: UseUpgradeOverlayOptions) {
 
   const isShopUnlocked = gameState.isShopAvailable();
   const nextInvoice = gameState.getInvoiceAmount();
-  const nextInvoiceRound = (gameState.invoiceCount + 1) * INVOICE_CONFIG.intervalRounds;
+  const roundsUntilInvoice = gameState.getRoundsUntilNextInvoice();
   const canAffordInvoice = gameState.sp >= nextInvoice;
+  const hasInvoiceAppeared = gameState.hasInvoiceAppeared();
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
@@ -68,8 +68,9 @@ export function useUpgradeOverlay({ onProceed }: UseUpgradeOverlayOptions) {
     isSidebarOpen,
     isShopUnlocked,
     nextInvoice,
-    nextInvoiceRound,
+    roundsUntilInvoice,
     canAffordInvoice,
+    hasInvoiceAppeared,
     refresh,
     toggleSidebar,
     handleSelectTab,

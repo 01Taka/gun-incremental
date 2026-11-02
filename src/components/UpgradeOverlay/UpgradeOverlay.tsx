@@ -30,8 +30,9 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
     isSidebarOpen,
     isShopUnlocked,
     nextInvoice,
-    nextInvoiceRound,
+    roundsUntilInvoice,
     canAffordInvoice,
+    hasInvoiceAppeared,
     refresh,
     toggleSidebar,
     handleSelectTab,
@@ -46,7 +47,7 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
       {/* 9:16 のゲーム画面領域にぴったり重なる西部劇コンテナ */}
       <div className="font-western-slab pointer-events-auto relative flex h-full max-h-full w-full max-w-[calc(100dvh*9/16)] flex-col overflow-hidden bg-[#1a0d06]/92 text-amber-50 backdrop-blur-[2px]">
         {/* 上部ヘッダー（木札＆真鍮鋲デザイン） */}
-        <header className="western-wood safe-pt-2 z-20 grid flex-shrink-0 grid-cols-3 items-center gap-2 border-b-2 border-amber-700/80 px-3 pb-2 sm:px-4 sm:pb-2">
+        <header className="western-wood safe-pt-2 z-20 grid flex-shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b-2 border-amber-700/80 px-3 pb-2 sm:px-4 sm:pb-2">
           {/* 左端: サイドバートグルボタン */}
           <div className="flex justify-start">
             <button
@@ -71,13 +72,15 @@ export function UpgradeOverlay({ onProceed }: UpgradeOverlayProps) {
             <div className="truncate text-sm font-extrabold text-amber-300 drop-shadow sm:text-lg">
               {VOCAB.currency.moneyName} {formatMoney(gameState.sp)}
             </div>
-            <div
-              className={`truncate text-[11px] font-bold sm:text-xs ${
-                canAffordInvoice ? "text-amber-200/85" : "text-red-400"
-              }`}
-            >
-              {VOCAB.progression.nextInvoiceHeader(nextInvoiceRound, formatMoney(nextInvoice))}
-            </div>
+            {hasInvoiceAppeared && (
+              <div
+                className={`truncate text-[11px] font-bold sm:text-xs ${
+                  canAffordInvoice ? "text-amber-200/85" : "text-red-400"
+                }`}
+              >
+                {VOCAB.progression.nextInvoiceHeader(roundsUntilInvoice, formatMoney(nextInvoice))}
+              </div>
+            )}
           </div>
 
           {/* 右端: 決闘数表示 */}
